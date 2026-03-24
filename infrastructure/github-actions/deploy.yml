@@ -1,0 +1,366 @@
+name: Deploy Bazzar Platform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/bazzar
+  K8S_NAMESPACE: bazzar
+
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================
+  # JOB 1 — Run tests for all 14 services in parallel
+  # ===========================================================
+  test:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - product-service
+          - cart-service
+          - order-service
+          - payment-service
+          - review-service
+          - seller-service
+          - notification-service
+          - search-service
+          - recommendation-service
+          - storefront-designer-service
+          - referral-service
+          - delivery-service
+          - analytics-service
+          - web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: |
+            ${{ matrix.service == 'web' && 'web/package-lock.json' || format('services/{0}/package-lock.json', matrix.service) }}
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.service == 'web' && 'web' || format('services/{0}', matrix.service) }}
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ${{ matrix.service == 'web' && 'web' || format('services/{0}', matrix.service) }}
+        run: npm run lint --if-present
+
+      - name: Run typecheck
+        working-directory: ${{ matrix.service == 'web' && 'web' || format('services/{0}', matrix.service) }}
+        run: npm run typecheck --if-present
+
+      - name: Run unit tests
+        working-directory: ${{ matrix.service == 'web' && 'web' || format('services/{0}', matrix.service) }}
+        run: npm test --if-present
+        env:
+          NODE_ENV: test
+          CI: true
+
+  # ===========================================================
+  # JOB 2 — Build and push Docker images (runs after all tests pass)
+  # ===========================================================
+  build:
+    name: Build ${{ matrix.service }}
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: user-service
+            context: services/user-service
+          - service: product-service
+            context: services/product-service
+          - service: cart-service
+            context: services/cart-service
+          - service: order-service
+            context: services/order-service
+          - service: payment-service
+            context: services/payment-service
+          - service: review-service
+            context: services/review-service
+          - service: seller-service
+            context: services/seller-service
+          - service: notification-service
+            context: services/notification-service
+          - service: search-service
+            context: services/search-service
+          - service: recommendation-service
+            context: services/recommendation-service
+          - service: storefront-designer-service
+            context: services/storefront-designer-service
+          - service: referral-service
+            context: services/referral-service
+          - service: delivery-service
+            context: services/delivery-service
+          - service: analytics-service
+            context: services/analytics-service
+          - service: web-frontend
+            context: web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+  # ===========================================================
+  # JOB 3 — Deploy to Kubernetes (push to main only)
+  # ===========================================================
+  deploy:
+    name: Deploy to EKS
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://bazzar.com.np
+    permissions:
+      contents: read
+      id-token: write   # For OIDC auth with AWS
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --region ap-south-1 \
+            --name bazzar-eks-cluster
+
+      - name: Set image tag
+        id: image-tag
+        run: echo "TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Apply Kubernetes namespace and config
+        run: |
+          kubectl apply -f infrastructure/k8s/namespace.yaml
+          kubectl apply -f infrastructure/k8s/configmap.yaml
+
+      - name: Update image tags in manifests and apply all services
+        run: |
+          SERVICES=(
+            user-service
+            product-service
+            cart-service
+            order-service
+            payment-service
+            review-service
+            seller-service
+            notification-service
+            search-service
+            recommendation-service
+            storefront-designer-service
+            referral-service
+            delivery-service
+            analytics-service
+          )
+
+          for SERVICE in "${SERVICES[@]}"; do
+            echo "Deploying ${SERVICE}..."
+            kubectl set image deployment/${SERVICE} \
+              ${SERVICE}=${{ env.IMAGE_PREFIX }}/${SERVICE}:${{ steps.image-tag.outputs.TAG }} \
+              -n ${{ env.K8S_NAMESPACE }} || \
+            kubectl apply -f infrastructure/k8s/services/${SERVICE}.yaml -n ${{ env.K8S_NAMESPACE }}
+          done
+
+      - name: Apply ingress
+        run: kubectl apply -f infrastructure/k8s/ingress.yaml
+
+      - name: Update web-frontend image on cluster
+        run: |
+          kubectl set image deployment/web-frontend \
+            web-frontend=${{ env.IMAGE_PREFIX }}/web-frontend:${{ steps.image-tag.outputs.TAG }} \
+            -n ${{ env.K8S_NAMESPACE }} || \
+          kubectl apply -f infrastructure/k8s/ingress.yaml
+
+      - name: Wait for rollout to complete
+        run: |
+          SERVICES=(
+            user-service product-service cart-service order-service
+            payment-service review-service seller-service notification-service
+            search-service recommendation-service storefront-designer-service
+            referral-service delivery-service analytics-service web-frontend
+          )
+          for SERVICE in "${SERVICES[@]}"; do
+            echo "Waiting for ${SERVICE} rollout..."
+            kubectl rollout status deployment/${SERVICE} \
+              -n ${{ env.K8S_NAMESPACE }} \
+              --timeout=300s
+          done
+
+      - name: Verify all pods are healthy
+        run: |
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o wide
+          kubectl get hpa -n ${{ env.K8S_NAMESPACE }}
+
+  # ===========================================================
+  # JOB 4 — Deploy web frontend to Vercel (push to main only)
+  # ===========================================================
+  deploy-vercel:
+    name: Deploy Frontend to Vercel
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        working-directory: web
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with Vercel
+        working-directory: web
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_API_URL: https://api.bazzar.com.np
+          NEXT_PUBLIC_WS_URL: wss://api.bazzar.com.np/api/v1/delivery
+
+      - name: Deploy to Vercel production
+        id: vercel-deploy
+        working-directory: web
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "VERCEL_URL=${URL}" >> $GITHUB_OUTPUT
+
+      - name: Output Vercel deployment URL
+        run: echo "Deployed to ${{ steps.vercel-deploy.outputs.VERCEL_URL }}"
+
+  # ===========================================================
+  # JOB 5 — Slack notification on success / failure
+  # ===========================================================
+  notify:
+    name: Notify Slack
+    needs: [deploy, deploy-vercel]
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" && "${{ needs.deploy-vercel.result }}" == "success" ]]; then
+            echo "STATUS=success" >> $GITHUB_OUTPUT
+            echo "EMOJI=white_check_mark" >> $GITHUB_OUTPUT
+            echo "COLOR=#36a64f" >> $GITHUB_OUTPUT
+          else
+            echo "STATUS=failure" >> $GITHUB_OUTPUT
+            echo "EMOJI=x" >> $GITHUB_OUTPUT
+            echo "COLOR=#dc3545" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.COLOR }}",
+                  "blocks": [
+                    {
+                      "type": "header",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":${{ steps.status.outputs.EMOJI }}: Bazzar Deploy — ${{ steps.status.outputs.STATUS == 'success' && 'SUCCESS' || 'FAILED' }}"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Commit:*\n<${{ github.event.head_commit.url }}|`${{ github.sha }}`>"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Author:*\n${{ github.event.head_commit.author.name }}"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Message:*\n${{ github.event.head_commit.message }}"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Action:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -1,0 +1,864 @@
+@import 'leaflet/dist/leaflet.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: var(--ap-h) var(--ap-s) var(--ap-l);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: var(--ap-h) var(--ap-s) var(--ap-l);
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
+    --primary: var(--ap-h) var(--ap-s) var(--ap-l);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: var(--ap-h) var(--ap-s) var(--ap-l);
+  }
+}
+
+@layer base {
+  * { @apply border-border; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection { background: rgba(249,115,22,0.2); color: #c2410c; }
+}
+
+/* ── Admin theme CSS variables ─────────────────────────────────────────── */
+:root {
+  --ap-h: 24;
+  --ap-s: 95%;
+  --ap-l: 53%;
+  --ap-sh: 0;
+  --ap-sl: 60%;
+  --ap: hsl(var(--ap-h) var(--ap-s) var(--ap-l));
+  --ap-5:  hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.05);
+  --ap-10: hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.10);
+  --ap-15: hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15);
+  --ap-20: hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.20);
+  --ap-30: hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.30);
+  --ap-50: hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.50);
+  --as: hsl(var(--ap-sh) var(--ap-s) var(--ap-sl));
+
+  /* Surface layers */
+  --surface-0: #080c18;
+  --surface-1: #0d1117;
+  --surface-2: #111827;
+  --surface-3: #161b27;
+  --surface-4: #1a2035;
+  --surface-5: #1e2640;
+
+  /* Glow colors */
+  --glow-ap:     hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35);
+  --glow-blue:   rgba(59,130,246,0.3);
+  --glow-purple: rgba(139,92,246,0.3);
+  --glow-teal:   rgba(20,184,166,0.3);
+  --glow-green:  rgba(34,197,94,0.3);
+  --glow-red:    rgba(239,68,68,0.3);
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.35); border-radius: 99px; transition: background 0.2s; }
+::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.65); }
+
+/* ===================================================================
+   KEYFRAMES
+===================================================================== */
+
+/* --- Entrance --- */
+@keyframes fadeInUp    { from { opacity:0; transform:translateY(28px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes fadeInDown  { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeInLeft  { from { opacity:0; transform:translateX(-36px); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeInRight { from { opacity:0; transform:translateX(36px);  } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeIn      { from { opacity:0; } to { opacity:1; } }
+@keyframes scaleIn     { from { opacity:0; transform:scale(0.86); } to { opacity:1; transform:scale(1); } }
+@keyframes scaleUp     { from { opacity:0; transform:scale(0.94) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+@keyframes popIn       { 0% { opacity:0; transform:scale(0.5); } 70% { transform:scale(1.06); } 100% { opacity:1; transform:scale(1); } }
+
+/* --- Slide --- */
+@keyframes slideDown      { from { opacity:0; transform:translateY(-10px) scaleY(0.96); } to { opacity:1; transform:translateY(0) scaleY(1); } }
+@keyframes slideUp        { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideInRight   { from { opacity:0; transform:translateX(100%); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeft    { from { opacity:0; transform:translateX(-100%); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInRightFade { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeftFade  { from { opacity:0; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
+
+/* --- Float & Motion --- */
+@keyframes floatY     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+@keyframes floatYSlow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}  }
+@keyframes floatX     { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-10px)} }
+@keyframes orbit      { from{transform:rotate(0deg) translateX(60px) rotate(0deg)} to{transform:rotate(360deg) translateX(60px) rotate(-360deg)} }
+
+/* --- Glow / Pulse --- */
+@keyframes pulseGlow    { 0%,100%{box-shadow:0 0 0 0 var(--glow-ap)}   50%{box-shadow:0 0 0 16px transparent} }
+@keyframes pulseGlowBlue{ 0%,100%{box-shadow:0 0 0 0 var(--glow-blue)} 50%{box-shadow:0 0 0 12px transparent} }
+@keyframes glowPulse    { 0%,100%{opacity:0.5; transform:scale(1)} 50%{opacity:1; transform:scale(1.08)} }
+@keyframes neonFlicker  { 0%,19%,21%,23%,25%,54%,56%,100%{opacity:1} 20%,24%,55%{opacity:0.85} }
+@keyframes borderGlow   { 0%,100%{border-color:var(--ap-30)} 50%{border-color:var(--ap-50)} }
+
+/* --- Background --- */
+@keyframes gradientShift  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes gradientRotate { from{--angle:0deg} to{--angle:360deg} }
+@keyframes auroraShift    { 0%{background-position:0% 0%} 33%{background-position:100% 0%} 66%{background-position:50% 100%} 100%{background-position:0% 0%} }
+@keyframes meshFloat      { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-20px,30px) scale(0.97)} }
+@keyframes rotateBg       { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes morphBlob      { 0%,100%{border-radius:60% 40% 30% 70% / 60% 30% 70% 40%} 50%{border-radius:30% 60% 70% 40% / 50% 60% 30% 60%} }
+
+/* --- Shimmer / Skeleton --- */
+@keyframes shimmer        { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes shimmerDiag    { 0%{transform:translateX(-100%) rotate(25deg)} 100%{transform:translateX(200%) rotate(25deg)} }
+
+/* --- Ticker & Loader --- */
+@keyframes ticker         { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes spinSlow       { to{transform:rotate(360deg)} }
+@keyframes spinReverse    { to{transform:rotate(-360deg)} }
+
+/* --- Bounce & Ripple --- */
+@keyframes bounceIn   { 0%{transform:scale(0.3);opacity:0} 50%{transform:scale(1.08)} 70%{transform:scale(0.96)} 100%{transform:scale(1);opacity:1} }
+@keyframes ripple     { 0%{transform:scale(0);opacity:1} 100%{transform:scale(2.6);opacity:0} }
+@keyframes tapRipple  { 0%{transform:scale(0);opacity:0.6} 100%{transform:scale(3);opacity:0} }
+
+/* --- Count & Progress --- */
+@keyframes countUp     { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes widthGrow   { from{width:0%} to{width:var(--target-width,80%)} }
+@keyframes progressBar { from{transform:scaleX(0);transform-origin:left} to{transform:scaleX(1);transform-origin:left} }
+
+/* --- Text --- */
+@keyframes typewriter { from{width:0} to{width:100%} }
+@keyframes blinkCaret { 50%{border-color:transparent} }
+@keyframes textReveal { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0% 0 0)} }
+@keyframes textGlow   { 0%,100%{text-shadow:0 0 8px var(--ap-30)} 50%{text-shadow:0 0 24px var(--ap-50),0 0 48px var(--ap-20)} }
+
+/* ===================================================================
+   ANIMATION UTILITIES
+===================================================================== */
+.animate-fade-up       { animation: fadeInUp        0.65s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-down     { animation: fadeInDown      0.55s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-left     { animation: fadeInLeft      0.65s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-right    { animation: fadeInRight     0.65s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-in       { animation: fadeIn          0.45s ease both; }
+.animate-scale-in      { animation: scaleIn         0.55s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-scale-up      { animation: scaleUp         0.4s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-pop-in        { animation: popIn           0.5s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-float         { animation: floatY          4s    ease-in-out infinite; }
+.animate-float-slow    { animation: floatYSlow      6s    ease-in-out infinite; }
+.animate-float-x       { animation: floatX          5s    ease-in-out infinite; }
+.animate-orbit         { animation: orbit           10s   linear infinite; }
+.animate-pulse-glow    { animation: pulseGlow       2.5s  ease-in-out infinite; }
+.animate-glow-pulse    { animation: glowPulse       2s    ease-in-out infinite; }
+.animate-neon          { animation: neonFlicker     3s    linear infinite; }
+.animate-gradient      { background-size: 200% 200%; animation: gradientShift 5s ease infinite; }
+.animate-aurora        { background-size: 300% 300%; animation: auroraShift 12s ease infinite; }
+.animate-mesh          { animation: meshFloat       8s    ease-in-out infinite; }
+.animate-morph         { animation: morphBlob       8s    ease-in-out infinite; }
+.animate-ticker        { animation: ticker          28s   linear infinite; }
+.animate-slide-down    { animation: slideDown       0.3s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-up      { animation: slideUp         0.3s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-right   { animation: slideInRight    0.4s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-left    { animation: slideInLeft     0.4s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-rfade   { animation: slideInRightFade 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-lfade   { animation: slideInLeftFade 0.5s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-spin-slow     { animation: spinSlow        8s    linear infinite; }
+.animate-spin-reverse  { animation: spinReverse     10s   linear infinite; }
+.animate-bounce-in     { animation: bounceIn        0.55s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+.animate-border-glow   { animation: borderGlow      2s    ease-in-out infinite; }
+.animate-progress      { animation: progressBar     1.2s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-text-glow     { animation: textGlow        3s    ease-in-out infinite; }
+.animate-count-up      { animation: countUp         0.6s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-rotate-bg     { animation: rotateBg        20s   linear infinite; }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* ===================================================================
+   DELAY UTILITIES
+===================================================================== */
+.delay-0    { animation-delay: 0ms; }
+.delay-50   { animation-delay: 50ms; }
+.delay-75   { animation-delay: 75ms; }
+.delay-100  { animation-delay: 100ms; }
+.delay-150  { animation-delay: 150ms; }
+.delay-200  { animation-delay: 200ms; }
+.delay-250  { animation-delay: 250ms; }
+.delay-300  { animation-delay: 300ms; }
+.delay-350  { animation-delay: 350ms; }
+.delay-400  { animation-delay: 400ms; }
+.delay-450  { animation-delay: 450ms; }
+.delay-500  { animation-delay: 500ms; }
+.delay-600  { animation-delay: 600ms; }
+.delay-700  { animation-delay: 700ms; }
+.delay-800  { animation-delay: 800ms; }
+.delay-900  { animation-delay: 900ms; }
+.delay-1000 { animation-delay: 1000ms; }
+.delay-1200 { animation-delay: 1200ms; }
+.delay-1400 { animation-delay: 1400ms; }
+.delay-1600 { animation-delay: 1600ms; }
+
+/* ===================================================================
+   SCROLL REVEAL
+===================================================================== */
+.reveal        { opacity:0; transform:translateY(36px); transition:opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.reveal-left   { opacity:0; transform:translateX(-36px); transition:opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.reveal-right  { opacity:0; transform:translateX(36px);  transition:opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.reveal-scale  { opacity:0; transform:scale(0.88); transition:opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.reveal.visible, .reveal-left.visible, .reveal-right.visible, .reveal-scale.visible { opacity:1; transform:none; }
+.reveal-d1 { transition-delay:  80ms; }
+.reveal-d2 { transition-delay: 160ms; }
+.reveal-d3 { transition-delay: 240ms; }
+.reveal-d4 { transition-delay: 320ms; }
+.reveal-d5 { transition-delay: 400ms; }
+.reveal-d6 { transition-delay: 480ms; }
+.reveal-d7 { transition-delay: 560ms; }
+.reveal-d8 { transition-delay: 640ms; }
+
+/* ===================================================================
+   GLASS MORPHISM  (v2 — multi-layer)
+===================================================================== */
+.glass {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.13);
+}
+.glass-dark {
+  background: rgba(0,0,0,0.28);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.glass-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.dark .glass-card {
+  background: rgba(13,17,23,0.75);
+  border-color: rgba(255,255,255,0.07);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+.glass-header {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.04);
+}
+.dark .glass-header {
+  background: rgba(8,12,24,0.90);
+  border-bottom-color: rgba(255,255,255,0.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+}
+/* Colored glass */
+.glass-brand  { background: var(--ap-10);  backdrop-filter:blur(16px); border:1px solid var(--ap-20); }
+.glass-blue   { background: rgba(59,130,246,0.08); backdrop-filter:blur(16px); border:1px solid rgba(59,130,246,0.18); }
+.glass-purple { background: rgba(139,92,246,0.08); backdrop-filter:blur(16px); border:1px solid rgba(139,92,246,0.18); }
+.glass-teal   { background: rgba(20,184,166,0.08); backdrop-filter:blur(16px); border:1px solid rgba(20,184,166,0.18); }
+
+/* ===================================================================
+   AURORA / MESH GRADIENT BACKGROUNDS
+===================================================================== */
+.aurora-bg {
+  background: linear-gradient(135deg,
+    rgba(var(--ap-h),80%,60%,0.15) 0%,
+    rgba(220,38,38,0.08) 25%,
+    rgba(59,130,246,0.10) 50%,
+    rgba(139,92,246,0.08) 75%,
+    rgba(20,184,166,0.12) 100%
+  );
+  background-size: 300% 300%;
+  animation: auroraShift 14s ease infinite;
+}
+.mesh-bg {
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 20%, var(--ap-10) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(139,92,246,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(59,130,246,0.07) 0%, transparent 70%);
+}
+.dark .mesh-bg {
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 20%, var(--ap-5) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(139,92,246,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(59,130,246,0.05) 0%, transparent 70%);
+}
+/* Dot grid pattern */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.dark .dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+}
+/* Line grid */
+.line-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ===================================================================
+   NEON / GLOW EFFECTS
+===================================================================== */
+.neon-text-brand  { text-shadow: 0 0 8px var(--ap-50), 0 0 20px var(--ap-30), 0 0 40px var(--ap-15); }
+.neon-text-blue   { text-shadow: 0 0 8px rgba(59,130,246,0.7), 0 0 20px rgba(59,130,246,0.4); }
+.neon-text-purple { text-shadow: 0 0 8px rgba(139,92,246,0.7), 0 0 20px rgba(139,92,246,0.4); }
+.neon-text-green  { text-shadow: 0 0 8px rgba(34,197,94,0.7),  0 0 20px rgba(34,197,94,0.4); }
+.neon-box-brand   { box-shadow: 0 0 0 1px var(--ap-30), 0 0 16px var(--ap-20), 0 0 40px var(--ap-10); }
+.neon-box-blue    { box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 0 16px rgba(59,130,246,0.15), 0 0 40px rgba(59,130,246,0.08); }
+.glow-sm  { box-shadow: 0 0 12px -2px var(--glow-ap); }
+.glow-md  { box-shadow: 0 0 24px -4px var(--glow-ap); }
+.glow-lg  { box-shadow: 0 0 48px -8px var(--glow-ap); }
+.glow-blue-sm  { box-shadow: 0 0 12px -2px var(--glow-blue); }
+.glow-blue-md  { box-shadow: 0 0 24px -4px var(--glow-blue); }
+.glow-purple-sm{ box-shadow: 0 0 12px -2px var(--glow-purple); }
+.glow-green-sm { box-shadow: 0 0 12px -2px var(--glow-green); }
+.glow-red-sm   { box-shadow: 0 0 12px -2px var(--glow-red); }
+
+/* ===================================================================
+   PRODUCT CARD  (enhanced 3D hover + cinematic reveal)
+===================================================================== */
+.product-card {
+  transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), box-shadow 0.45s ease;
+  will-change: transform;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+.product-card:hover {
+  transform: translateY(-10px) scale(1.01);
+  box-shadow:
+    0 40px 80px -12px rgba(0,0,0,0.18),
+    0 0 0 1px rgba(249,115,22,0.12),
+    0 0 40px -8px var(--ap-10);
+}
+.product-card .card-actions {
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.product-card:hover .card-actions { opacity:1; transform:translateY(0) scale(1); }
+.product-card .card-img { transition: transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.product-card:hover .card-img { transform: scale(1.12); }
+/* Shimmer on hover */
+.product-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  opacity:0;
+  transition: opacity 0.4s ease;
+  z-index:5;
+}
+.product-card:hover::before { opacity:1; }
+
+/* ===================================================================
+   CATEGORY CARD
+===================================================================== */
+.category-card { overflow:hidden; }
+.category-card .cat-img { transition: transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+.category-card:hover .cat-img { transform: scale(1.14); }
+.category-card .cat-overlay {
+  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 60%);
+  transition: background 0.4s ease;
+}
+.category-card:hover .cat-overlay {
+  background: linear-gradient(to top, rgba(249,115,22,0.72) 0%, rgba(0,0,0,0.15) 100%);
+}
+.category-card .cat-label { transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); }
+.category-card:hover .cat-label { transform: translateY(-6px); }
+
+/* ===================================================================
+   GRADIENT TEXT  (multi-stop)
+===================================================================== */
+.gradient-text        { background: linear-gradient(135deg, var(--ap) 0%, #ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-cool   { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-purple { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-teal   { background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-gold   { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-night  { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text-aurora { background: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #f472b6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ===================================================================
+   ANIMATED GRADIENT BORDER
+===================================================================== */
+.gradient-border {
+  position: relative;
+  border-radius: var(--radius);
+  isolation: isolate;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: calc(var(--radius) + 1.5px);
+  background: linear-gradient(135deg, var(--ap), #ef4444, #8b5cf6, var(--ap));
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+  z-index: -1;
+}
+
+/* Thinner static gradient border */
+.border-gradient {
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  background-image: linear-gradient(var(--surface-4), var(--surface-4)),
+                    linear-gradient(135deg, var(--ap-50), transparent 50%, var(--ap-20));
+  background-origin: border-box;
+  -webkit-background-clip: padding-box;
+}
+
+/* ===================================================================
+   SHINE / SWEEP BUTTON
+===================================================================== */
+.btn-shine { position:relative; overflow:hidden; }
+.btn-shine::after {
+  content:'';
+  position:absolute;
+  top:-50%; left:-80%;
+  width:55%; height:200%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.28), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.65s ease;
+}
+.btn-shine:hover::after { left:130%; }
+
+/* Magnetic-style lift */
+.btn-lift {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+}
+.btn-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 0 0 1px var(--ap-20);
+}
+.btn-lift:active { transform: translateY(0); box-shadow: none; }
+
+/* ===================================================================
+   NAV LINK UNDERLINE (animated)
+===================================================================== */
+.nav-link {
+  position: relative;
+  transition: color 0.25s ease;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ap), #ef4444);
+  border-radius: 1px;
+  transition: width 0.3s cubic-bezier(0.16,1,0.3,1), left 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.nav-link:hover::after  { width: 100%; left: 0; }
+.nav-link.active::after { width: 100%; left: 0; }
+
+/* ===================================================================
+   SKELETON LOADER
+===================================================================== */
+.skeleton {
+  background: linear-gradient(90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted)/0.55) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.7s infinite;
+  border-radius: var(--radius);
+}
+.skeleton-dark {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.7s infinite;
+  border-radius: var(--radius);
+}
+
+/* ===================================================================
+   SCROLLBAR HIDE
+===================================================================== */
+.scrollbar-hide::-webkit-scrollbar { display:none; }
+.scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
+
+/* ===================================================================
+   STAT CARD
+===================================================================== */
+.stat-card {
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease, border-color 0.3s ease;
+  cursor: default;
+}
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.10);
+}
+
+/* ===================================================================
+   DASHBOARD CARD
+===================================================================== */
+.dashboard-card {
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease, border-color 0.3s ease;
+}
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+}
+
+/* ===================================================================
+   INTERACTIVE LIST ITEMS
+===================================================================== */
+.list-item-hover {
+  transition: background 0.2s ease, padding-left 0.2s cubic-bezier(0.16,1,0.3,1), transform 0.2s ease;
+}
+.list-item-hover:hover {
+  background: rgba(249,115,22,0.06);
+  padding-left: 1.5rem;
+}
+
+/* ===================================================================
+   MEGA MENU
+===================================================================== */
+.mega-menu {
+  animation: slideDown 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  transform-origin: top center;
+}
+
+/* ===================================================================
+   PAGE TRANSITION
+===================================================================== */
+.page-enter {
+  animation: fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ===================================================================
+   RIPPLE
+===================================================================== */
+.ripple-container { position:relative; overflow:hidden; }
+.ripple-effect {
+  position:absolute;
+  border-radius:50%;
+  background: rgba(255,255,255,0.28);
+  animation: tapRipple 0.65s ease-out forwards;
+  pointer-events:none;
+}
+
+/* ===================================================================
+   ENHANCED INPUT
+===================================================================== */
+.input-enhanced {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.input-enhanced:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(249,115,22,0.12), 0 0 0 3px var(--ap-10);
+}
+
+/* ===================================================================
+   STATUS BADGE PULSE
+===================================================================== */
+.status-pulse { position:relative; }
+.status-pulse::before {
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:inherit;
+  background:currentColor;
+  opacity:0.25;
+  animation: ripple 2s ease-out infinite;
+}
+
+/* ===================================================================
+   SEARCH DROPDOWN
+===================================================================== */
+.search-dropdown {
+  animation: scaleUp 0.22s cubic-bezier(0.16,1,0.3,1) both;
+  transform-origin: top center;
+}
+
+/* ===================================================================
+   CHART TOOLTIP
+===================================================================== */
+.chart-tooltip {
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(249,115,22,0.18);
+  border-radius: 0.875rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(249,115,22,0.08);
+}
+.dark .chart-tooltip {
+  background: rgba(13,17,23,0.94);
+  border-color: rgba(249,115,22,0.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* ===================================================================
+   ADMIN / SELLER PANEL  — shared primitives
+===================================================================== */
+
+/* Sidebar nav item */
+.sidebar-item {
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.16,1,0.3,1);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.06);
+  transform: translateX(2px);
+}
+.sidebar-item.active {
+  background: var(--ap-10);
+  border-color: var(--ap-20);
+  color: var(--ap);
+  box-shadow: 0 0 0 1px var(--ap-15), inset 0 0 20px var(--ap-5);
+}
+/* Active sidebar glow pulse */
+.sidebar-item.active::after {
+  content:'';
+  position:absolute;
+  right:0; top:50%;
+  transform:translateY(-50%);
+  width:3px; height:60%;
+  background: var(--ap);
+  border-radius:2px 0 0 2px;
+  box-shadow: 0 0 8px var(--glow-ap);
+}
+
+/* Admin panel surface card */
+.panel-card {
+  background: var(--surface-4);
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 1rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.panel-card:hover {
+  border-color: rgba(255,255,255,0.09);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+/* Dark panel header */
+.panel-header {
+  background: linear-gradient(135deg, var(--surface-3), var(--surface-2));
+  border-bottom: 1px solid rgba(255,255,255,0.055);
+}
+
+/* Floating label input for admin */
+.admin-input {
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  color: #e2e8f0;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+.admin-input::placeholder { color: rgba(255,255,255,0.2); }
+.admin-input:focus {
+  outline: none;
+  border-color: var(--ap-40, var(--ap-30));
+  box-shadow: 0 0 0 3px var(--ap-10), 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* ===================================================================
+   ADMIN THEME UTILITY CLASSES
+===================================================================== */
+.ap-bg        { background-color: var(--ap); }
+.ap-text      { color: var(--ap); }
+.ap-border    { border-color: var(--ap); }
+.ap-gradient  { background: linear-gradient(135deg, var(--ap), var(--as)); }
+.ap-gradient-soft { background: linear-gradient(135deg, var(--ap-20), var(--ap-10)); }
+.ap-ring:focus{ outline:none; box-shadow:0 0 0 2px var(--ap-30); }
+.ap-input:focus{ border-color:var(--ap-30) !important; outline:none; box-shadow:0 0 0 3px var(--ap-10) !important; }
+.ap-btn { background-color: var(--ap) !important; color:#fff; }
+.ap-btn:hover { filter:brightness(1.1); }
+.ap-glow { box-shadow: 0 4px 20px -4px var(--glow-ap); }
+.ap-glow-lg { box-shadow: 0 8px 40px -8px var(--glow-ap), 0 0 0 1px var(--ap-15); }
+
+/* ===================================================================
+   BUYER THEME  — light mode premium card
+===================================================================== */
+.buyer-card {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease, border-color 0.25s ease;
+}
+.buyer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.09), 0 0 0 1px rgba(249,115,22,0.12);
+  border-color: rgba(249,115,22,0.15);
+}
+.dark .buyer-card {
+  background: #111827;
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ===================================================================
+   MICRO-INTERACTIONS
+===================================================================== */
+/* Checkbox animation */
+.check-bounce:checked + label { animation: bounceIn 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+/* Tag pop */
+.tag-interactive {
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), background 0.2s, color 0.2s;
+}
+.tag-interactive:hover { transform: scale(1.06); }
+.tag-interactive:active { transform: scale(0.96); }
+
+/* Number badge */
+.badge-count {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.625rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: bounceIn 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+
+/* Floating action */
+.fab {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+}
+.fab:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18), 0 0 0 1px var(--ap-20);
+}
+.fab:active { transform: scale(0.97); }
+
+/* Progress bar animated */
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+}
+.progress-bar > div {
+  border-radius: 99px;
+  transition: width 1s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar > div::after {
+  content:'';
+  position:absolute;
+  top:0; left:-40%;
+  width:40%; height:100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmerDiag 2s ease-in-out infinite;
+}
+
+/* ===================================================================
+   TABLE  (admin)
+===================================================================== */
+.admin-table tr {
+  transition: background 0.18s ease;
+}
+.admin-table tr:hover td { background: rgba(255,255,255,0.025); }
+.admin-table th {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(156,163,175,0.8);
+}
+
+/* ===================================================================
+   TOOLTIP (custom)
+===================================================================== */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(15,20,35,0.95);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16,1,0.3,1);
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ===================================================================
+   MOBILE MENU OVERLAY
+===================================================================== */
+.mobile-overlay {
+  animation: fadeIn 0.25s ease both;
+  backdrop-filter: blur(4px);
+}
+
+/* ===================================================================
+   SCROLL PROGRESS BAR
+===================================================================== */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--ap), #ef4444, #8b5cf6);
+  z-index: 9999;
+  transform-origin: left;
+  transition: transform 0.1s linear;
+}

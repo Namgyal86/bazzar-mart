@@ -1,0 +1,38 @@
+{
+  "name": "bazzar-ecommerce",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bazzar — Multi-vendor e-commerce marketplace (Nepal-focused)",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=web",
+    "dev:user": "npm run dev --workspace=services/user-service",
+    "dev:product": "npm run dev --workspace=services/product-service",
+    "dev:cart": "npm run dev --workspace=services/cart-service",
+    "dev:order": "npm run dev --workspace=services/order-service",
+    "dev:payment": "npm run dev --workspace=services/payment-service",
+    "dev:delivery": "npm run dev --workspace=services/delivery-service",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,json}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

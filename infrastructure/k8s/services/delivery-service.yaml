@@ -1,0 +1,135 @@
+# =============================================================
+# Bazzar — Delivery Service Kubernetes Manifests
+# Handles: Real-time GPS tracking via Socket.io
+# Port: 8013
+# =============================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delivery-service
+  namespace: bazzar
+  labels:
+    app: delivery-service
+    app.kubernetes.io/name: delivery-service
+    app.kubernetes.io/part-of: bazzar
+    app.kubernetes.io/version: latest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: delivery-service
+  strategy:
+    # RollingUpdate with affinity to avoid WebSocket disruption
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: delivery-service
+        app.kubernetes.io/name: delivery-service
+        app.kubernetes.io/part-of: bazzar
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: delivery-service
+          image: ghcr.io/your-org/bazzar/delivery-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8013
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: bazzar-config
+            - secretRef:
+                name: bazzar-secrets
+          env:
+            - name: PORT
+              value: "8013"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: bazzar-db-secrets
+                  key: DELIVERY_SERVICE_MONGO_URI
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8013
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8013
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: delivery-service
+  namespace: bazzar
+  labels:
+    app: delivery-service
+    app.kubernetes.io/name: delivery-service
+    app.kubernetes.io/part-of: bazzar
+  annotations:
+    # Sticky sessions needed for Socket.io WebSocket connections
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "DELIVERYROUTE"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+spec:
+  type: ClusterIP
+  selector:
+    app: delivery-service
+  ports:
+    - name: http
+      port: 8013
+      targetPort: 8013
+      protocol: TCP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: delivery-service-hpa
+  namespace: bazzar
+  labels:
+    app: delivery-service
+    app.kubernetes.io/part-of: bazzar
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: delivery-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

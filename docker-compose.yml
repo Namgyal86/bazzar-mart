@@ -1,0 +1,465 @@
+version: '3.9'
+
+# ============================================================
+# Bazzar — Full Local Development Environment
+# Run: docker-compose up -d
+# ============================================================
+
+networks:
+  bazzar-net:
+    driver: bridge
+
+volumes:
+  mongo_user_data:
+  mongo_product_data:
+  mongo_order_data:
+  mongo_payment_data:
+  mongo_review_data:
+  mongo_seller_data:
+  mongo_notification_data:
+  mongo_delivery_data:
+  mongo_referral_data:
+  mongo_recommendation_data:
+  mongo_storefront_data:
+  mongo_analytics_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+  elasticsearch_data:
+
+services:
+
+  # ---- Infrastructure ----------------------------------------
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: bazzar-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: bazzar-kafka
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: bazzar-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: bazzar-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  # ---- MongoDB instances (one per service) ------------------
+
+  mongo-user:
+    image: mongo:7
+    container_name: bazzar-mongo-user
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_user_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-product:
+    image: mongo:7
+    container_name: bazzar-mongo-product
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_product_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-order:
+    image: mongo:7
+    container_name: bazzar-mongo-order
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo_order_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-payment:
+    image: mongo:7
+    container_name: bazzar-mongo-payment
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongo_payment_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-review:
+    image: mongo:7
+    container_name: bazzar-mongo-review
+    ports:
+      - "27021:27017"
+    volumes:
+      - mongo_review_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-seller:
+    image: mongo:7
+    container_name: bazzar-mongo-seller
+    ports:
+      - "27022:27017"
+    volumes:
+      - mongo_seller_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-notification:
+    image: mongo:7
+    container_name: bazzar-mongo-notification
+    ports:
+      - "27023:27017"
+    volumes:
+      - mongo_notification_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-delivery:
+    image: mongo:7
+    container_name: bazzar-mongo-delivery
+    ports:
+      - "27024:27017"
+    volumes:
+      - mongo_delivery_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-referral:
+    image: mongo:7
+    container_name: bazzar-mongo-referral
+    ports:
+      - "27025:27017"
+    volumes:
+      - mongo_referral_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-recommendation:
+    image: mongo:7
+    container_name: bazzar-mongo-recommendation
+    ports:
+      - "27026:27017"
+    volumes:
+      - mongo_recommendation_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-storefront:
+    image: mongo:7
+    container_name: bazzar-mongo-storefront
+    ports:
+      - "27027:27017"
+    volumes:
+      - mongo_storefront_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-analytics:
+    image: mongo:7
+    container_name: bazzar-mongo-analytics
+    ports:
+      - "27028:27017"
+    volumes:
+      - mongo_analytics_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  # ---- Microservices ----------------------------------------
+
+  user-service:
+    build: ./services/user-service
+    container_name: bazzar-user-service
+    ports:
+      - "8001:8001"
+    environment:
+      - NODE_ENV=development
+      - PORT=8001
+      - MONGO_URI=mongodb://mongo-user:27017/user_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+    depends_on: [mongo-user, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  product-service:
+    build: ./services/product-service
+    container_name: bazzar-product-service
+    ports:
+      - "8002:8002"
+    environment:
+      - NODE_ENV=development
+      - PORT=8002
+      - MONGO_URI=mongodb://mongo-product:27017/product_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    depends_on: [mongo-product, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  cart-service:
+    build: ./services/cart-service
+    container_name: bazzar-cart-service
+    ports:
+      - "8003:8003"
+    environment:
+      - NODE_ENV=development
+      - PORT=8003
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - PRODUCT_SERVICE_URL=http://product-service:8002
+    depends_on: [redis, kafka, product-service]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  order-service:
+    build: ./services/order-service
+    container_name: bazzar-order-service
+    ports:
+      - "8004:8004"
+    environment:
+      - NODE_ENV=development
+      - PORT=8004
+      - MONGO_URI=mongodb://mongo-order:27017/order_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - PRODUCT_SERVICE_URL=http://product-service:8002
+      - CART_SERVICE_URL=http://cart-service:8003
+      - REFERRAL_SERVICE_URL=http://referral-service:8012
+    depends_on: [mongo-order, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  payment-service:
+    build: ./services/payment-service
+    container_name: bazzar-payment-service
+    ports:
+      - "8005:8005"
+    environment:
+      - NODE_ENV=development
+      - PORT=8005
+      - MONGO_URI=mongodb://mongo-payment:27017/payment_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - KHALTI_SECRET_KEY=${KHALTI_SECRET_KEY}
+      - ESEWA_MERCHANT_CODE=${ESEWA_MERCHANT_CODE}
+      - ESEWA_SECRET_KEY=${ESEWA_SECRET_KEY}
+      - FONEPAY_MERCHANT_CODE=${FONEPAY_MERCHANT_CODE}
+      - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+    depends_on: [mongo-payment, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  review-service:
+    build: ./services/review-service
+    container_name: bazzar-review-service
+    ports:
+      - "8006:8006"
+    environment:
+      - NODE_ENV=development
+      - PORT=8006
+      - MONGO_URI=mongodb://mongo-review:27017/review_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - ORDER_SERVICE_URL=http://order-service:8004
+    depends_on: [mongo-review, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  seller-service:
+    build: ./services/seller-service
+    container_name: bazzar-seller-service
+    ports:
+      - "8007:8007"
+    environment:
+      - NODE_ENV=development
+      - PORT=8007
+      - MONGO_URI=mongodb://mongo-seller:27017/seller_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on: [mongo-seller, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: bazzar-notification-service
+    ports:
+      - "8008:8008"
+    environment:
+      - NODE_ENV=development
+      - PORT=8008
+      - MONGO_URI=mongodb://mongo-notification:27017/notification_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SPARROW_SMS_TOKEN=${SPARROW_SMS_TOKEN}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+    depends_on: [mongo-notification, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  search-service:
+    build: ./services/search-service
+    container_name: bazzar-search-service
+    ports:
+      - "8009:8009"
+    environment:
+      - NODE_ENV=development
+      - PORT=8009
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on: [elasticsearch, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  recommendation-service:
+    build: ./services/recommendation-service
+    container_name: bazzar-recommendation-service
+    ports:
+      - "8010:8010"
+    environment:
+      - NODE_ENV=development
+      - PORT=8010
+      - MONGO_URI=mongodb://mongo-recommendation:27017/recommendation_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on: [mongo-recommendation, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  storefront-designer-service:
+    build: ./services/storefront-designer-service
+    container_name: bazzar-storefront-service
+    ports:
+      - "8011:8011"
+    environment:
+      - NODE_ENV=development
+      - PORT=8011
+      - MONGO_URI=mongodb://mongo-storefront:27017/storefront_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - CLOUDFRONT_URL=${CLOUDFRONT_URL}
+    depends_on: [mongo-storefront, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  referral-service:
+    build: ./services/referral-service
+    container_name: bazzar-referral-service
+    ports:
+      - "8012:8012"
+    environment:
+      - NODE_ENV=development
+      - PORT=8012
+      - MONGO_URI=mongodb://mongo-referral:27017/referral_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on: [mongo-referral, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  delivery-service:
+    build: ./services/delivery-service
+    container_name: bazzar-delivery-service
+    ports:
+      - "8013:8013"
+    environment:
+      - NODE_ENV=development
+      - PORT=8013
+      - MONGO_URI=mongodb://mongo-delivery:27017/delivery_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on: [mongo-delivery, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./services/analytics-service
+    container_name: bazzar-analytics-service
+    ports:
+      - "8014:8014"
+    environment:
+      - NODE_ENV=development
+      - PORT=8014
+      - MONGO_URI=mongodb://mongo-analytics:27017/analytics_db
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on: [mongo-analytics, redis, kafka]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  # ---- Web Frontend -----------------------------------------
+
+  web:
+    build: ./web
+    container_name: bazzar-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8013
+    networks: [bazzar-net]
+    restart: unless-stopped

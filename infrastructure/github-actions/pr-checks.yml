@@ -1,0 +1,387 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================
+  # Detect which services have changed files
+  # ===========================================================
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      user-service: ${{ steps.filter.outputs.user-service }}
+      product-service: ${{ steps.filter.outputs.product-service }}
+      cart-service: ${{ steps.filter.outputs.cart-service }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      review-service: ${{ steps.filter.outputs.review-service }}
+      seller-service: ${{ steps.filter.outputs.seller-service }}
+      notification-service: ${{ steps.filter.outputs.notification-service }}
+      search-service: ${{ steps.filter.outputs.search-service }}
+      recommendation-service: ${{ steps.filter.outputs.recommendation-service }}
+      storefront-designer-service: ${{ steps.filter.outputs.storefront-designer-service }}
+      referral-service: ${{ steps.filter.outputs.referral-service }}
+      delivery-service: ${{ steps.filter.outputs.delivery-service }}
+      analytics-service: ${{ steps.filter.outputs.analytics-service }}
+      web: ${{ steps.filter.outputs.web }}
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect file changes per service
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            user-service:
+              - 'services/user-service/**'
+            product-service:
+              - 'services/product-service/**'
+            cart-service:
+              - 'services/cart-service/**'
+            order-service:
+              - 'services/order-service/**'
+            payment-service:
+              - 'services/payment-service/**'
+            review-service:
+              - 'services/review-service/**'
+            seller-service:
+              - 'services/seller-service/**'
+            notification-service:
+              - 'services/notification-service/**'
+            search-service:
+              - 'services/search-service/**'
+            recommendation-service:
+              - 'services/recommendation-service/**'
+            storefront-designer-service:
+              - 'services/storefront-designer-service/**'
+            referral-service:
+              - 'services/referral-service/**'
+            delivery-service:
+              - 'services/delivery-service/**'
+            analytics-service:
+              - 'services/analytics-service/**'
+            web:
+              - 'web/**'
+            infrastructure:
+              - 'infrastructure/**'
+              - 'docker-compose.yml'
+              - '.github/**'
+
+  # ===========================================================
+  # Lint & typecheck changed services
+  # ===========================================================
+  lint-typecheck:
+    name: Lint & Typecheck (${{ matrix.service }})
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: |
+      needs.detect-changes.outputs[matrix.service] == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: user-service
+            path: services/user-service
+          - service: product-service
+            path: services/product-service
+          - service: cart-service
+            path: services/cart-service
+          - service: order-service
+            path: services/order-service
+          - service: payment-service
+            path: services/payment-service
+          - service: review-service
+            path: services/review-service
+          - service: seller-service
+            path: services/seller-service
+          - service: notification-service
+            path: services/notification-service
+          - service: search-service
+            path: services/search-service
+          - service: recommendation-service
+            path: services/recommendation-service
+          - service: storefront-designer-service
+            path: services/storefront-designer-service
+          - service: referral-service
+            path: services/referral-service
+          - service: delivery-service
+            path: services/delivery-service
+          - service: analytics-service
+            path: services/analytics-service
+          - service: web
+            path: web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.path }}
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ${{ matrix.path }}
+        run: npm run lint --if-present
+
+      - name: Run TypeScript typecheck
+        working-directory: ${{ matrix.path }}
+        run: npm run typecheck --if-present
+
+  # ===========================================================
+  # Run tests for changed services only
+  # ===========================================================
+  test-changed:
+    name: Test (${{ matrix.service }})
+    needs: [detect-changes, lint-typecheck]
+    runs-on: ubuntu-latest
+    if: |
+      needs.detect-changes.outputs[matrix.service] == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: user-service
+            path: services/user-service
+          - service: product-service
+            path: services/product-service
+          - service: cart-service
+            path: services/cart-service
+          - service: order-service
+            path: services/order-service
+          - service: payment-service
+            path: services/payment-service
+          - service: review-service
+            path: services/review-service
+          - service: seller-service
+            path: services/seller-service
+          - service: notification-service
+            path: services/notification-service
+          - service: search-service
+            path: services/search-service
+          - service: recommendation-service
+            path: services/recommendation-service
+          - service: storefront-designer-service
+            path: services/storefront-designer-service
+          - service: referral-service
+            path: services/referral-service
+          - service: delivery-service
+            path: services/delivery-service
+          - service: analytics-service
+            path: services/analytics-service
+          - service: web
+            path: web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.path }}
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: ${{ matrix.path }}
+        run: npm test --if-present -- --coverage --coverageReporters=lcov
+        env:
+          NODE_ENV: test
+          CI: true
+
+      - name: Upload coverage report
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ matrix.path }}/coverage/lcov.info
+          flags: ${{ matrix.service }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ===========================================================
+  # Validate infrastructure files on any infrastructure change
+  # ===========================================================
+  validate-infrastructure:
+    name: Validate Infrastructure
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.infrastructure == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "v1.29.0"
+
+      - name: Validate Kubernetes manifests (dry-run)
+        run: |
+          echo "Validating namespace..."
+          kubectl apply --dry-run=client -f infrastructure/k8s/namespace.yaml
+
+          echo "Validating configmap..."
+          kubectl apply --dry-run=client -f infrastructure/k8s/configmap.yaml
+
+          echo "Validating ingress..."
+          kubectl apply --dry-run=client -f infrastructure/k8s/ingress.yaml
+
+          echo "Validating service manifests..."
+          for f in infrastructure/k8s/services/*.yaml; do
+            echo "  - ${f}"
+            kubectl apply --dry-run=client -f "${f}"
+          done
+
+      - name: Set up deck (Kong)
+        run: |
+          curl -sL https://github.com/Kong/deck/releases/download/v1.38.1/deck_1.38.1_linux_amd64.tar.gz | tar xz
+          sudo mv deck /usr/local/bin/deck
+
+      - name: Validate Kong configuration
+        run: deck validate --state infrastructure/kong/kong.yml
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive infrastructure/terraform/
+
+      - name: Terraform validate
+        working-directory: infrastructure/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  # ===========================================================
+  # Docker build check (but don't push) for changed services
+  # ===========================================================
+  docker-build-check:
+    name: Docker Build Check (${{ matrix.service }})
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: |
+      needs.detect-changes.outputs[matrix.service] == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: user-service
+            context: services/user-service
+          - service: product-service
+            context: services/product-service
+          - service: cart-service
+            context: services/cart-service
+          - service: order-service
+            context: services/order-service
+          - service: payment-service
+            context: services/payment-service
+          - service: review-service
+            context: services/review-service
+          - service: seller-service
+            context: services/seller-service
+          - service: notification-service
+            context: services/notification-service
+          - service: search-service
+            context: services/search-service
+          - service: recommendation-service
+            context: services/recommendation-service
+          - service: storefront-designer-service
+            context: services/storefront-designer-service
+          - service: referral-service
+            context: services/referral-service
+          - service: delivery-service
+            context: services/delivery-service
+          - service: analytics-service
+            context: services/analytics-service
+          - service: web
+            context: web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.service }}-pr
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}-pr
+          build-args: |
+            NODE_ENV=production
+
+  # ===========================================================
+  # PR summary — post a comment listing what was checked
+  # ===========================================================
+  pr-summary:
+    name: PR Check Summary
+    needs: [lint-typecheck, test-changed, docker-build-check]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Post PR summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = {
+              'lint-typecheck': '${{ needs.lint-typecheck.result }}',
+              'test-changed': '${{ needs.test-changed.result }}',
+              'docker-build-check': '${{ needs.docker-build-check.result }}'
+            };
+
+            const icon = (result) => {
+              if (result === 'success') return ':white_check_mark:';
+              if (result === 'failure') return ':x:';
+              if (result === 'skipped') return ':fast_forward:';
+              return ':warning:';
+            };
+
+            const body = [
+              '## PR Check Results',
+              '',
+              '| Check | Status |',
+              '|-------|--------|',
+              ...Object.entries(jobs).map(([name, result]) =>
+                `| ${name} | ${icon(result)} \`${result}\` |`
+              ),
+              '',
+              `> Commit: \`${{ github.event.pull_request.head.sha }}\``
+            ].join('\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

@@ -1,0 +1,815 @@
+_format_version: "3.0"
+_transform: true
+
+# =============================================================
+# Bazzar — Kong API Gateway Declarative Configuration (deck)
+# Apply with: deck sync --state infrastructure/kong/kong.yml
+# =============================================================
+
+# ---- Global Plugins -----------------------------------------
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "https://bazzar.com.np"
+        - "https://www.bazzar.com.np"
+        - "http://localhost:3000"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Authorization
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - X-Requested-With
+      exposed_headers:
+        - X-Auth-Token
+        - X-Request-Id
+      credentials: true
+      max_age: 3600
+      preflight_continue: false
+
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10
+      size_unit: megabytes
+      require_content_length: false
+
+# ---- Upstreams (load-balanced backends) ---------------------
+
+upstreams:
+  - name: user-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: user-service:8001
+        weight: 100
+
+  - name: product-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: product-service:8002
+        weight: 100
+
+  - name: cart-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: cart-service:8003
+        weight: 100
+
+  - name: order-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: order-service:8004
+        weight: 100
+
+  - name: payment-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: payment-service:8005
+        weight: 100
+
+  - name: review-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: review-service:8006
+        weight: 100
+
+  - name: seller-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: seller-service:8007
+        weight: 100
+
+  - name: notification-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: notification-service:8008
+        weight: 100
+
+  - name: search-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: search-service:8009
+        weight: 100
+
+  - name: recommendation-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: recommendation-service:8010
+        weight: 100
+
+  - name: storefront-designer-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: storefront-designer-service:8011
+        weight: 100
+
+  - name: referral-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: referral-service:8012
+        weight: 100
+
+  - name: delivery-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: delivery-service:8013
+        weight: 100
+
+  - name: analytics-service.upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+        http_path: /health
+        timeout: 3
+    targets:
+      - target: analytics-service:8014
+        weight: 100
+
+# ---- Services -----------------------------------------------
+
+services:
+  # ---- User Service -------------------------------------------
+  - name: user-service
+    url: http://user-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: user-service-auth-route
+        paths:
+          - /api/v1/auth
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          # Public auth endpoints — rate-limit only, no JWT
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+              fault_tolerant: true
+              hide_client_headers: false
+              error_code: 429
+              error_message: "Too many requests. Please try again later."
+
+      - name: user-service-users-route
+        paths:
+          - /api/v1/users
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+              hide_client_headers: false
+              header_name: X-RateLimit-Limit-Minute
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Product Service ----------------------------------------
+  - name: product-service
+    url: http://product-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: product-service-public-route
+        paths:
+          - /api/v1/products
+          - /api/v1/categories
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - OPTIONS
+        plugins:
+          # Public read access — lower rate limit, no JWT
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+              fault_tolerant: true
+
+      - name: product-service-write-route
+        paths:
+          - /api/v1/products
+          - /api/v1/categories
+        strip_path: false
+        preserve_host: true
+        methods:
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Cart Service -------------------------------------------
+  - name: cart-service
+    url: http://cart-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: cart-service-route
+        paths:
+          - /api/v1/cart
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Order Service ------------------------------------------
+  - name: order-service
+    url: http://order-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: order-service-route
+        paths:
+          - /api/v1/orders
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Payment Service ----------------------------------------
+  - name: payment-service
+    url: http://payment-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: payment-service-route
+        paths:
+          - /api/v1/payments
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Review Service -----------------------------------------
+  - name: review-service
+    url: http://review-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: review-service-public-route
+        paths:
+          - /api/v1/reviews
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+              fault_tolerant: true
+
+      - name: review-service-write-route
+        paths:
+          - /api/v1/reviews
+        strip_path: false
+        preserve_host: true
+        methods:
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Seller Service -----------------------------------------
+  - name: seller-service
+    url: http://seller-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: seller-service-route
+        paths:
+          - /api/v1/sellers
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Notification Service -----------------------------------
+  - name: notification-service
+    url: http://notification-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: notification-service-route
+        paths:
+          - /api/v1/notifications
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Search Service -----------------------------------------
+  - name: search-service
+    url: http://search-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: search-service-route
+        paths:
+          - /api/v1/search
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+        plugins:
+          # Public search endpoint
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+              fault_tolerant: true
+
+  # ---- Recommendation Service ---------------------------------
+  - name: recommendation-service
+    url: http://recommendation-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: recommendation-service-route
+        paths:
+          - /api/v1/recommendations
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+              fault_tolerant: true
+
+  # ---- Storefront Designer Service ----------------------------
+  - name: storefront-designer-service
+    url: http://storefront-designer-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: storefront-designer-service-route
+        paths:
+          - /api/v1/storefronts
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Referral Service ---------------------------------------
+  - name: referral-service
+    url: http://referral-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: referral-service-route
+        paths:
+          - /api/v1/referrals
+          - /api/v1/wallet
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Delivery Service ---------------------------------------
+  - name: delivery-service
+    url: http://delivery-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: delivery-service-route
+        paths:
+          - /api/v1/delivery
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+  # ---- Analytics Service --------------------------------------
+  - name: analytics-service
+    url: http://analytics-service.upstream
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 3
+    routes:
+      - name: analytics-service-route
+        paths:
+          - /api/v1/analytics
+        strip_path: false
+        preserve_host: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 1000
+              policy: local
+              fault_tolerant: true
+          - name: jwt
+            config:
+              uri_param_names:
+                - jwt
+              cookie_names: []
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              anonymous: ~
+
+# ---- Consumers (JWT credentials are managed separately via Admin API)
+# consumers:
+#   - username: bazzar-web-frontend
+#     jwt_secrets:
+#       - algorithm: HS256
+#         secret: ${JWT_SECRET}

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bazzar
+  labels:
+    name: bazzar
+    environment: production
+    app.kubernetes.io/managed-by: kubectl

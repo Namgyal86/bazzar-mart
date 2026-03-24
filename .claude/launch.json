@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bazzar-web",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "web\\scripts\\start-dev.cmd"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
