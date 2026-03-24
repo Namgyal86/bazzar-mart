@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Bazzar — Nepal's Modern E-Commerce Platform
 
 A full-stack microservices e-commerce platform built with Next.js 14, TypeScript, Express, MongoDB, and Redis.
@@ -156,3 +157,6 @@ For the seller dashboard: register and apply at `/sellers/register`.
 | Real-time | Socket.io (delivery tracking) |
 | Charts | Recharts |
 | Deployment | Docker, docker-compose |
+=======
+# bazzar-mart
+>>>>>>> fb443e5ebb6296402c61002c894e974dda6f6a4a
