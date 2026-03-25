@@ -111,7 +111,8 @@ async function loadDeliveriesFromOrders() {
   try {
     const ORDER_URI = process.env.MONGO_URI_ORDER || 'mongodb://localhost:27019/order_db';
     const orderConn = await mongoose.createConnection(ORDER_URI).asPromise();
-    const orders = await orderConn.db.collection('orders')
+    
+    const orders = await orderConn.db!.collection('orders')
       .find({ status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'] } })
       .sort({ createdAt: -1 }).limit(30).toArray();
     orderConn.close();
