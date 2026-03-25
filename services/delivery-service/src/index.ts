@@ -108,14 +108,20 @@ setInterval(() => {
 
 // Load seeded orders into in-memory deliveries on startup
 async function loadDeliveriesFromOrders() {
+  let orderConn: mongoose.Connection | null = null;
   try {
     const ORDER_URI = process.env.MONGO_URI_ORDER || 'mongodb://localhost:27019/order_db';
-    const orderConn = await mongoose.createConnection(ORDER_URI).asPromise();
-    
-    const orders = await orderConn.db!.collection('orders')
+    orderConn = await mongoose.createConnection(ORDER_URI).asPromise();
+
+    // Get db with proper type handling
+    const db = orderConn.db;
+    if (!db) {
+      throw new Error('Failed to get database connection');
+    }
+
+    const orders = await db.collection('orders')
       .find({ status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'] } })
       .sort({ createdAt: -1 }).limit(30).toArray();
-    orderConn.close();
 
     const statusMap: Record<string, string> = {
       PENDING: 'PENDING', CONFIRMED: 'PENDING', PROCESSING: 'PENDING',
@@ -123,7 +129,9 @@ async function loadDeliveriesFromOrders() {
     };
     const driverPool = availableDrivers;
 
-    orders.forEach((o: any, i: number) => {
+    // Use for...of instead of forEach for proper async handling
+    for (let i = 0; i < orders.length; i++) {
+      const o = orders[i] as any;
       const status = statusMap[o.status] || 'PENDING';
       const driver = (status === 'IN_TRANSIT' || status === 'DELIVERED')
         ? driverPool[i % driverPool.length] : null;
@@ -139,10 +147,15 @@ async function loadDeliveriesFromOrders() {
         total: o.total,
         createdAt: o.createdAt,
       });
-    });
+    }
     console.log(`✅ Loaded ${deliveries.length} deliveries from orders`);
   } catch (err: any) {
     console.warn('⚠️  Could not load orders for delivery:', err.message);
+  } finally {
+    // Ensure connection is closed in finally block
+    if (orderConn) {
+      await orderConn.close();
+    }
   }
 }
 

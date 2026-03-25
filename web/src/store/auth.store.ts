@@ -10,6 +10,7 @@ export interface AuthUser {
   profilePhotoUrl?: string;
   referralCode?: string;
   sellerId?: string;
+  createdAt?: string;
 }
 
 interface AuthState {

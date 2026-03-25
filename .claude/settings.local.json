@@ -171,7 +171,8 @@
       "Bash(head -20 grep -n \"Schema\\\\|model\\(\" \"C:/Users/sgrgr/Desktop/Ecommerce/services/referral-service/src/index.ts\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWJlOGMzY2Q4MmExZjI5ZjVhYTFjNGUiLCJyb2xlIjoiQURNSU4iLCJlbWFpbCI6ImFkbWluQGJhenphci5jb20iLCJpYXQiOjE3NzQyMDM1NzEsImV4cCI6MTc3NDIwNDQ3MX0.sGp-Kzu7UsxtU0sv58l3u3qTX0vaBNp8t5a2lUHD2M8\" __NEW_LINE_0fe4537fc8775e5f__ echo \"=== USERS ===\")",
       "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>{const r=JSON.parse\\(d\\);const a=r.data||[];console.log\\(''''Count:'''',a.length,''''| Codes:'''',a.map\\(c=>c.code\\).join\\('''', ''''\\)\\)}\\)\" __NEW_LINE_0fe4537fc8775e5f__ echo \"=== REFERRALS ===\")",
-      "Bash(ls -la C:UserssgrgrDesktopEcommercewebtailwind.config.*)"
+      "Bash(ls -la C:UserssgrgrDesktopEcommercewebtailwind.config.*)",
+      "Bash(docker-compose ps:*)"
     ]
   }
 }
