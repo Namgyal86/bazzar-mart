@@ -190,7 +190,12 @@
       "Bash(node -e \"require\\(''''bcryptjs''''\\)\")",
       "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const j=JSON.parse\\(d\\); const tok=j.data.accessToken; require\\(''''child_process''''\\).execSync\\(''''curl -s http://localhost:8007/api/v1/seller/profile -H Authorization: Bearer ''''+tok+'''''''', {stdio:''''inherit''''}\\)\")",
       "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\)[''''data''''][''''accessToken'''']\\)\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
