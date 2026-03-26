@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -65,7 +65,7 @@ function ReviewModal({ order, onClose }: { order: any; onClose: () => void }) {
         {/* Modal header with gradient accent */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-amber-50/60 dark:bg-amber-950/20">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
             <h3 className="font-bold text-gray-900 dark:text-white">Rate Your Order</h3>
@@ -146,7 +146,7 @@ function ReviewModal({ order, onClose }: { order: any; onClose: () => void }) {
             type="submit"
             disabled={submitting}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4 fill-white" />}
             {submitting ? 'Submitting…' : 'Submit Review'}
@@ -371,7 +371,7 @@ export default function OrdersPage() {
                   ? 'text-white shadow-md shadow-orange-200 dark:shadow-orange-900/40 border-0'
                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-orange-300 dark:hover:border-orange-700 hover:text-orange-600 dark:hover:text-orange-400'
               }`}
-              style={isActive ? { background: 'linear-gradient(135deg, #f97316, #ef4444)' } : undefined}
+              style={isActive ? { background: 'linear-gradient(135deg, var(--ap), var(--as))' } : undefined}
             >
               {s === 'All' ? 'All Orders' : ORDER_STATUS_LABELS[s] ?? s}
             </button>
@@ -392,7 +392,7 @@ export default function OrdersPage() {
             </div>
             <h3
               className="text-lg font-bold mb-1"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
             >
               No orders yet
             </h3>
@@ -402,7 +402,7 @@ export default function OrdersPage() {
             <Link href="/products">
               <button
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md shadow-orange-200 dark:shadow-orange-900/40 hover:opacity-90 active:scale-95 transition-all"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 <ShoppingBag className="w-4 h-4" />
                 Start Shopping
@@ -474,7 +474,7 @@ export default function OrdersPage() {
                   Total:{' '}
                   <strong
                     className="font-bold"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                   >
                     {formatCurrency(order.total)}
                   </strong>
@@ -500,7 +500,7 @@ export default function OrdersPage() {
                   <Link href={`/account/track/${order._id || order.id}`}>
                     <button
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
-                      style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                     >
                       <MapPin className="w-3.5 h-3.5" /> Track Order
                     </button>

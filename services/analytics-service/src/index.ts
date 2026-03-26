@@ -101,9 +101,9 @@ app.post('/api/v1/analytics/event', async (req, res) => {
 app.get('/api/v1/analytics/admin/overview', authenticate, requireAdmin, async (req: any, res) => {
   const headers = { 'x-user-id': req.user.id, 'x-user-role': 'ADMIN' };
 
-  let orderStats   = { totalOrders: 1284, totalRevenue: 15420000, pendingOrders: 43, todayOrders: 32 };
-  let userStats    = { totalUsers: 52340, newToday: 127 };
-  let productStats = { totalProducts: 50000, totalSellers: 5200, pendingSellers: 12 };
+  let orderStats   = { totalOrders: 0, totalRevenue: 0, pendingOrders: 0, todayOrders: 0 };
+  let userStats    = { totalUsers: 0, newToday: 0 };
+  let productStats = { totalProducts: 0, totalSellers: 0, pendingSellers: 0 };
 
   try {
     const [ordersRes, usersRes, productsRes] = await Promise.allSettled([
@@ -116,25 +116,31 @@ app.get('/api/v1/analytics/admin/overview', authenticate, requireAdmin, async (r
     if (productsRes.status === 'fulfilled' && productsRes.value.data.data) productStats = { ...productStats, ...productsRes.value.data.data };
   } catch {}
 
-  // Generate last-7-days revenue trend
-  const revenueByDay = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return {
-      day: d.toLocaleDateString('en', { weekday: 'short' }),
-      gmv: Math.floor(Math.random() * 600000) + 200000,
-      orders: Math.floor(Math.random() * 60) + 20,
-    };
-  });
+  // Build last-7-days revenue trend from real order data
+  let revenueByDay: { day: string; gmv: number; orders: number }[] = [];
+  try {
+    const resp = await axios.get(`${ORDER_SERVICE_URL}/api/v1/orders/admin/revenue-by-day?days=7`, { headers, timeout: 4000 });
+    if (resp.data.data?.length) revenueByDay = resp.data.data;
+  } catch {}
+  // Fallback: show 7 days with 0 revenue (real zeros, not fake data)
+  if (!revenueByDay.length) {
+    revenueByDay = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { day: d.toLocaleDateString('en', { weekday: 'short' }), gmv: 0, orders: 0 };
+    });
+  }
 
-  // Category breakdown for pie chart
-  const categoryData = [
-    { name: 'Staples & Grains', value: 32, color: '#f59e0b' },
-    { name: 'Fruits & Vegetables', value: 28, color: '#10b981' },
-    { name: 'Dairy & Eggs', value: 18, color: '#3b82f6' },
-    { name: 'Snacks & Beverages', value: 14, color: '#8b5cf6' },
-    { name: 'Other', value: 8, color: '#6b7280' },
-  ];
+  // Category breakdown from real order data
+  let categoryData: { name: string; value: number; color: string }[] = [];
+  try {
+    const resp = await axios.get(`${ORDER_SERVICE_URL}/api/v1/orders/admin/category-breakdown`, { headers, timeout: 4000 });
+    if (resp.data.data?.length) categoryData = resp.data.data;
+  } catch {}
+  // Fallback: empty — frontend shows "No category data yet"
+  if (!categoryData.length) {
+    categoryData = [];
+  }
 
   const recentActions = [
     { message: `${productStats.pendingSellers ?? 0} seller applications pending review`, urgent: (productStats.pendingSellers ?? 0) > 5, time: 'Now' },
@@ -145,19 +151,16 @@ app.get('/api/v1/analytics/admin/overview', authenticate, requireAdmin, async (r
   res.json({
     success: true,
     data: {
-      // Top stat cards
       gmv:           orderStats.totalRevenue,
-      gmvChange:     '+12.4%',
+      gmvChange:     null,
       totalUsers:    userStats.totalUsers,
       newUsersToday: userStats.newToday,
       totalSellers:  productStats.totalSellers,
       pendingSellers: productStats.pendingSellers,
-      ordersToday:   orderStats.todayOrders ?? orderStats.pendingOrders,
-      ordersChange:  '+8.1%',
-      // Charts
+      ordersToday:   orderStats.todayOrders,
+      ordersChange:  null,
       revenueByDay,
       categoryData,
-      // Attention items
       recentActions,
     },
   });
@@ -199,24 +202,20 @@ app.get('/api/v1/analytics/platform-health', async (req, res) => {
   });
 });
 
-// Revenue chart data (last 30 days)
+// Revenue chart data (last 30 days) — proxied from order service
 app.get('/api/v1/analytics/admin/revenue', authenticate, requireAdmin, async (req: any, res) => {
+  const headers = { 'x-user-id': req.user.id, 'x-user-role': 'ADMIN' };
   try {
-    // Generate mock daily revenue data for the last 30 days
-    const days = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      days.push({
-        date: date.toISOString().split('T')[0],
-        revenue: Math.floor(Math.random() * 500000) + 100000,
-        orders: Math.floor(Math.random() * 50) + 10,
-      });
-    }
-    res.json({ success: true, data: days });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+    const resp = await axios.get(`${ORDER_SERVICE_URL}/api/v1/orders/admin/revenue-by-day?days=30`, { headers, timeout: 4000 });
+    if (resp.data.data?.length) return res.json({ success: true, data: resp.data.data });
+  } catch {}
+  // Fallback: real zeros for last 30 days
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - i));
+    return { date: date.toISOString().split('T')[0], revenue: 0, orders: 0 };
+  });
+  res.json({ success: true, data: days });
 });
 
 // Top search queries

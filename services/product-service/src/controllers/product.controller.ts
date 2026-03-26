@@ -20,12 +20,14 @@ const createSchema = z.object({
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, category, search, sort = 'createdAt', order = 'desc', minPrice, maxPrice, sellerId, featured } = req.query;
+    const { page = 1, limit = 20, category, subCategory, search, sort = 'createdAt', order = 'desc', minPrice, maxPrice, sellerId, featured, onSale } = req.query;
 
     const filter: any = { isActive: true };
     if (category) filter.category = category;
+    if (subCategory) filter.subCategory = subCategory;
     if (sellerId) filter.sellerId = sellerId;
     if (featured === 'true') filter.isFeatured = true;
+    if (onSale === 'true') filter.salePrice = { $exists: true, $gt: 0 };
     if (minPrice || maxPrice) {
       const priceRange: any = {};
       if (minPrice) priceRange.$gte = Number(minPrice);
@@ -130,4 +132,51 @@ export const getAdminStats = async (req: Request, res: Response) => {
 
 export const updateProductRating = async (productId: string, rating: number, reviewCount: number) => {
   await Product.findByIdAndUpdate(productId, { rating, reviewCount });
+};
+
+// Admin: get all active flash deals
+export const getFlashDeals = async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const deals = await Product.find({
+      isActive: true,
+      salePrice: { $exists: true, $gt: 0 },
+      $or: [{ dealEndsAt: { $exists: false } }, { dealEndsAt: null }, { dealEndsAt: { $gt: now } }],
+    }).sort('-createdAt');
+    res.json({ success: true, data: deals });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Admin: set flash deal on a product (bypasses sellerId check)
+export const adminSetFlashDeal = async (req: AuthRequest, res: Response) => {
+  try {
+    const { salePrice, dealEndsAt } = req.body;
+    if (!salePrice || salePrice <= 0) return res.status(400).json({ success: false, error: 'salePrice must be > 0' });
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    if (salePrice >= product.price) return res.status(400).json({ success: false, error: 'Sale price must be less than regular price' });
+    product.salePrice = salePrice;
+    product.dealEndsAt = dealEndsAt ? new Date(dealEndsAt) : undefined;
+    await product.save();
+    res.json({ success: true, data: product });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Admin: remove flash deal from a product
+export const adminRemoveFlashDeal = async (req: AuthRequest, res: Response) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $unset: { salePrice: '', dealEndsAt: '' } },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    res.json({ success: true, data: product });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 };

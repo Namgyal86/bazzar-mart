@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Palette, Globe, Shield, Check, Save, Eye, Image as ImageIcon } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Palette, Globe, Shield, Check, Save, Eye, Image as ImageIcon, Wand2 } from 'lucide-react';
 import { useThemeStore, THEME_PRESETS } from '@/store/theme.store';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
@@ -10,11 +10,12 @@ const inputCls = 'w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-
 const labelCls = 'text-xs font-semibold text-gray-400 mb-1.5 block';
 
 export default function AdminSettingsPage() {
-  const { themeName, logo, siteName, setTheme, setLogo, setSiteName, getPreset } = useThemeStore();
+  const { themeName, customColor, logo, siteName, setTheme, setCustomColor, setLogo, setSiteName, getPreset } = useThemeStore();
   const [activeTab, setActiveTab] = useState<'appearance' | 'general' | 'security'>('appearance');
   const [localLogo, setLocalLogo] = useState(logo);
   const [localSiteName, setLocalSiteName] = useState(siteName);
   const [saving, setSaving] = useState(false);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const preset = getPreset();
 
   const handleSave = async () => {
@@ -68,8 +69,10 @@ export default function AdminSettingsPage() {
                 <Palette className="w-4 h-4" style={{ color: 'var(--ap)' }} />
                 Admin Theme Color
               </h2>
-              <p className="text-xs text-gray-500 mb-5">Choose the accent color for the admin panel</p>
-              <div className="grid grid-cols-4 gap-3">
+              <p className="text-xs text-gray-500 mb-5">Choose a preset or pick any custom color</p>
+
+              {/* Preset swatches */}
+              <div className="grid grid-cols-4 gap-3 mb-5">
                 {THEME_PRESETS.map(p => (
                   <button
                     key={p.name}
@@ -96,6 +99,71 @@ export default function AdminSettingsPage() {
                     )}
                   </button>
                 ))}
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex-1 h-px bg-white/5" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">or pick custom</span>
+                <div className="flex-1 h-px bg-white/5" />
+              </div>
+
+              {/* Custom color picker */}
+              <div className="flex items-center gap-4">
+                {/* Color wheel button */}
+                <button
+                  onClick={() => colorInputRef.current?.click()}
+                  className={`relative w-14 h-14 rounded-2xl border-2 transition-all flex items-center justify-center shrink-0 overflow-hidden shadow-lg ${
+                    themeName === 'custom' ? 'border-white/40' : 'border-white/10 hover:border-white/20'
+                  }`}
+                  style={{ background: themeName === 'custom' ? customColor : 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}
+                  title="Pick custom color"
+                >
+                  {themeName === 'custom' && (
+                    <Check className="w-5 h-5 text-white drop-shadow-lg" />
+                  )}
+                  <input
+                    ref={colorInputRef}
+                    type="color"
+                    value={themeName === 'custom' ? customColor : '#6366f1'}
+                    onChange={e => setCustomColor(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Pick custom color"
+                  />
+                </button>
+
+                <div className="flex-1">
+                  <p className={`text-sm font-bold mb-1 ${themeName === 'custom' ? 'text-white' : 'text-gray-400'}`}>
+                    Custom Color
+                    {themeName === 'custom' && <span className="ml-2 text-xs font-normal" style={{ color: 'var(--ap)' }}>Active</span>}
+                  </p>
+                  <p className="text-xs text-gray-600 mb-2">Click the swatch to open color picker</p>
+                  {/* Hex input */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-5 h-5 rounded-md shrink-0 border border-white/10"
+                      style={{ background: themeName === 'custom' ? customColor : '#6366f1' }}
+                    />
+                    <input
+                      type="text"
+                      value={themeName === 'custom' ? customColor : ''}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (/^#[0-9a-fA-F]{6}$/.test(v)) setCustomColor(v);
+                      }}
+                      placeholder="#6366f1"
+                      maxLength={7}
+                      className="flex-1 bg-[#0f1117] border border-white/10 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-colors"
+                    />
+                    <button
+                      onClick={() => colorInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 hover:border-white/20 text-gray-400 hover:text-white transition-all"
+                    >
+                      <Wand2 className="w-3 h-3" />
+                      Pick
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -153,7 +221,7 @@ export default function AdminSettingsPage() {
               <div className="p-4 bg-[#161b27] border-b border-white/5 flex items-center gap-2">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center shadow-lg"
-                  style={{ background: `linear-gradient(135deg, ${preset.preview}, ${preset.previewTo})` }}
+                  style={{ background: preset.name === 'custom' ? preset.preview : `linear-gradient(135deg, ${preset.preview}, ${preset.previewTo})` }}
                 >
                   {localLogo ? (
                     <img src={localLogo} alt="logo" className="w-5 h-5 object-contain rounded" />
@@ -188,7 +256,7 @@ export default function AdminSettingsPage() {
               <div className="p-4 border-t border-white/5 space-y-3">
                 <button
                   className="w-full py-2 rounded-xl text-xs font-bold text-white shadow-lg"
-                  style={{ background: `linear-gradient(135deg, ${preset.preview}, ${preset.previewTo})` }}
+                  style={{ background: preset.name === 'custom' ? preset.preview : `linear-gradient(135deg, ${preset.preview}, ${preset.previewTo})` }}
                 >
                   Primary Button
                 </button>

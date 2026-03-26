@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -126,7 +126,7 @@ function DealCard({ pid, deal, salePrice, discount, image, sold, sellerName, ind
         <button
           onClick={handleCart}
           className="mt-3 w-full py-2 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all hover:brightness-110"
-          style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+          style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
         >
           <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
         </button>

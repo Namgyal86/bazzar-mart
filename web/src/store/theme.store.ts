@@ -24,11 +24,30 @@ export const THEME_PRESETS: ThemePreset[] = [
   { name: 'indigo',  label: 'Indigo',  h: 239, s: '84%', l: '67%', secondaryH: 263, secondaryL: '50%', preview: '#818cf8', previewTo: '#9333ea' },
 ];
 
+/** Convert a #rrggbb hex string to HSL components */
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l: Math.round(l * 100) };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r)      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else                h = ((r - g) / d + 4) / 6;
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
 interface ThemeStore {
   themeName: string;
+  customColor: string;   // hex, used when themeName === 'custom'
   logo: string;
   siteName: string;
   setTheme: (name: string) => void;
+  setCustomColor: (hex: string) => void;
   setLogo: (url: string) => void;
   setSiteName: (name: string) => void;
   getPreset: () => ThemePreset;
@@ -38,12 +57,32 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       themeName: 'orange',
+      customColor: '#6366f1',
       logo: '',
       siteName: 'Bazzar',
       setTheme: (name) => set({ themeName: name }),
+      setCustomColor: (hex) => set({ customColor: hex, themeName: 'custom' }),
       setLogo: (url) => set({ logo: url }),
       setSiteName: (name) => set({ siteName: name }),
-      getPreset: () => THEME_PRESETS.find(p => p.name === get().themeName) ?? THEME_PRESETS[0],
+      getPreset: () => {
+        const { themeName, customColor } = get();
+        if (themeName === 'custom') {
+          const { h, s, l } = hexToHsl(customColor);
+          // Secondary is the complementary hue offset by ~30 degrees
+          return {
+            name: 'custom',
+            label: 'Custom',
+            h,
+            s: `${s}%`,
+            l: `${l}%`,
+            secondaryH: (h + 30) % 360,
+            secondaryL: `${Math.max(l - 5, 30)}%`,
+            preview: customColor,
+            previewTo: customColor,
+          };
+        }
+        return THEME_PRESETS.find(p => p.name === themeName) ?? THEME_PRESETS[0];
+      },
     }),
     { name: 'bazzar-theme' }
   )

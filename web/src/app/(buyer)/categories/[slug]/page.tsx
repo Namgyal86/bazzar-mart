@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
-import { productApi } from '@/lib/api/product.api';
+import { productApi, categoryApi, Category } from '@/lib/api/product.api';
 import { formatCurrency } from '@/lib/utils';
 import { Star, Heart, ShoppingCart, Package, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
@@ -89,7 +89,7 @@ function ProductCard({ product }: { product: any }) {
             <button
               onClick={handleAddToCart}
               className="w-full py-2.5 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
             </button>
@@ -122,6 +122,8 @@ function CategoryPageInner() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState('newest');
+  const [subcategories, setSubcategories] = useState<Category[]>([]);
+  const [selectedSub, setSelectedSub] = useState<string | null>(null);
 
   const meta = CATEGORY_META[slug] ?? {
     name: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
@@ -130,9 +132,20 @@ function CategoryPageInner() {
     desc: 'Browse our collection',
   };
 
+  // Fetch subcategories for this category
+  useEffect(() => {
+    categoryApi.withSubs().then((res: any) => {
+      const cats = res.data?.data ?? [];
+      const parent = cats.find((c: any) => c.slug === slug);
+      setSubcategories(parent?.subcategories ?? []);
+    }).catch(() => {});
+  }, [slug]);
+
   useEffect(() => {
     setLoading(true);
-    productApi.list({ category: slug, sort, limit: 24 })
+    const params: Record<string, string | number> = { category: slug, sort, limit: 24 };
+    if (selectedSub) params.subCategory = selectedSub;
+    productApi.list(params)
       .then((res: any) => {
         const prods = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.products ?? []);
         setProducts(prods.map((p: any) => ({
@@ -148,7 +161,7 @@ function CategoryPageInner() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [slug, sort]);
+  }, [slug, sort, selectedSub]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -168,6 +181,35 @@ function CategoryPageInner() {
           <p className="text-white/60 text-sm mt-2">{loading ? '…' : products.length} products</p>
         </div>
       </div>
+
+      {/* Subcategory filter pills */}
+      {subcategories.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-6">
+          <button
+            onClick={() => setSelectedSub(null)}
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+              selectedSub === null
+                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700'
+            }`}
+          >
+            All
+          </button>
+          {subcategories.map((sub) => (
+            <button
+              key={sub._id}
+              onClick={() => setSelectedSub(sub.slug === selectedSub ? null : sub.slug)}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                selectedSub === sub.slug
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700'
+              }`}
+            >
+              {sub.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center justify-between mb-6">
@@ -198,7 +240,7 @@ function CategoryPageInner() {
           <Link
             href="/products"
             className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-all hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             Browse All Products
           </Link>

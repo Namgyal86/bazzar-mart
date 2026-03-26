@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -83,8 +83,8 @@ export default function RegisterPage() {
 
   const fieldCls = "w-full h-11 px-3 rounded-xl text-sm text-white placeholder:text-gray-600 outline-none transition-all";
   const fieldFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.border = '1px solid rgba(249,115,22,0.5)';
-    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.1)';
+    e.currentTarget.style.border = '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5)';
+    e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)';
   };
   const fieldBlur = (e: React.FocusEvent<HTMLInputElement>, hasError: boolean) => {
     e.currentTarget.style.border = hasError ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)';
@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
         {/* Aurora orbs */}
         <div className="absolute -top-24 -left-16 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #f97316, #ef4444, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, var(--ap), var(--as), transparent)' }} />
         <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #8b5cf6, transparent)' }} />
         <div className="absolute inset-0 opacity-[0.03]"
@@ -110,7 +110,7 @@ export default function RegisterPage() {
         <div className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-3 group">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 0 20px rgba(249,115,22,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 0 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)' }}>
               <span className="text-white font-black text-xl">B</span>
             </div>
             <span className="text-white text-2xl font-black tracking-tight">Bazzar</span>
@@ -121,13 +121,13 @@ export default function RegisterPage() {
         <div className="relative z-10 space-y-8">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5"
-              style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)' }}>
+              style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)', border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}>
               <Sparkles className="w-3.5 h-3.5 text-orange-400" />
               <span className="text-orange-300 text-xs font-semibold">Get Rs. 200 on your first order</span>
             </div>
             <h2 className="text-4xl font-black text-white leading-[1.1] mb-3">
               Join 200,000+<br />
-              <span style={{ background: 'linear-gradient(90deg, #f97316, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: 'linear-gradient(90deg, var(--ap), var(--as))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 happy shoppers
               </span>
             </h2>
@@ -156,7 +156,7 @@ export default function RegisterPage() {
               <div className="flex -space-x-2">
                 {['S', 'R', 'A', 'P'].map((l) => (
                   <div key={l} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-white text-xs font-bold"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', borderColor: '#0d1117' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', borderColor: '#0d1117' }}>
                     {l}
                   </div>
                 ))}
@@ -173,11 +173,11 @@ export default function RegisterPage() {
         style={{ background: 'linear-gradient(145deg, #080c18 0%, #0d1117 100%)' }}>
 
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #f97316, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, var(--ap), transparent)' }} />
 
         {/* Mobile brand bar */}
         <div className="lg:hidden flex items-center gap-3 px-6 pt-6 relative z-10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
             <span className="text-white font-bold">B</span>
           </div>
           <span className="text-white text-xl font-bold">Bazzar</span>
@@ -302,9 +302,9 @@ export default function RegisterPage() {
                 </div>
                 <span className="text-sm text-gray-500 leading-relaxed">
                   I agree to Bazzar&apos;s{' '}
-                  <Link href="/terms" className="font-medium hover:opacity-80 transition-opacity" style={{ color: '#f97316' }}>Terms of Service</Link>
+                  <Link href="/terms" className="font-medium hover:opacity-80 transition-opacity" style={{ color: 'var(--ap)' }}>Terms of Service</Link>
                   {' '}and{' '}
-                  <Link href="/privacy" className="font-medium hover:opacity-80 transition-opacity" style={{ color: '#f97316' }}>Privacy Policy</Link>
+                  <Link href="/privacy" className="font-medium hover:opacity-80 transition-opacity" style={{ color: 'var(--ap)' }}>Privacy Policy</Link>
                 </span>
               </label>
               {errors.terms && <p className="text-xs text-red-400 mt-1.5 ml-8">{errors.terms.message}</p>}
@@ -315,8 +315,8 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               className="w-full h-12 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.01] hover:shadow-xl disabled:opacity-60 disabled:scale-100 mt-2"
               style={{
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                boxShadow: '0 4px 20px rgba(249,115,22,0.3)',
+                background: 'linear-gradient(135deg, var(--ap), var(--as))',
+                boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)',
               }}
             >
               {isSubmitting ? (
@@ -329,7 +329,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-gray-600 mt-6">
             Already have an account?{' '}
-            <Link href="/auth/login" className="font-bold transition-colors hover:opacity-80" style={{ color: '#f97316' }}>
+            <Link href="/auth/login" className="font-bold transition-colors hover:opacity-80" style={{ color: 'var(--ap)' }}>
               Sign in
             </Link>
           </p>

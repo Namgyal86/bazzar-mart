@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -42,7 +42,7 @@ const DEFAULT_SLIDES = [
     description: 'Chips, biscuits, juices, tea, coffee and your favourite beverages — all in one place.',
     cta: 'Shop Snacks',
     ctaLink: '/categories/snacks-beverages',
-    accentColor: '#f97316',
+    accentcolor: 'var(--ap)',
     badge: '🍿 Top Sellers',
     image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=900&q=85',
     isActive: true, order: 2,

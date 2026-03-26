@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { X, ShoppingBag, Trash2, Plus, Minus, Package } from 'lucide-react';
@@ -87,7 +87,7 @@ export function CartDrawer() {
                 href="/products"
                 onClick={closeCart}
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-all hover:scale-[1.02]"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 Start Shopping
               </Link>
@@ -154,7 +154,7 @@ export function CartDrawer() {
               href="/checkout"
               onClick={closeCart}
               className="w-full flex items-center justify-center py-3 text-white font-semibold rounded-xl transition-all hover:brightness-110 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 16px rgba(249,115,22,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
             >
               Proceed to Checkout →
             </Link>

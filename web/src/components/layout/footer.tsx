@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 
 export function Footer() {
@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <span className="text-white text-xl font-bold">Bazzar</span>

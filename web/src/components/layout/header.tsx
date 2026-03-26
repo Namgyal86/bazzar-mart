@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -15,20 +15,20 @@ import { useThemeStore } from '@/store/theme.store';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { productApi } from '@/lib/api/product.api';
+import { categoryApi } from '@/lib/api/product.api';
 
-/* ─── CATEGORY ENRICHMENT MAP (icon + subcategories per slug) ──────────────── */
-const CAT_META: Record<string, { icon: React.ElementType; color: string; sub: string[] }> = {
-  'fruits-vegetables': { icon: ShoppingBag, color: 'text-green-500',  sub: ['Fresh Fruits','Fresh Vegetables','Organic Produce','Herbs & Greens','Mushrooms','Salad & Sprouts'] },
-  'dairy-eggs':        { icon: Package,     color: 'text-yellow-500', sub: ['Milk','Curd & Yogurt','Cheese','Butter & Ghee','Eggs','Paneer'] },
-  'grains-pulses':     { icon: Cpu,         color: 'text-amber-500',  sub: ['Rice','Wheat & Flour','Lentils (Dal)','Chickpeas','Beaten Rice','Maize & Millet'] },
-  'meat-seafood':      { icon: Dumbbell,    color: 'text-red-500',    sub: ['Chicken','Mutton','Fish','Pork','Eggs','Processed Meat'] },
-  'snacks-beverages':  { icon: Sparkles,    color: 'text-orange-400', sub: ['Chips & Namkeen','Biscuits & Cookies','Juices','Soft Drinks','Tea & Coffee','Energy Drinks'] },
-  'spices-condiments': { icon: Home,        color: 'text-pink-500',   sub: ['Whole Spices','Ground Spices','Masala Blends','Oils & Ghee','Sauces & Pickles','Salt & Sugar'] },
-  'personal-care':     { icon: Shirt,       color: 'text-purple-500', sub: ['Soap & Body Wash','Shampoo','Toothpaste','Skincare','Deodorants','Sanitary Products'] },
-  'household-items':   { icon: BookOpen,    color: 'text-teal-500',   sub: ['Cleaning Products','Detergent','Kitchen Supplies','Trash Bags','Insecticides','Candles & Matches'] },
-  'frozen-foods':      { icon: Package,     color: 'text-cyan-500',   sub: ['Frozen Vegetables','Frozen Meat','Ice Cream','Ready Meals','Frozen Snacks'] },
-  'bakery-bread':      { icon: ShoppingBag, color: 'text-amber-400',  sub: ['Bread & Buns','Biscuits','Cakes & Pastries','Rusk','Cookies'] },
+/* ─── ICON MAP per slug (icons stay code-side; subcategories come from DB) ── */
+const CAT_ICON: Record<string, { icon: React.ElementType; color: string }> = {
+  'fruits-vegetables': { icon: ShoppingBag, color: 'text-green-500'  },
+  'dairy-eggs':        { icon: Package,     color: 'text-yellow-500' },
+  'grains-pulses':     { icon: Cpu,         color: 'text-amber-500'  },
+  'meat-seafood':      { icon: Dumbbell,    color: 'text-red-500'    },
+  'snacks-beverages':  { icon: Sparkles,    color: 'text-orange-400' },
+  'spices-condiments': { icon: Home,        color: 'text-pink-500'   },
+  'personal-care':     { icon: Shirt,       color: 'text-purple-500' },
+  'household-items':   { icon: BookOpen,    color: 'text-teal-500'   },
+  'frozen-foods':      { icon: Package,     color: 'text-cyan-500'   },
+  'bakery-bread':      { icon: ShoppingBag, color: 'text-amber-400'  },
 };
 
 /* ─── QUICK SEARCHES ─────────────────────────────────────────────────────────── */
@@ -74,16 +74,25 @@ export function Header() {
   const [scrolled,       setScrolled]       = useState(false);
   const [cartBounce,     setCartBounce]     = useState(false);
   const [prevCart,       setPrevCart]       = useState(0);
-  const [categories,     setCategories]     = useState<Array<{ name: string; slug: string; icon: React.ElementType; color: string; sub: string[] }>>([]);
+  const [categories, setCategories] = useState<Array<{
+    name: string; slug: string; icon: React.ElementType; color: string;
+    sub: Array<{ name: string; slug: string }>;
+  }>>([]);
 
-  /* fetch categories from DB */
+  /* fetch categories + subcategories from DB — only showInNav parents */
   useEffect(() => {
-    productApi.listCategories().then((res: any) => {
+    categoryApi.withSubs().then((res: any) => {
       const raw: any[] = Array.isArray(res.data?.data) ? res.data.data : [];
-      const enriched = raw.map((c: any) => {
-        const meta = CAT_META[c.slug] ?? { icon: ShoppingBag, color: 'text-orange-400', sub: [] };
-        return { name: c.name, slug: c.slug, ...meta };
-      });
+      const enriched = raw
+        .filter((c: any) => c.showInNav !== false)
+        .map((c: any) => {
+          const meta = CAT_ICON[c.slug] ?? { icon: ShoppingBag, color: 'text-orange-400' };
+          const subs: Array<{ name: string; slug: string }> = (c.subcategories ?? []).map((s: any) => ({
+            name: s.name,
+            slug: s.slug,
+          }));
+          return { name: c.name, slug: c.slug, sub: subs, ...meta };
+        });
       if (enriched.length > 0) setCategories(enriched);
     }).catch(() => {});
   }, []);
@@ -137,7 +146,7 @@ export function Header() {
   return (
     <>
       {/* ── PROMO BAR ── */}
-      <div className="text-white text-xs py-2 text-center overflow-hidden relative" style={{ background: 'linear-gradient(90deg, #ea580c, #f97316, #fb923c)' }}>
+      <div className="text-white text-xs py-2 text-center overflow-hidden relative" style={{ background: 'linear-gradient(90deg, var(--ap), var(--as))' }}>
         <div className="animate-ticker whitespace-nowrap inline-block">
           🥦 Fresh produce delivered daily &nbsp;|&nbsp;
           💜 Pay with Khalti &amp; eSewa &nbsp;|&nbsp;
@@ -165,7 +174,7 @@ export function Header() {
             {/* ── LOGO ── */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
               <div className="relative">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow duration-300 overflow-hidden" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow duration-300 overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                   {logo ? (
                     <img src={logo} alt={siteName || 'Bazzar'} className="w-full h-full object-cover rounded-xl" />
                   ) : (
@@ -201,7 +210,7 @@ export function Header() {
                   <button
                     type="submit"
                     className="absolute right-1.5 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all duration-200 hover:shadow-md btn-shine"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     Search
                   </button>
@@ -282,7 +291,7 @@ export function Header() {
                       initial={{ scale: 0 }} animate={{ scale: cartBounce ? 1.3 : 1 }} exit={{ scale: 0 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                       className="absolute -top-1 -right-1 min-w-[18px] h-[18px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
-                      style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                     >
                       {cartCount}
                     </motion.span>
@@ -297,7 +306,7 @@ export function Header() {
                     onClick={() => setShowUserMenu(v => !v)}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-muted transition-colors duration-200 group"
                   >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                       <span className="text-white font-bold text-sm">{user.firstName[0]}</span>
                     </div>
                     <div className="hidden lg:block text-left">
@@ -352,7 +361,7 @@ export function Header() {
               ) : (
                 <div className="hidden md:flex items-center gap-2 ml-1">
                   <Link href="/auth/login" className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-xl hover:bg-muted transition-colors duration-200">Login</Link>
-                  <Link href="/auth/register" className="btn-shine inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-lg transition-all hover:scale-[1.01]" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>Sign Up</Link>
+                  <Link href="/auth/register" className="btn-shine inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-lg transition-all hover:scale-[1.01]" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 12px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}>Sign Up</Link>
                 </div>
               )}
 
@@ -408,14 +417,14 @@ export function Header() {
                       <div className="grid grid-cols-1 gap-0.5">
                         {cat.sub.map((sub, i) => (
                           <Link
-                            key={sub}
-                            href={`/categories/${cat.slug}?sub=${encodeURIComponent(sub)}`}
+                            key={sub.slug}
+                            href={`/categories/${cat.slug}?sub=${encodeURIComponent(sub.name)}`}
                             onClick={() => setActiveMegaMenu(null)}
                             className="flex items-center gap-2 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20 rounded-lg transition-all duration-150"
                             style={{ transitionDelay: `${i * 20}ms` }}
                           >
                             <span className="w-1 h-1 rounded-full bg-orange-400 opacity-60" />
-                            {sub}
+                            {sub.name}
                           </Link>
                         ))}
                       </div>
@@ -466,7 +475,7 @@ export function Header() {
             >
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                     {logo ? (
                       <img src={logo} alt={siteName || 'Bazzar'} className="w-full h-full object-cover rounded-lg" />
                     ) : (
@@ -484,7 +493,7 @@ export function Header() {
                 {isAuthenticated && user ? (
                   <div className="bg-orange-50 dark:bg-orange-950/40 rounded-xl p-3 mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                         <span className="text-white font-bold">{user.firstName[0]}</span>
                       </div>
                       <div>
@@ -504,7 +513,7 @@ export function Header() {
                 ) : (
                   <div className="flex gap-2 mb-4">
                     <Link href="/auth/login" className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-xl border border-border hover:bg-muted transition-colors duration-200">Login</Link>
-                    <Link href="/auth/register" className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold text-white rounded-xl transition-all" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>Sign Up</Link>
+                    <Link href="/auth/register" className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold text-white rounded-xl transition-all" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>Sign Up</Link>
                   </div>
                 )}
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       {/* Aurora orbs */}
       <div
         className="fixed -top-40 -left-24 w-[560px] h-[560px] rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #f97316, #ef4444 50%, transparent)' }}
+        style={{ background: 'radial-gradient(circle, var(--ap), var(--as) 50%, transparent)' }}
       />
       <div
         className="fixed bottom-0 right-0 w-[420px] h-[420px] rounded-full opacity-15 blur-3xl pointer-events-none"
@@ -84,8 +84,8 @@ export default function ForgotPasswordPage() {
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover:scale-105"
               style={{
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                boxShadow: '0 0 20px rgba(249,115,22,0.4)',
+                background: 'linear-gradient(135deg, var(--ap), var(--as))',
+                boxShadow: '0 0 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)',
               }}
             >
               <span className="text-white font-black text-xl">B</span>
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
               <h1
                 className="text-3xl font-black mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                  background: 'linear-gradient(135deg, var(--ap), var(--as))',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -133,8 +133,8 @@ export default function ForgotPasswordPage() {
                       boxShadow: 'none',
                     }}
                     onFocus={e => {
-                      e.currentTarget.style.border = '1px solid rgba(249,115,22,0.5)';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.1)';
+                      e.currentTarget.style.border = '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)';
                     }}
                     onBlur={e => {
                       e.currentTarget.style.border = errors.email
@@ -156,9 +156,9 @@ export default function ForgotPasswordPage() {
                 className="w-full h-12 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.01] hover:shadow-xl disabled:opacity-60 disabled:scale-100"
                 style={{
                   background: isSubmitting
-                    ? 'rgba(249,115,22,0.6)'
-                    : 'linear-gradient(135deg, #f97316, #ef4444)',
-                  boxShadow: '0 4px 20px rgba(249,115,22,0.3)',
+                    ? 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.6)'
+                    : 'linear-gradient(135deg, var(--ap), var(--as))',
+                  boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)',
                 }}
               >
                 {isSubmitting ? (
@@ -195,7 +195,7 @@ export default function ForgotPasswordPage() {
               <h1
                 className="text-3xl font-black mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                  background: 'linear-gradient(135deg, var(--ap), var(--as))',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -213,8 +213,8 @@ export default function ForgotPasswordPage() {
                 href="/auth/login"
                 className="w-full h-12 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.01] hover:shadow-xl"
                 style={{
-                  background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                  boxShadow: '0 4px 20px rgba(249,115,22,0.3)',
+                  background: 'linear-gradient(135deg, var(--ap), var(--as))',
+                  boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)',
                 }}
               >
                 Back to Sign In
@@ -225,7 +225,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   className="font-semibold transition-colors hover:opacity-80"
-                  style={{ color: '#f97316' }}
+                  style={{ color: 'var(--ap)' }}
                   onClick={() => setSubmitted(false)}
                 >
                   Try again

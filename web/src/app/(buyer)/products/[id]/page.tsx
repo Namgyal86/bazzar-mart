@@ -396,7 +396,7 @@ export default function ProductDetailPage() {
           <div className="flex gap-3">
             <button
               className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-semibold text-sm transition-all hover:scale-[1.01] disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               onClick={addToCart}
               disabled={product.stock === 0}
             >
@@ -404,7 +404,7 @@ export default function ProductDetailPage() {
             </button>
             <button
               className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-semibold text-sm transition-all hover:brightness-110 disabled:opacity-50"
-              style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)' }}
+              style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)', border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
               disabled={product.stock === 0}
               onClick={() => { addToCart(); router.push('/checkout'); }}
             >

@@ -72,7 +72,7 @@ function ProductCard({ product }: { product: any }) {
             <button
               onClick={handleAddToCart}
               className="w-full py-2.5 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
             </button>
@@ -137,7 +137,7 @@ export default function StoreDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Store header */}
-      <div className="rounded-2xl p-8 text-white mb-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ef4444 60%, #dc2626 100%)', boxShadow: '0 8px 32px rgba(249,115,22,0.25)' }}>
+      <div className="rounded-2xl p-8 text-white mb-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 8px 32px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.25)' }}>
         <div className="absolute inset-0 opacity-10 pointer-events-none select-none">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="absolute w-32 h-32 border-2 border-white rounded-full"

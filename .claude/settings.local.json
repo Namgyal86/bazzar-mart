@@ -172,7 +172,25 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWJlOGMzY2Q4MmExZjI5ZjVhYTFjNGUiLCJyb2xlIjoiQURNSU4iLCJlbWFpbCI6ImFkbWluQGJhenphci5jb20iLCJpYXQiOjE3NzQyMDM1NzEsImV4cCI6MTc3NDIwNDQ3MX0.sGp-Kzu7UsxtU0sv58l3u3qTX0vaBNp8t5a2lUHD2M8\" __NEW_LINE_0fe4537fc8775e5f__ echo \"=== USERS ===\")",
       "Bash(node -e \"let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>{const r=JSON.parse\\(d\\);const a=r.data||[];console.log\\(''''Count:'''',a.length,''''| Codes:'''',a.map\\(c=>c.code\\).join\\('''', ''''\\)\\)}\\)\" __NEW_LINE_0fe4537fc8775e5f__ echo \"=== REFERRALS ===\")",
       "Bash(ls -la C:UserssgrgrDesktopEcommercewebtailwind.config.*)",
-      "Bash(docker-compose ps:*)"
+      "Bash(docker-compose ps:*)",
+      "Bash(bash start-services.sh)",
+      "Bash(tasklist /FI \"PID eq 13936\")",
+      "Bash(tasklist /FI \"PID eq 16204\")",
+      "Bash(grep -r \"admin\\\\|seed\\\\|Admin\" C:/Users/sgrgr/Desktop/Ecommerce/services/user-service/src/ --include=*.ts -l)",
+      "Bash(grep -rn \"admin@bazzar\\\\|seedAdmin\\\\|createAdmin\" C:/Users/sgrgr/Desktop/Ecommerce/services/user-service/src/ --include=*.ts)",
+      "Bash(docker-compose restart:*)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\)[''''data'''']; [print\\(f\"\"{c[''''name'''']}: {len\\(c.get\\(''''subcategories'''',[]\\)\\)} subs - {[s[''''name''''] for s in c.get\\(''''subcategories'''',[]\\)]}\"\"  \\) for c in data]\")",
+      "Bash(findstr \"subcategories\")",
+      "Bash(docker cp:*)",
+      "Bash(grep -rn \"#f97316\\\\|rgba\\(249,115,22\" C:/Users/sgrgr/Desktop/Ecommerce/web/src --include=*.tsx)",
+      "Bash(grep -v \"//.*#f97316\")",
+      "Bash(grep -rn \"#f97316\\\\|rgba\\(249,115,22\\\\|rgba\\(249, 115, 22\" C:/Users/sgrgr/Desktop/Ecommerce/web/src --include=*.tsx)",
+      "Bash(grep -l Pipette C:/Users/sgrgr/Desktop/Ecommerce/web/node_modules/lucide-react/dist/*.js)",
+      "Bash(node -e \"require\\(''''mongodb''''\\)\")",
+      "Bash(node -e \"require\\(''''bcryptjs''''\\)\")",
+      "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const j=JSON.parse\\(d\\); const tok=j.data.accessToken; require\\(''''child_process''''\\).execSync\\(''''curl -s http://localhost:8007/api/v1/seller/profile -H Authorization: Bearer ''''+tok+'''''''', {stdio:''''inherit''''}\\)\")",
+      "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\)[''''data''''][''''accessToken'''']\\)\")",
+      "Bash(git add:*)"
     ]
   }
 }

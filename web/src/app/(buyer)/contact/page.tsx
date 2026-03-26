@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare, Clock, CheckCircle } from 'lucide-react';
@@ -74,7 +74,7 @@ export default function ContactPage() {
       <div className="text-center mb-12">
         <div
           className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 8px 24px rgba(249,115,22,0.25)' }}
+          style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 8px 24px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.25)' }}
         >
           <MessageSquare className="w-7 h-7 text-white" />
         </div>
@@ -171,7 +171,7 @@ export default function ContactPage() {
               type="submit"
               disabled={sending}
               className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-semibold rounded-xl transition-all hover:scale-105 disabled:opacity-60 disabled:scale-100 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 16px rgba(249,115,22,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
             >
               {sent ? (
                 <><CheckCircle className="w-4 h-4" /> Sent!</>

@@ -26,6 +26,7 @@ export interface IProduct extends Document {
   soldCount: number;
   isActive: boolean;
   isFeatured: boolean;
+  dealEndsAt?: Date;
   tags: string[];
   specifications: Record<string, string>;
   weight?: number;
@@ -53,6 +54,7 @@ const ProductSchema = new Schema<IProduct>({
   soldCount:        { type: Number, default: 0 },
   isActive:         { type: Boolean, default: true },
   isFeatured:       { type: Boolean, default: false },
+  dealEndsAt:       { type: Date },
   tags:             { type: [String], default: [] },
   specifications:   { type: Map, of: String, default: {} },
   weight:           { type: Number },

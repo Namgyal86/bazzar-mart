@@ -4,13 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from 'next-themes';
 import { useState, useEffect } from 'react';
-import { useThemeStore, THEME_PRESETS } from '@/store/theme.store';
+import { useThemeStore } from '@/store/theme.store';
 
 function GlobalThemeProvider({ children }: { children: React.ReactNode }) {
-  const { themeName } = useThemeStore();
+  const { themeName, customColor, getPreset } = useThemeStore();
 
   useEffect(() => {
-    const preset = THEME_PRESETS.find(p => p.name === themeName) ?? THEME_PRESETS[0];
+    const preset = getPreset();
     const root = document.documentElement;
     root.style.setProperty('--ap-h', String(preset.h));
     root.style.setProperty('--ap-s', preset.s);
@@ -20,7 +20,7 @@ function GlobalThemeProvider({ children }: { children: React.ReactNode }) {
     // Update browser chrome theme-color meta tag dynamically
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) metaTheme.setAttribute('content', preset.preview);
-  }, [themeName]);
+  }, [themeName, customColor, getPreset]);
 
   return <>{children}</>;
 }

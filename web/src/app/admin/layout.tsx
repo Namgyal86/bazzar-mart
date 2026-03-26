@@ -29,6 +29,7 @@ const NAV_SECTIONS = [
       { icon: Users, label: 'Users', href: '/admin/users' },
       { icon: Store, label: 'Sellers', href: '/admin/sellers' },
       { icon: Package, label: 'Products', href: '/admin/products' },
+      { icon: Tag, label: 'Categories', href: '/admin/categories' },
       { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
       { icon: Truck, label: 'Delivery', href: '/admin/delivery' },
     ],
@@ -36,6 +37,7 @@ const NAV_SECTIONS = [
   {
     label: 'Marketing',
     items: [
+      { icon: Zap, label: 'Flash Deals', href: '/admin/flash-deals' },
       { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
       { icon: MessageSquare, label: 'Reviews', href: '/admin/reviews' },
       { icon: Gift, label: 'Referrals', href: '/admin/referrals' },

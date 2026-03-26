@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -87,17 +87,17 @@ function validateStep2(data: Step2): FieldError {
 
 const BENEFITS = [
   {
-    icon: <Store className="w-5 h-5" style={{ color: '#f97316' }} />,
+    icon: <Store className="w-5 h-5" style={{ color: 'var(--ap)' }} />,
     title: 'Huge Reach',
     text: 'Sell to 10,000+ active buyers across Nepal every day.',
   },
   {
-    icon: <DollarSign className="w-5 h-5" style={{ color: '#f97316' }} />,
+    icon: <DollarSign className="w-5 h-5" style={{ color: 'var(--ap)' }} />,
     title: 'Low Commission',
     text: 'Keep more of what you earn with our 30% flat commission.',
   },
   {
-    icon: <Clock className="w-5 h-5" style={{ color: '#f97316' }} />,
+    icon: <Clock className="w-5 h-5" style={{ color: 'var(--ap)' }} />,
     title: 'Fast Payouts',
     text: 'Get your earnings deposited within 48 hours of a sale.',
   },
@@ -195,16 +195,16 @@ function StepIndicator({ current }: { current: number }) {
                 background: isCompleted
                   ? 'linear-gradient(135deg, #22c55e, #16a34a)'
                   : isActive
-                  ? 'linear-gradient(135deg, #f97316, #ef4444)'
+                  ? 'linear-gradient(135deg, var(--ap), var(--as))'
                   : 'rgba(255,255,255,0.07)',
                 border: isActive
-                  ? '2px solid rgba(249,115,22,0.4)'
+                  ? '2px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)'
                   : isCompleted
                   ? '2px solid rgba(34,197,94,0.4)'
                   : '2px solid rgba(255,255,255,0.12)',
                 color: isCompleted || isActive ? '#fff' : 'rgba(255,255,255,0.35)',
                 boxShadow: isActive
-                  ? '0 0 16px rgba(249,115,22,0.35)'
+                  ? '0 0 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35)'
                   : isCompleted
                   ? '0 0 12px rgba(34,197,94,0.25)'
                   : 'none',
@@ -374,7 +374,7 @@ export default function SellerRegisterPage() {
             height: '600px',
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)',
+              'radial-gradient(circle, hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.08) 0%, transparent 70%)',
             filter: 'blur(40px)',
           }}
         />
@@ -450,11 +450,11 @@ export default function SellerRegisterPage() {
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                background: 'linear-gradient(135deg, var(--ap), var(--as))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(249,115,22,0.4)',
+                boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)',
               }}
             >
               <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem' }}>B</span>
@@ -485,7 +485,7 @@ export default function SellerRegisterPage() {
             <br />
             <span
               style={{
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                background: 'linear-gradient(135deg, var(--ap), var(--as))',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -526,7 +526,7 @@ export default function SellerRegisterPage() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: 'rgba(249,115,22,0.12)',
+                    background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -573,7 +573,7 @@ export default function SellerRegisterPage() {
                   style={{
                     fontSize: '1.4rem',
                     fontWeight: 800,
-                    background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                    background: 'linear-gradient(135deg, var(--ap), var(--as))',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     lineHeight: 1,
@@ -623,11 +623,11 @@ export default function SellerRegisterPage() {
                   width: '40px',
                   height: '40px',
                   borderRadius: '11px',
-                  background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                  background: 'linear-gradient(135deg, var(--ap), var(--as))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 16px rgba(249,115,22,0.35)',
+                  boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35)',
                 }}
               >
                 <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem' }}>B</span>
@@ -655,15 +655,15 @@ export default function SellerRegisterPage() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  background: 'rgba(249,115,22,0.1)',
-                  border: '1px solid rgba(249,115,22,0.2)',
+                  background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)',
+                  border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.2)',
                   borderRadius: '20px',
                   padding: '4px 12px',
                   marginBottom: '14px',
                 }}
               >
-                <Briefcase style={{ width: '13px', height: '13px', color: '#f97316' }} />
-                <span style={{ color: '#f97316', fontSize: '0.75rem', fontWeight: 600 }}>
+                <Briefcase style={{ width: '13px', height: '13px', color: 'var(--ap)' }} />
+                <span style={{ color: 'var(--ap)', fontSize: '0.75rem', fontWeight: 600 }}>
                   Seller Hub
                 </span>
               </div>
@@ -713,8 +713,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep1Change('storeName', e.target.value)}
                       style={{ ...inputStyle(errors.storeName), paddingLeft: '38px' }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.storeName
@@ -746,8 +746,8 @@ export default function SellerRegisterPage() {
                       WebkitAppearance: 'none',
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#f97316';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                      e.currentTarget.style.borderColor = 'var(--ap)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.borderColor = errors.businessType
@@ -788,8 +788,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep1Change('phone', e.target.value)}
                       style={{ ...inputStyle(errors.phone), paddingLeft: '38px' }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.phone
@@ -821,8 +821,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep1Change('city', e.target.value)}
                       style={{ ...inputStyle(errors.city), paddingLeft: '38px' }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.city
@@ -868,8 +868,8 @@ export default function SellerRegisterPage() {
                         transition: 'border-color 0.2s',
                       }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
@@ -886,7 +886,7 @@ export default function SellerRegisterPage() {
                   style={{
                     width: '100%',
                     height: '48px',
-                    background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                    background: 'linear-gradient(135deg, var(--ap), var(--as))',
                     border: 'none',
                     borderRadius: '12px',
                     color: '#fff',
@@ -897,7 +897,7 @@ export default function SellerRegisterPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '6px',
-                    boxShadow: '0 4px 20px rgba(249,115,22,0.35)',
+                    boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35)',
                     transition: 'opacity 0.2s, transform 0.1s',
                     marginTop: '4px',
                   }}
@@ -944,8 +944,8 @@ export default function SellerRegisterPage() {
                         onChange={(e) => handleStep2Change('firstName', e.target.value)}
                         style={{ ...inputStyle(errors.firstName), paddingLeft: '36px' }}
                         onFocus={(e) => {
-                          e.currentTarget.style.borderColor = '#f97316';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                          e.currentTarget.style.borderColor = 'var(--ap)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                         }}
                         onBlur={(e) => {
                           e.currentTarget.style.borderColor = errors.firstName
@@ -963,8 +963,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep2Change('lastName', e.target.value)}
                       style={inputStyle(errors.lastName)}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.lastName
@@ -997,8 +997,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep2Change('email', e.target.value)}
                       style={{ ...inputStyle(errors.email), paddingLeft: '38px' }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.email
@@ -1031,8 +1031,8 @@ export default function SellerRegisterPage() {
                       onChange={(e) => handleStep2Change('password', e.target.value)}
                       style={{ ...inputStyle(errors.password), paddingLeft: '38px', paddingRight: '42px' }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.password
@@ -1092,8 +1092,8 @@ export default function SellerRegisterPage() {
                         paddingRight: '42px',
                       }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#f97316';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+                        e.currentTarget.style.borderColor = 'var(--ap)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)';
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = errors.confirmPassword
@@ -1168,8 +1168,8 @@ export default function SellerRegisterPage() {
                       flex: 2,
                       height: '48px',
                       background: isSubmitting
-                        ? 'rgba(249,115,22,0.5)'
-                        : 'linear-gradient(135deg, #f97316, #ef4444)',
+                        ? 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5)'
+                        : 'linear-gradient(135deg, var(--ap), var(--as))',
                       border: 'none',
                       borderRadius: '12px',
                       color: '#fff',
@@ -1180,7 +1180,7 @@ export default function SellerRegisterPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      boxShadow: isSubmitting ? 'none' : '0 4px 20px rgba(249,115,22,0.35)',
+                      boxShadow: isSubmitting ? 'none' : '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35)',
                       transition: 'opacity 0.2s, transform 0.1s',
                     }}
                     onMouseEnter={(e) => {
@@ -1241,7 +1241,7 @@ export default function SellerRegisterPage() {
               <Link
                 href="/auth/login"
                 style={{
-                  color: '#f97316',
+                  color: 'var(--ap)',
                   fontWeight: 600,
                   textDecoration: 'none',
                 }}

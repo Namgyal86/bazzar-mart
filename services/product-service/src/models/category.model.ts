@@ -7,6 +7,7 @@ export interface ICategory extends Document {
   image?: string;
   parentCategory?: string;
   isActive: boolean;
+  showInNav: boolean;
   sortOrder: number;
 }
 
@@ -17,6 +18,7 @@ const CategorySchema = new Schema<ICategory>({
   image:          { type: String },
   parentCategory: { type: String },
   isActive:       { type: Boolean, default: true },
+  showInNav:      { type: Boolean, default: true },
   sortOrder:      { type: Number, default: 0 },
 }, { timestamps: true });
 

@@ -15,17 +15,22 @@ export function formatCurrency(amount: number, currency = 'NPR'): string {
   }).format(amount);
 }
 
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | undefined | null): string {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('en-NP', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(new Date(date));
+  }).format(d);
 }
 
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | undefined | null): string {
+  if (!date) return '—';
   const now = new Date();
   const then = new Date(date);
+  if (isNaN(then.getTime())) return '—';
   const diff = now.getTime() - then.getTime();
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);

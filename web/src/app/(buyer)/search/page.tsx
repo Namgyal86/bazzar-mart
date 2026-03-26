@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
@@ -53,7 +53,7 @@ function SearchContent() {
               Search results for:{' '}
               <span
                 className="bg-clip-text text-transparent"
-                style={{ backgroundImage: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ backgroundImage: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 &ldquo;{query}&rdquo;
               </span>
@@ -72,7 +72,7 @@ function SearchContent() {
             <div className="flex items-center gap-2 mb-4">
               <span
                 className="flex items-center justify-center w-8 h-8 rounded-lg"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 <Search className="w-4 h-4 text-white" />
               </span>
@@ -129,7 +129,7 @@ function SearchContent() {
               <Search className="w-9 h-9 text-orange-500" />
             </div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
               No results found
             </h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
@@ -207,7 +207,7 @@ function SearchContent() {
                     <div className="flex items-baseline gap-1.5">
                       <span
                         className="font-bold text-sm bg-clip-text text-transparent"
-                        style={{ backgroundImage: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                        style={{ backgroundImage: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                       >
                         {formatCurrency(p.salePrice)}
                       </span>
@@ -221,7 +221,7 @@ function SearchContent() {
                     {/* Add to Cart */}
                     <button
                       className="w-full flex items-center justify-center gap-1.5 text-white text-xs font-semibold py-2 rounded-xl transition-all duration-200 hover:opacity-90 hover:shadow-md active:scale-95"
-                      style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                       onClick={() => {
                         const cartItem = {
                           id: p.id,

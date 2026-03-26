@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { Smartphone, Star } from 'lucide-react';
@@ -20,7 +20,7 @@ export function AppDownloadBanner() {
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
         className="relative rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+        style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
       >
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">

@@ -3,8 +3,34 @@ import { Category } from '../models/category.model';
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await Category.find({ isActive: true }).sort('sortOrder');
+    const filter: any = { isActive: true };
+    if (req.query.navOnly === 'true') filter.showInNav = true;
+    const categories = await Category.find(filter).sort('sortOrder');
     res.json({ success: true, data: categories });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const getAllCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await Category.find().sort('sortOrder');
+    res.json({ success: true, data: categories });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Returns top-level categories (no parentCategory) with their subcategories nested
+export const getCategoriesWithSubs = async (req: Request, res: Response) => {
+  try {
+    const all = await Category.find({ isActive: true }).sort('sortOrder');
+    const parents = all.filter(c => !c.parentCategory);
+    const result = parents.map(p => ({
+      ...p.toObject(),
+      subcategories: all.filter(c => c.parentCategory === p.slug),
+    }));
+    res.json({ success: true, data: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -24,13 +50,49 @@ export const createCategory = async (req: Request, res: Response) => {
   try {
     const cat = await Category.create({
       name: req.body.name,
-      slug: req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      slug: req.body.slug || req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       description: req.body.description,
       image: req.body.image,
       parentCategory: req.body.parentCategory,
       sortOrder: req.body.sortOrder || 0,
+      showInNav: req.body.showInNav !== false,
+      isActive: req.body.isActive !== false,
     });
     res.status(201).json({ success: true, data: cat });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updates: any = {};
+    if (req.body.name !== undefined) {
+      updates.name = req.body.name;
+      updates.slug = req.body.slug || req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+    if (req.body.slug !== undefined) updates.slug = req.body.slug;
+    if (req.body.description !== undefined) updates.description = req.body.description;
+    if (req.body.image !== undefined) updates.image = req.body.image;
+    if (req.body.sortOrder !== undefined) updates.sortOrder = req.body.sortOrder;
+    if (req.body.showInNav !== undefined) updates.showInNav = req.body.showInNav;
+    if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
+    if ('parentCategory' in req.body) updates.parentCategory = req.body.parentCategory || undefined;
+
+    const cat = await Category.findByIdAndUpdate(id, updates, { new: true });
+    if (!cat) return res.status(404).json({ success: false, error: 'Category not found' });
+    res.json({ success: true, data: cat });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const cat = await Category.findByIdAndDelete(req.params.id);
+    if (!cat) return res.status(404).json({ success: false, error: 'Category not found' });
+    res.json({ success: true, message: 'Category deleted' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

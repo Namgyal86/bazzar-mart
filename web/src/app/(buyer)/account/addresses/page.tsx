@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { MapPin, Plus, Trash2, Edit, X, Loader2 } from 'lucide-react';
@@ -146,7 +146,7 @@ function AddressForm({
             size="sm"
             disabled={saving}
             className="text-white border-0"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />Saving...</> : 'Save Address'}
           </Button>
@@ -226,7 +226,7 @@ export default function AddressesPage() {
         <Button
           size="sm"
           className="gap-1.5 text-white border-0 shadow-sm"
-          style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+          style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
         >
           <Plus className="w-4 h-4" /> Add Address
@@ -310,7 +310,7 @@ export default function AddressesPage() {
             <button
               onClick={() => setShowAdd(true)}
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-medium text-white border-0 shadow-sm"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <Plus className="w-4 h-4" /> Add your first address
             </button>

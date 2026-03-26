@@ -406,7 +406,7 @@
   transition: background 0.4s ease;
 }
 .category-card:hover .cat-overlay {
-  background: linear-gradient(to top, rgba(249,115,22,0.72) 0%, rgba(0,0,0,0.15) 100%);
+  background: linear-gradient(to top, hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.72) 0%, rgba(0,0,0,0.15) 100%);
 }
 .category-card .cat-label { transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); }
 .category-card:hover .cat-label { transform: translateY(-6px); }
@@ -414,7 +414,7 @@
 /* ===================================================================
    GRADIENT TEXT  (multi-stop)
 ===================================================================== */
-.gradient-text        { background: linear-gradient(135deg, var(--ap) 0%, #ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.gradient-text        { background: linear-gradient(135deg, var(--ap) 0%, var(--as, #ef4444) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .gradient-text-cool   { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .gradient-text-purple { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .gradient-text-teal   { background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }

@@ -39,7 +39,7 @@ function LiveMap({ lat, lng }: { lat: number; lng: number }) {
       }).addTo(map);
 
       const deliveryIcon = L.divIcon({
-        html: '<div style="background:linear-gradient(135deg,#f97316,#ef4444);width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(249,115,22,0.5);display:flex;align-items:center;justify-content:center;font-size:16px;">🛵</div>',
+        html: '<div style="background:linear-gradient(135deg, var(--ap), var(--as));width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5);display:flex;align-items:center;justify-content:center;font-size:16px;">🛵</div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         className: '',
@@ -120,7 +120,7 @@ export default function TrackOrderPage() {
       {/* ETA Banner */}
       <div
         className="rounded-2xl p-6 text-white relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 8px 32px rgba(249,115,22,0.3)' }}
+        style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 8px 32px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
       >
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10 -translate-y-12 translate-x-12"
           style={{ background: 'radial-gradient(circle, white, transparent)' }} />
@@ -150,7 +150,7 @@ export default function TrackOrderPage() {
           {agent ? (
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0"
-                style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(239,68,68,0.1))', border: '2px solid rgba(249,115,22,0.2)' }}>
+                style={{ background: 'linear-gradient(135deg, hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1), rgba(239,68,68,0.1))', border: '2px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.2)' }}>
                 🧑
               </div>
               <div>
@@ -194,7 +194,7 @@ export default function TrackOrderPage() {
                       ? 'border-2 border-orange-500 text-orange-500 bg-orange-50 dark:bg-orange-950/20'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
                   }`}
-                    style={step.done ? { background: 'linear-gradient(135deg, #f97316, #ef4444)' } : undefined}
+                    style={step.done ? { background: 'linear-gradient(135deg, var(--ap), var(--as))' } : undefined}
                   >
                     {step.done ? <CheckCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                   </div>

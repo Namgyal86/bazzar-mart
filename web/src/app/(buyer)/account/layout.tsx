@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -65,11 +65,11 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               <div className="relative flex flex-col items-center text-center py-5 mb-3">
                 {/* Gradient background strip */}
                 <div className="absolute top-0 left-0 right-0 h-16 rounded-xl opacity-10"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }} />
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }} />
 
                 <div
                   className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-black mb-3 shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 8px 24px rgba(249,115,22,0.3)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 8px 24px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
                 >
                   {initial}
                 </div>
@@ -77,7 +77,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 <p className="text-xs text-gray-400 mt-0.5 truncate max-w-full px-2">{user?.email ?? ''}</p>
                 {user?.role && (
                   <span className="mt-2.5 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold capitalize"
-                    style={{ background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)' }}>
+                    style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)', color: 'var(--ap)', border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.2)' }}>
                     {user.role.toLowerCase()} Account
                   </span>
                 )}
@@ -99,7 +99,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                           ? 'text-white shadow-md'
                           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                       }`}
-                      style={isActive ? { background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' } : {}}
+                      style={isActive ? { background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 12px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' } : {}}
                     >
                       <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : color}`} />
                       <span className="flex-1">{label}</span>

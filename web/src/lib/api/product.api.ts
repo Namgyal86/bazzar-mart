@@ -28,8 +28,36 @@ export interface ProductListResponse {
 }
 
 export interface Category {
-  _id: string; name: string; slug: string; image?: string; productCount?: number;
+  _id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  description?: string;
+  isActive: boolean;
+  showInNav: boolean;
+  sortOrder: number;
+  parentCategory?: string;
+  productCount?: number;
 }
+
+export interface CategoryWithSubs extends Category {
+  subcategories: Category[];
+}
+
+export const categoryApi = {
+  list: () =>
+    apiClient.get<{ success: true; data: Category[] }>('/api/v1/categories'),
+  withSubs: () =>
+    apiClient.get<{ success: true; data: CategoryWithSubs[] }>('/api/v1/categories/with-subs'),
+  listAll: () =>
+    apiClient.get<{ success: true; data: Category[] }>('/api/v1/categories/admin/all'),
+  create: (data: Partial<Category>) =>
+    apiClient.post<{ success: true; data: Category }>('/api/v1/categories', data),
+  update: (id: string, data: Partial<Category>) =>
+    apiClient.put<{ success: true; data: Category }>(`/api/v1/categories/${id}`, data),
+  delete: (id: string) =>
+    apiClient.delete(`/api/v1/categories/${id}`),
+};
 
 export interface Banner {
   _id: string; title: string; subtitle: string; description: string;

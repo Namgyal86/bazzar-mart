@@ -231,7 +231,7 @@ export default function EditProductPage() {
         <div className={sectionCls} style={sectionStyle}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(249,115,22,0.12)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)' }}>
                 <ImageIcon className="w-4 h-4 text-orange-400" />
               </div>
               <div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -77,11 +77,11 @@ export default function ProfilePage() {
           {/* Decorative blobs */}
           <div
             className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           />
           <div
             className="absolute top-4 left-1/4 w-24 h-24 rounded-full opacity-10"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           />
           <div
             className="absolute -bottom-6 right-1/3 w-20 h-20 rounded-full opacity-15"
@@ -98,13 +98,13 @@ export default function ProfilePage() {
             <div className="relative shrink-0">
               <div
                 className="w-24 h-24 rounded-full p-[3px] shadow-xl"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 <div
                   className="w-full h-full rounded-full flex items-center justify-center text-white text-3xl font-bold select-none"
                   style={{
-                    background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                    boxShadow: '0 0 24px rgba(249,115,22,0.45)',
+                    background: 'linear-gradient(135deg, var(--ap), var(--as))',
+                    boxShadow: '0 0 24px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.45)',
                   }}
                 >
                   {initial}
@@ -113,7 +113,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 className="absolute -bottom-1 -right-1 p-1.5 rounded-full text-white shadow-md transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                 aria-label="Change avatar"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -129,7 +129,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span
                   className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold text-white capitalize"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                 >
                   {user?.role?.toLowerCase()} Account
                 </span>
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                 type="submit"
                 disabled={isSubmitting}
                 className="inline-flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 {isSubmitting ? (
                   <>
@@ -251,13 +251,13 @@ export default function ProfilePage() {
       {/* Referral card */}
       <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
         {/* Referral card inner accent strip */}
-        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #f97316, #ef4444)' }} />
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, var(--ap), var(--as))' }} />
 
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div
               className="p-3 rounded-xl shrink-0 shadow-md"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <Gift className="w-5 h-5 text-white" />
             </div>
@@ -286,7 +286,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={copyReferralCode}
                   className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.04] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                 >
                   {copied ? (
                     <>

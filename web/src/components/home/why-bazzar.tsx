@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Truck, Shield, RefreshCw, Headphones, Tag, CheckCircle, Package, Users, TrendingUp, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -119,7 +119,7 @@ export function WhyBazzar() {
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
           className="rounded-3xl p-10"
-          style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+          style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((s, i) => (

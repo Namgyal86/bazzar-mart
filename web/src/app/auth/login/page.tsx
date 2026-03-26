@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, ShoppingBag, Star, Shield, Zap, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, ShoppingBag, Star, Shield, Zap, ArrowRight, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -40,6 +41,7 @@ export default function LoginPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
+    setLoginError(null);
     try {
       const res = await authApi.login(data);
       const { user, accessToken, refreshToken } = res.data.data;
@@ -60,7 +62,8 @@ export default function LoginPage() {
       toast({ title: 'Welcome back!', description: 'You have been logged in successfully.' });
       router.push('/');
     } catch (err) {
-      toast({ title: 'Login failed', description: getErrorMessage(err), variant: 'destructive' });
+      const msg = getErrorMessage(err);
+      setLoginError(msg);
     }
   };
 
@@ -73,7 +76,7 @@ export default function LoginPage() {
 
         {/* Aurora orbs */}
         <div className="absolute -top-32 -left-16 w-[500px] h-[500px] rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #f97316, #ef4444 50%, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, var(--ap), var(--as) 50%, transparent)' }} />
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #6366f1, #8b5cf6 50%, transparent)' }} />
         <div className="absolute top-1/2 -translate-y-1/2 right-12 w-48 h-48 rounded-full opacity-10 blur-2xl pointer-events-none"
@@ -88,7 +91,7 @@ export default function LoginPage() {
           <Link href="/" className="inline-flex items-center gap-3 group">
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 0 20px rgba(249,115,22,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 0 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)' }}
             >
               <span className="text-white font-black text-xl">B</span>
             </div>
@@ -101,7 +104,7 @@ export default function LoginPage() {
           <div>
             <h2 className="text-5xl font-black text-white leading-[1.1] mb-4">
               Nepal&apos;s largest<br />
-              <span style={{ background: 'linear-gradient(90deg, #f97316, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: 'linear-gradient(90deg, var(--ap), var(--as))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 online marketplace
               </span>
             </h2>
@@ -150,11 +153,11 @@ export default function LoginPage() {
 
         {/* Subtle glow */}
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #f97316, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, var(--ap), transparent)' }} />
 
         {/* Mobile brand bar */}
         <div className="lg:hidden flex items-center gap-3 px-6 pt-6 relative z-10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
             <span className="text-white font-bold">B</span>
           </div>
           <span className="text-white text-xl font-bold">Bazzar</span>
@@ -185,7 +188,7 @@ export default function LoginPage() {
                     border: errors.email ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)',
                     boxShadow: 'none',
                   }}
-                  onFocus={e => { e.currentTarget.style.border = '1px solid rgba(249,115,22,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.1)'; }}
+                  onFocus={e => { e.currentTarget.style.border = '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)'; }}
                   onBlur={e => { e.currentTarget.style.border = errors.email ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   {...register('email')}
                 />
@@ -196,7 +199,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Password</label>
-                <Link href="/auth/forgot-password" className="text-xs font-semibold transition-colors" style={{ color: '#f97316' }}>
+                <Link href="/auth/forgot-password" className="text-xs font-semibold transition-colors" style={{ color: 'var(--ap)' }}>
                   Forgot password?
                 </Link>
               </div>
@@ -210,7 +213,7 @@ export default function LoginPage() {
                     background: 'rgba(255,255,255,0.05)',
                     border: errors.password ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)',
                   }}
-                  onFocus={e => { e.currentTarget.style.border = '1px solid rgba(249,115,22,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.1)'; }}
+                  onFocus={e => { e.currentTarget.style.border = '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)'; }}
                   onBlur={e => { e.currentTarget.style.border = errors.password ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   {...register('password')}
                 />
@@ -225,13 +228,21 @@ export default function LoginPage() {
               {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
             </div>
 
+            {/* Inline error message */}
+            {loginError && (
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-400 font-medium">{loginError}</p>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full h-12 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.01] hover:shadow-xl disabled:opacity-60 disabled:scale-100"
               style={{
-                background: isSubmitting ? 'rgba(249,115,22,0.6)' : 'linear-gradient(135deg, #f97316, #ef4444)',
-                boxShadow: '0 4px 20px rgba(249,115,22,0.3)',
+                background: isSubmitting ? 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.6)' : 'linear-gradient(135deg, var(--ap), var(--as))',
+                boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)',
               }}
             >
               {isSubmitting ? (
@@ -271,14 +282,14 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-600 mt-6">
             Don&apos;t have an account?{' '}
-            <Link href="/auth/register" className="font-bold transition-colors hover:opacity-80" style={{ color: '#f97316' }}>
+            <Link href="/auth/register" className="font-bold transition-colors hover:opacity-80" style={{ color: 'var(--ap)' }}>
               Create one free
             </Link>
           </p>
 
           <p className="text-center text-xs text-gray-700 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             Want to sell on Bazzar?{' '}
-            <Link href="/sellers/register" className="font-medium transition-colors hover:opacity-80" style={{ color: '#f97316' }}>
+            <Link href="/sellers/register" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--ap)' }}>
               Register as Seller →
             </Link>
           </p>

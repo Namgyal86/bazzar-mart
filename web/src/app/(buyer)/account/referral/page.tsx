@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Gift, Copy, CheckCircle, Users, Wallet, Clock, ArrowRight, Share2 } from 'lucide-react';
@@ -104,7 +104,7 @@ export default function ReferralPage() {
 
       {/* Wallet balance cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl p-5 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 8px 32px rgba(249,115,22,0.3)' }}>
+        <div className="rounded-2xl p-5 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 8px 32px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}>
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 -translate-y-8 translate-x-8" style={{ background: 'radial-gradient(circle, white, transparent)' }} />
           <div className="flex items-center gap-2 mb-3 relative">
             <Wallet className="w-5 h-5 opacity-80" />
@@ -128,7 +128,7 @@ export default function ReferralPage() {
       {/* Referral code card */}
       <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/40 rounded-2xl p-6">
         <div className="flex items-start gap-4">
-          <div className="p-2.5 rounded-xl shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>
+          <div className="p-2.5 rounded-xl shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 12px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}>
             <Gift className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
@@ -145,7 +145,7 @@ export default function ReferralPage() {
                 <button
                   onClick={copyCode}
                   className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-xl transition-all hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 12px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
                 >
                   {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   {copied ? 'Copied!' : 'Copy'}
@@ -169,7 +169,7 @@ export default function ReferralPage() {
           {HOW_IT_WORKS.map((step, idx) => (
             <div key={idx} className="flex gap-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 text-white"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                 {step.step}
               </div>
               <div>
@@ -205,7 +205,7 @@ export default function ReferralPage() {
             <button
               onClick={shareCode}
               className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-xl"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <Share2 className="w-4 h-4" /> Share Your Code
             </button>
@@ -215,7 +215,7 @@ export default function ReferralPage() {
             {wallet!.referrals.map((ref) => (
               <div key={ref._id} className="flex items-center gap-4 px-5 py-4">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
                   {ref.refereeName[0]?.toUpperCase() ?? '?'}
                 </div>
                 <div className="flex-1 min-w-0">

@@ -331,6 +331,8 @@ services:
       - MONGO_URI=mongodb://mongo-seller:27017/seller_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
+      - PRODUCT_SERVICE_URL=http://product-service:8002
+      - ORDER_SERVICE_URL=http://order-service:8004
     depends_on: [mongo-seller, redis, kafka]
     networks: [bazzar-net]
     restart: unless-stopped
@@ -446,6 +448,9 @@ services:
       - MONGO_URI=mongodb://mongo-analytics:27017/analytics_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
+      - ORDER_SERVICE_URL=http://order-service:8004
+      - USER_SERVICE_URL=http://user-service:8001
+      - PRODUCT_SERVICE_URL=http://product-service:8002
     depends_on: [mongo-analytics, redis, kafka]
     networks: [bazzar-net]
     restart: unless-stopped

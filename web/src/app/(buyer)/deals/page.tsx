@@ -186,16 +186,21 @@ export default function DealsPage() {
         const prods = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.products ?? []);
         setDeals(
           prods
-            .filter((p: any) => p.salePrice && p.salePrice < p.price)
+            .filter((p: any) => {
+              if (!p.salePrice || p.salePrice >= p.price) return false;
+              if (p.dealEndsAt && new Date(p.dealEndsAt) <= new Date()) return false;
+              return true;
+            })
             .map((p: any) => ({
               id: p._id || p.id,
               name: p.name,
               image: p.images?.[0] || '',
               price: p.salePrice,
               basePrice: p.price,
+              dealEndsAt: p.dealEndsAt,
               rating: p.rating || 0,
               reviews: p.reviewCount || 0,
-              seller: typeof p.seller === 'object' ? (p.seller?.storeName ?? '') : (p.seller ?? ''),
+              seller: typeof p.seller === 'object' ? (p.seller?.storeName ?? '') : (p.sellerName ?? p.seller ?? ''),
             }))
         );
       })
@@ -306,7 +311,7 @@ export default function DealsPage() {
           <Link
             href="/products"
             className="inline-flex items-center gap-2 px-6 py-2.5 text-white text-sm font-semibold rounded-xl shadow-md transition-all hover:shadow-orange-400/40 hover:scale-105"
-            style={{ background: 'linear-gradient(135deg, #f97316, #f59e0b)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             Browse All Products
           </Link>

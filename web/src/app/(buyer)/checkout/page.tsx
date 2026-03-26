@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -196,7 +196,7 @@ export default function CheckoutPage() {
                         ? 'text-white ring-orange-100 dark:ring-orange-900/40 shadow-lg shadow-orange-200/50 dark:shadow-orange-900/30'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 ring-transparent',
                     )}
-                    style={isActive ? { background: 'linear-gradient(135deg, #f97316, #ef4444)' } : undefined}
+                    style={isActive ? { background: 'linear-gradient(135deg, var(--ap), var(--as))' } : undefined}
                   >
                     {isCompleted ? <CheckCircle className="w-5 h-5" /> : s.num}
                   </div>
@@ -222,7 +222,7 @@ export default function CheckoutPage() {
                       background: stepIndex > idx
                         ? '#22c55e'
                         : stepIndex === idx
-                        ? 'linear-gradient(90deg, #f97316 40%, #e5e7eb 100%)'
+                        ? 'linear-gradient(90deg, var(--ap) 40%, #e5e7eb 100%)'
                         : '#e5e7eb',
                     }}
                   />
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
                 <h2 className="font-semibold text-lg mb-5 flex items-center gap-3 text-gray-900 dark:text-white">
                   <span
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     <MapPin className="w-4 h-4 text-white" />
                   </span>
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
                       type="submit"
                       disabled={addingAddress}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-                      style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                     >
                       {addingAddress ? 'Saving...' : 'Save Address'}
                     </button>
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
                   disabled={!selectedAddress}
                   onClick={() => setStep('payment')}
                   className="mt-6 w-full py-3.5 rounded-xl text-base font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                 >
                   Continue to Payment
                   <ChevronRight className="w-5 h-5" />
@@ -431,7 +431,7 @@ export default function CheckoutPage() {
                 <h2 className="font-semibold text-lg mb-5 flex items-center gap-3 text-gray-900 dark:text-white">
                   <span
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     <CreditCard className="w-4 h-4 text-white" />
                   </span>
@@ -560,7 +560,7 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => setStep('confirm')}
                     className="flex-1 py-3 rounded-xl text-base font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.99] flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     Review Order
                     <ChevronRight className="w-5 h-5" />
@@ -576,7 +576,7 @@ export default function CheckoutPage() {
                 <h2 className="font-semibold text-lg mb-5 flex items-center gap-3 text-gray-900 dark:text-white">
                   <span
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     <CheckCircle className="w-4 h-4 text-white" />
                   </span>
@@ -679,7 +679,7 @@ export default function CheckoutPage() {
                     disabled={isPlacing}
                     onClick={placeOrder}
                     className="flex-1 py-3 rounded-xl text-base font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                   >
                     {isPlacing ? (
                       <>
@@ -788,7 +788,7 @@ export default function CheckoutPage() {
                         className="h-full rounded-full transition-all duration-500"
                         style={{
                           width:      `${freeShippingProgress}%`,
-                          background: 'linear-gradient(90deg, #f97316, #ef4444)',
+                          background: 'linear-gradient(90deg, var(--ap), var(--as))',
                         }}
                       />
                     </div>
@@ -838,7 +838,7 @@ export default function CheckoutPage() {
                     <span className="text-gray-900 dark:text-white">Total</span>
                     <span
                       style={{
-                        background:              'linear-gradient(135deg, #f97316, #ef4444)',
+                        background:              'linear-gradient(135deg, var(--ap), var(--as))',
                         WebkitBackgroundClip:    'text',
                         WebkitTextFillColor:     'transparent',
                       }}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -49,10 +49,10 @@ export default function WishlistPage() {
             <div className="relative p-3 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-orange-100 dark:border-orange-900/40">
               <div
                 className="absolute inset-0 rounded-2xl opacity-40 blur-md"
-                style={{ background: 'radial-gradient(circle, #f97316 0%, transparent 70%)' }}
+                style={{ background: 'radial-gradient(circle, var(--ap) 0%, transparent 70%)' }}
                 aria-hidden="true"
               />
-              <Heart className="relative w-6 h-6 text-orange-500 fill-orange-500 drop-shadow-[0_0_6px_rgba(249,115,22,0.7)]" />
+              <Heart className="relative w-6 h-6 text-orange-500 fill-orange-500 drop-shadow-[0_0_6px_hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.7)]" />
             </div>
 
             <div>
@@ -77,18 +77,18 @@ export default function WishlistPage() {
               {/* Outer pulse ring */}
               <span
                 className="absolute inset-0 rounded-full animate-ping opacity-20"
-                style={{ background: 'radial-gradient(circle, #f97316, #ef4444)' }}
+                style={{ background: 'radial-gradient(circle, var(--ap), var(--as))' }}
                 aria-hidden="true"
               />
               {/* Inner glow ring */}
               <span
                 className="absolute inset-2 rounded-full opacity-30"
-                style={{ background: 'radial-gradient(circle, #f97316, #ef4444)' }}
+                style={{ background: 'radial-gradient(circle, var(--ap), var(--as))' }}
                 aria-hidden="true"
               />
               <div
                 className="relative w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
               >
                 <Heart className="w-10 h-10 text-white fill-white" />
               </div>
@@ -97,7 +97,7 @@ export default function WishlistPage() {
             {/* Gradient headline */}
             <h3
               className="text-2xl font-extrabold mb-2 bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               Your Wishlist is Empty
             </h3>
@@ -109,7 +109,7 @@ export default function WishlistPage() {
             <Link
               href="/products"
               className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold text-white shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <ShoppingCart className="w-4 h-4" />
               Browse Products
@@ -219,7 +219,7 @@ export default function WishlistPage() {
                         }`}
                         style={
                           item.inStock
-                            ? { background: 'linear-gradient(135deg, #f97316, #ef4444)' }
+                            ? { background: 'linear-gradient(135deg, var(--ap), var(--as))' }
                             : undefined
                         }
                         aria-label={item.inStock ? 'Add to cart' : 'Out of stock'}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -11,7 +11,7 @@ const FALLBACK_CATEGORIES = [
   { _id: 'c1', name: 'Fruits & Vegetables', slug: 'fruits-vegetables', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&q=80', productCount: 0, color: '#22c55e' },
   { _id: 'c2', name: 'Dairy & Eggs',        slug: 'dairy-eggs',        image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80', productCount: 0, color: '#eab308' },
   { _id: 'c3', name: 'Grains & Pulses',     slug: 'grains-pulses',     image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&q=80', productCount: 0, color: '#f59e0b' },
-  { _id: 'c4', name: 'Snacks & Beverages',  slug: 'snacks-beverages',  image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500&q=80', productCount: 0, color: '#f97316' },
+  { _id: 'c4', name: 'Snacks & Beverages',  slug: 'snacks-beverages',  image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500&q=80', productCount: 0, color: 'var(--ap)' },
   { _id: 'c5', name: 'Spices & Condiments', slug: 'spices-condiments', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&q=80', productCount: 0, color: '#ec4899' },
 ];
 

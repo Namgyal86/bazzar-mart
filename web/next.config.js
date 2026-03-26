@@ -55,7 +55,9 @@ const nextConfig = {
     return [
       { source: '/api/v1/auth/:path*',             destination: `${U}/api/v1/auth/:path*` },
       { source: '/api/v1/users/:path*',             destination: `${U}/api/v1/users/:path*` },
+      { source: '/api/v1/products',                  destination: `${P}/api/v1/products` },
       { source: '/api/v1/products/:path*',          destination: `${P}/api/v1/products/:path*` },
+      { source: '/api/v1/categories',               destination: `${P}/api/v1/categories` },
       { source: '/api/v1/categories/:path*',        destination: `${P}/api/v1/categories/:path*` },
       { source: '/api/v1/banners/:path*',           destination: `${P}/api/v1/banners/:path*` },
       { source: '/api/v1/banners',                  destination: `${P}/api/v1/banners` },

@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Package, TrendingUp, ChevronDown, X, MapPin, CreditCard, User, Calendar, ShoppingBag, Clock, Truck, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { orderApi } from '@/lib/api/order.api';
@@ -21,6 +21,68 @@ const PAYMENT_COLORS: Record<string, string> = {
 };
 
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+// ── Custom dark status dropdown (replaces native <select> which shows white) ──
+const STATUS_DOT: Record<string, string> = {
+  PENDING: 'bg-yellow-400', CONFIRMED: 'bg-blue-400', PROCESSING: 'bg-purple-400',
+  SHIPPED: 'bg-cyan-400', DELIVERED: 'bg-green-400', CANCELLED: 'bg-red-400',
+};
+const STATUS_TEXT_COLOR: Record<string, string> = {
+  PENDING: 'text-yellow-300', CONFIRMED: 'text-blue-300', PROCESSING: 'text-purple-300',
+  SHIPPED: 'text-cyan-300', DELIVERED: 'text-green-300', CANCELLED: 'text-red-300',
+};
+
+function StatusSelect({ value, disabled, onChange, compact = false }: {
+  value: string; disabled?: boolean; onChange: (v: string) => void; compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+      <button
+        disabled={disabled}
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-2 rounded-lg border transition-all disabled:opacity-50 ${
+          compact ? 'pl-2.5 pr-7 py-1.5 text-[11px]' : 'pl-3 pr-8 py-2 text-xs'
+        } ${open ? 'border-white/25' : 'border-white/10 hover:border-white/20'}`}
+        style={{ background: 'rgba(13,17,23,0.9)', minWidth: compact ? 110 : 130 }}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[value] ?? 'bg-gray-400'}`} />
+        <span className={`font-semibold ${STATUS_TEXT_COLOR[value] ?? 'text-gray-300'}`}>{value}</span>
+        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute z-50 right-0 mt-1.5 w-40 rounded-xl overflow-hidden py-1 shadow-2xl"
+          style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.7)' }}
+        >
+          {ORDER_STATUSES.map(s => (
+            <button
+              key={s}
+              onClick={() => { onChange(s); setOpen(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold transition-colors hover:bg-white/[0.06] ${
+                s === value ? 'bg-white/[0.04]' : ''
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[s]}`} />
+              <span className={STATUS_TEXT_COLOR[s]}>{s}</span>
+              {s === value && <span className="ml-auto text-[9px] text-gray-600 font-normal">current</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const FILTER_TAB_STATUS_COLORS: Record<string, string> = {
   PENDING:    'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 shadow-yellow-500/10',
@@ -90,21 +152,11 @@ function OrderDetailPanel({ order, onClose, onStatusChange, updatingId }: { orde
                 <span className={`w-2 h-2 rounded-full animate-pulse ${cfg.dot}`} />
                 {order.status}
               </span>
-              <div className="relative">
-                <select
-                  value={order.status}
-                  disabled={updatingId === order._id}
-                  onChange={e => onStatusChange(order._id, e.target.value)}
-                  className="appearance-none text-white text-xs rounded-xl pl-3 pr-8 py-2 focus:outline-none disabled:opacity-50 cursor-pointer transition-all"
-                  style={{
-                    background: 'rgba(13,17,23,0.8)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                  }}
-                >
-                  {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
-              </div>
+              <StatusSelect
+                value={order.status}
+                disabled={updatingId === order._id}
+                onChange={v => onStatusChange(order._id, v)}
+              />
             </div>
             {updatingId === order._id && (
               <div className="mt-3 flex items-center gap-2">
@@ -315,8 +367,8 @@ export default function AdminOrdersPage() {
       value: null,
       icon: ShoppingBag,
       gradient: 'from-orange-500 to-amber-500',
-      glow: 'rgba(249,115,22,0.15)',
-      iconBg: 'rgba(249,115,22,0.15)',
+      glow: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)',
+      iconBg: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)',
       iconColor: 'text-orange-400',
     },
     {
@@ -438,7 +490,7 @@ export default function AdminOrdersPage() {
               border: '1px solid rgba(255,255,255,0.07)',
               backdropFilter: 'blur(8px)',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.08)'; }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)'; e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.08)'; }}
             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none'; }}
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -460,7 +512,7 @@ export default function AdminOrdersPage() {
                 }`}
                 style={
                   isActive
-                    ? { boxShadow: `0 4px 14px ${FILTER_TAB_STATUS_COLORS[s].includes('orange') ? 'rgba(249,115,22,0.25)' : 'rgba(0,0,0,0.3)'}` }
+                    ? { boxShadow: `0 4px 14px ${FILTER_TAB_STATUS_COLORS[s].includes('orange') ? 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.25)' : 'rgba(0,0,0,0.3)'}` }
                     : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }
                 }
               >
@@ -567,28 +619,20 @@ export default function AdminOrdersPage() {
                     </td>
 
                     {/* Update dropdown */}
-                    <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
-                      <div className="relative">
-                        <select
+                    <td className="px-5 py-4">
+                      {updatingId === order._id ? (
+                        <div className="flex items-center gap-2 pl-2.5">
+                          <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--ap)', borderTopColor: 'transparent' }} />
+                          <span className="text-[11px] text-gray-500">Saving…</span>
+                        </div>
+                      ) : (
+                        <StatusSelect
                           value={order.status}
-                          disabled={updatingId === order._id}
-                          onChange={e => handleStatusChange(order._id, e.target.value)}
-                          className="appearance-none text-white text-[11px] font-semibold rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none disabled:opacity-50 cursor-pointer transition-all"
-                          style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                          }}
-                          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; }}
-                          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                        >
-                          {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        {updatingId === order._id ? (
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-orange-500 border-t-transparent animate-spin pointer-events-none" />
-                        ) : (
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
-                        )}
-                      </div>
+                          disabled={false}
+                          onChange={v => handleStatusChange(order._id, v)}
+                          compact
+                        />
+                      )}
                     </td>
                   </tr>
                 );
@@ -627,8 +671,8 @@ export default function AdminOrdersPage() {
                   onClick={() => { setSearch(''); setStatusFilter('ALL'); }}
                   className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold text-orange-400 transition-all hover:text-orange-300"
                   style={{
-                    background: 'rgba(249,115,22,0.1)',
-                    border: '1px solid rgba(249,115,22,0.2)',
+                    background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)',
+                    border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.2)',
                   }}
                 >
                   Clear filters

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Package, ShoppingBag, Tag, AlertCircle } from 'lucide-react';
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
         })}
         {notifications.length === 0 && (
           <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shadow-[0_0_30px_rgba(249,115,22,0.15)] dark:shadow-[0_0_30px_rgba(249,115,22,0.1)]">
+            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shadow-[0_0_30px_hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)] dark:shadow-[0_0_30px_hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.1)]">
               <Bell className="w-10 h-10 text-orange-400 dark:text-orange-500" />
             </div>
             <h3 className="text-lg font-semibold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-1">

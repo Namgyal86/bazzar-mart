@@ -36,9 +36,12 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.data.accessToken}`;
         return apiClient(original);
       } catch {
-        // Do not call logout() here — corrupts localStorage and forces out users
-        // whose background API calls fail with 401 (e.g. backend not running, token mismatch).
-        // The admin auth guard handles redirect when isAuthenticated is truly false.
+        // Refresh failed → token is truly dead (user deleted, secret changed, etc.)
+        // Clear auth state and redirect to login so user can re-authenticate.
+        useAuthStore.getState().logout();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
       }
     }
     return Promise.reject(error);

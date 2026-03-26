@@ -100,10 +100,10 @@ export default function AdminDashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Gross Merchandise Value" value={overview ? formatCurrency(overview.gmv ?? 0) : '—'} change={overview?.gmvChange ?? '+0%'} icon={DollarSign} gradient="bg-gradient-to-br from-brand-500 to-red-500" />
-        <StatCard title="Total Users" value={overview ? (overview.totalUsers ?? 0).toLocaleString() : '—'} change={overview?.newUsersToday ? `+${overview.newUsersToday} today` : 'Loading…'} icon={Users} gradient="bg-gradient-to-br from-blue-500 to-cyan-500" />
-        <StatCard title="Active Sellers" value={overview ? (overview.totalSellers ?? 0).toLocaleString() : '—'} change={overview?.pendingSellers ? `${overview.pendingSellers} pending` : 'Loading…'} icon={Store} gradient="bg-gradient-to-br from-purple-500 to-pink-500" positive={false} />
-        <StatCard title="Orders Today" value={overview ? (overview.ordersToday ?? 0).toLocaleString() : '—'} change={overview?.ordersChange ?? '+0%'} icon={ShoppingBag} gradient="bg-gradient-to-br from-emerald-500 to-teal-500" />
+        <StatCard title="Gross Merchandise Value" value={overview ? formatCurrency(overview.gmv ?? 0) : '—'} change={overview?.gmvChange ?? 'All time'} icon={DollarSign} gradient="bg-gradient-to-br from-brand-500 to-red-500" />
+        <StatCard title="Total Users" value={overview ? (overview.totalUsers ?? 0).toLocaleString() : '—'} change={overview?.newUsersToday ? `+${overview.newUsersToday} today` : '0 today'} icon={Users} gradient="bg-gradient-to-br from-blue-500 to-cyan-500" />
+        <StatCard title="Active Sellers" value={overview ? (overview.totalSellers ?? 0).toLocaleString() : '—'} change={overview?.pendingSellers ? `${overview.pendingSellers} pending` : '0 pending'} icon={Store} gradient="bg-gradient-to-br from-purple-500 to-pink-500" positive={false} />
+        <StatCard title="Orders Today" value={overview ? (overview.ordersToday ?? 0).toLocaleString() : '—'} change={overview?.ordersChange ?? 'Live count'} icon={ShoppingBag} gradient="bg-gradient-to-br from-emerald-500 to-teal-500" />
       </div>
 
       {/* Charts row */}
@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-sm font-bold text-white">Revenue This Week</h3>
               <p className="text-xs text-gray-500 mt-0.5">Gross Merchandise Value · Daily</p>
             </div>
-            {overview?.gmvChange && (
+            {overview?.gmvChange && typeof overview.gmvChange === 'string' && overview.gmvChange.startsWith('+') && (
               <div className="flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-500/10 px-2.5 py-1 rounded-lg">
                 <TrendingUp className="w-3 h-3" /> {overview.gmvChange}
               </div>

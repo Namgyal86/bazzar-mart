@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -67,7 +67,7 @@ function ProductCard({ product, delay, onAddToCart }: { product: any; delay: num
           <button
             onClick={() => onAddToCart(product)}
             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold shadow-lg text-white px-3 py-2"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
           </button>

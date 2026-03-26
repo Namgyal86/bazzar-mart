@@ -61,6 +61,20 @@ const config: Config = {
           800: 'hsl(var(--ap-h) var(--ap-s) 30%)',
           900: 'hsl(var(--ap-h) var(--ap-s) 22%)',
         },
+        // Override orange → theme brand color so all text-orange-* / bg-orange-* respond to theme
+        orange: {
+          50:  'hsl(var(--ap-h) var(--ap-s) 97%)',
+          100: 'hsl(var(--ap-h) var(--ap-s) 93%)',
+          200: 'hsl(var(--ap-h) var(--ap-s) 85%)',
+          300: 'hsl(var(--ap-h) var(--ap-s) 75%)',
+          400: 'hsl(var(--ap-h) var(--ap-s) 65%)',
+          500: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l))',
+          600: 'hsl(var(--ap-h) var(--ap-s) 45%)',
+          700: 'hsl(var(--ap-h) var(--ap-s) 38%)',
+          800: 'hsl(var(--ap-h) var(--ap-s) 30%)',
+          900: 'hsl(var(--ap-h) var(--ap-s) 22%)',
+          950: 'hsl(var(--ap-h) var(--ap-s) 15%)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

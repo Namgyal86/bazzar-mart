@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -107,7 +107,7 @@ function ProductGridCard({ product }: { product: any }) {
           <button
             onClick={() => addToCart(product)}
             className="w-full text-xs flex items-center justify-center gap-1 py-2 text-white font-semibold rounded-xl shadow transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
           >
             <ShoppingCart className="w-3 h-3" /> Add to Cart
           </button>
@@ -175,7 +175,7 @@ function ProductListCard({ product }: { product: any }) {
             <button
               onClick={() => addToCart(product)}
               className="flex items-center gap-1 px-3 py-1.5 text-xs text-white font-semibold rounded-xl transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
             >
               <ShoppingCart className="w-3.5 h-3.5" /> Add
             </button>
@@ -376,7 +376,7 @@ function ProductsPageInner() {
               <div className="text-6xl mb-4">🔍</div>
               <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">No products found</p>
               <p className="text-muted-foreground mb-6">Try adjusting your filters or search terms</p>
-              <button onClick={clearFilters} className="px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>Clear Filters</button>
+              <button onClick={clearFilters} className="px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>Clear Filters</button>
             </motion.div>
           ) : (
             <AnimatePresence mode="wait">
