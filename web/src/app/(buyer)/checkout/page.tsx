@@ -158,7 +158,7 @@ export default function CheckoutPage() {
 
       // For Khalti / eSewa / Fonepay — initiate payment and redirect
       if (['khalti', 'esewa', 'fonepay'].includes(selectedPayment) && orderId) {
-        const payRes = await paymentApi.initiate(orderId, selectedPayment.toUpperCase()) as any;
+        const payRes = await paymentApi.initiate(orderId, selectedPayment.toUpperCase(), total) as any;
         const payData = payRes?.data?.data;
 
         if (payData?.redirect) {
@@ -574,7 +574,7 @@ export default function CheckoutPage() {
                         if (!couponCode) return;
                         try {
                           const res = await apiClient.post('/api/v1/coupons/validate', { code: couponCode, orderTotal: subtotal }) as any;
-                          const discount = res.data?.data?.discountAmount ?? 0;
+                          const discount = res.data?.data?.discount ?? res.data?.data?.discountAmount ?? 0;
                           setCouponDiscount(discount);
                           setCouponApplied(true);
                           toast({ title: 'Coupon applied!', description: `Discount of Rs. ${discount} applied.` });

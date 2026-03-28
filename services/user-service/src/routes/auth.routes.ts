@@ -5,6 +5,7 @@ const router = Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/token/refresh', refresh);
+router.post('/refresh', refresh);   // alias for mobile clients
 router.post('/logout', logout);
 
 export default router;

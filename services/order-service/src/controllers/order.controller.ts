@@ -1,7 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { Order } from '../models/order.model';
+import { Coupon } from '../models/coupon.model';
 import { z } from 'zod';
+import axios from 'axios';
+
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8008';
 
 const createOrderSchema = z.object({
   items: z.array(z.object({
@@ -23,7 +27,22 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     const subtotal = body.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
     const shippingFee = subtotal >= 1000 ? 0 : 100;
     let discount = 0;
-    if (body.couponCode === 'BAZZAR10') discount = Math.round(subtotal * 0.1);
+    if (body.couponCode) {
+      // Validate against real coupon collection; fall back to hardcoded BAZZAR10
+      if (body.couponCode.toUpperCase() === 'BAZZAR10') {
+        discount = Math.round(subtotal * 0.1);
+      } else {
+        const coupon = await Coupon.findOne({ code: body.couponCode.toUpperCase(), isActive: true });
+        if (coupon && coupon.usageCount < coupon.usageLimit && (!coupon.validUntil || new Date() <= coupon.validUntil) && subtotal >= coupon.minOrder) {
+          discount = coupon.type === 'PERCENTAGE'
+            ? Math.round((subtotal * coupon.value) / 100)
+            : coupon.value;
+          if (coupon.maxDiscount > 0) discount = Math.min(discount, coupon.maxDiscount);
+          // Increment usage count (fire-and-forget)
+          Coupon.findByIdAndUpdate(coupon._id, { $inc: { usageCount: 1 } }).catch(() => {});
+        }
+      }
+    }
     const total = Math.max(0, subtotal + shippingFee - discount);
     const items = body.items.map((i) => ({ ...i, totalPrice: i.unitPrice * i.quantity }));
     const order = await Order.create({
@@ -38,6 +57,15 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
     });
     res.status(201).json({ success: true, data: order });
+
+    // Fire-and-forget: notify buyer of order confirmation
+    axios.post(`${NOTIFICATION_SERVICE_URL}/api/v1/notifications/internal`, {
+      userId: req.user!.userId,
+      type: 'ORDER_PLACED',
+      title: 'Order Confirmed',
+      message: `Your order #${order._id.toString().slice(-8).toUpperCase()} has been placed successfully.`,
+      data: { orderId: order.id, total },
+    }).catch(() => {}); // non-blocking
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ success: false, error: err.errors });
     res.status(500).json({ success: false, error: err.message });
@@ -82,6 +110,25 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
     }
     await order.save();
     res.json({ success: true, data: order });
+
+    // Fire-and-forget: notify buyer of status change
+    const statusMessages: Record<string, string> = {
+      CONFIRMED:        'Your order has been confirmed and is being prepared.',
+      SHIPPED:          `Your order is on the way! Tracking: ${order.trackingNumber ?? ''}`,
+      OUT_FOR_DELIVERY: 'Your order is out for delivery today.',
+      DELIVERED:        'Your order has been delivered. Enjoy!',
+      CANCELLED:        'Your order has been cancelled.',
+    };
+    const msg = statusMessages[status];
+    if (msg) {
+      axios.post(`${NOTIFICATION_SERVICE_URL}/api/v1/notifications/internal`, {
+        userId: order.userId,
+        type: 'ORDER_STATUS_UPDATE',
+        title: `Order ${status.charAt(0) + status.slice(1).toLowerCase()}`,
+        message: msg,
+        data: { orderId: order.id, status },
+      }).catch(() => {});
+    }
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

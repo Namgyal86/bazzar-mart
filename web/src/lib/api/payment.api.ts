@@ -1,8 +1,8 @@
 import { apiClient } from './client';
 
 export const paymentApi = {
-  initiate: (orderId: string, gateway: string, returnUrl?: string) =>
-    apiClient.post('/api/v1/payments/initiate', { orderId, gateway, returnUrl }),
+  initiate: (orderId: string, gateway: string, amount?: number, returnUrl?: string) =>
+    apiClient.post('/api/v1/payments/initiate', { orderId, gateway, amount, returnUrl }),
 
   verify: (payload: Record<string, any>) =>
     apiClient.post('/api/v1/payments/verify', payload),

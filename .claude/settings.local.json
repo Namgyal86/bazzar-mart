@@ -205,7 +205,14 @@
       "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\\\\\(buyer\\\\\\)/account/orders/[orderId]/page.tsx)",
       "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\\\\\(buyer\\\\\\)/account/orders/page.tsx)",
       "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/search-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/search-service/src/controllers/*.ts)",
-      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/controllers/*.ts)"
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/controllers/*.ts)",
+      "Bash(grep -r \"users/me/wishlist\\\\|users/wishlist\" c:UserssgrgrDesktopEcommerceservices --include=*.ts)",
+      "Bash(grep -r \"shopName\\\\|shop_name\" c:UserssgrgrDesktopEcommerceservicesseller-servicesrc --include=*.ts)",
+      "Bash(grep -n \"sellers/register\\\\|sellers.*register\" c:UserssgrgrDesktopEcommercewebsrc -r --include=*.tsx --include=*.ts)",
+      "Bash(flutter --version)",
+      "Bash(mongosh --version)",
+      "Bash(docker info:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

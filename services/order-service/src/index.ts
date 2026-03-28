@@ -2,9 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import mongoose, { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import orderRoutes from './routes/order.routes';
+import { Coupon } from './models/coupon.model';
 
 const app = express();
 const PORT = process.env.PORT || 8004;
@@ -14,20 +15,6 @@ const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'a
 app.use(helmet()); app.use(cors({ origin: '*', credentials: true })); app.use(express.json());
 app.get('/health', (_, res) => res.json({ status: 'ok', service: 'order-service' }));
 
-// ─── Coupon Schema ─────────────────────────────────────────────────────────────
-const CouponSchema = new Schema({
-  code:         { type: String, required: true, unique: true, uppercase: true },
-  type:         { type: String, enum: ['PERCENTAGE', 'FIXED'], default: 'PERCENTAGE' },
-  value:        { type: Number, required: true },
-  minOrder:     { type: Number, default: 0 },
-  maxDiscount:  { type: Number, default: 0 },  // 0 = unlimited
-  usageLimit:   { type: Number, default: 100 },
-  usageCount:   { type: Number, default: 0 },
-  validUntil:   { type: Date },
-  isActive:     { type: Boolean, default: true },
-}, { timestamps: true });
-
-const Coupon = model('Coupon', CouponSchema);
 
 function authMiddleware(req: any, res: any, next: any) {
   const userId = req.headers['x-user-id'];

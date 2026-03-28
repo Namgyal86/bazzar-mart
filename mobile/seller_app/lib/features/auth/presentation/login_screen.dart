@@ -40,12 +40,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authStateProvider.notifier).login(
         accessToken: data['accessToken'],
         refreshToken: data['refreshToken'],
-        userId: data['user']['_id'],
+        userId: (data['user']['id'] ?? data['user']['_id']) as String,
         role: data['user']['role'],
         firstName: data['user']['firstName'],
         email: data['user']['email'],
-        shopName: data['user']['shopName'],
+        shopName: data['user']['shopName'],  // may be null; dashboard fetches full profile
       );
+      // Fetch seller profile to populate shopName (user-service doesn't return it)
+      try {
+        final profileRes = await dio.get('/api/v1/seller/me');
+        final shopName = profileRes.data['data']?['shopName'] as String?;
+        if (shopName != null) {
+          await ref.read(authStateProvider.notifier).login(
+            accessToken: data['accessToken'],
+            refreshToken: data['refreshToken'],
+            userId: (data['user']['id'] ?? data['user']['_id']) as String,
+            role: data['user']['role'],
+            firstName: data['user']['firstName'],
+            email: data['user']['email'],
+            shopName: shopName,
+          );
+        }
+      } catch (_) {}
       if (mounted) context.go('/dashboard');
     } catch (e) {
       if (mounted) {

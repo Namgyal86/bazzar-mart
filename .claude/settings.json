@@ -12,7 +12,15 @@
       "Bash(grep -r \"notifications.*internal\\\\|notification.*create\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
       "Bash(grep -r \"/analytics/admin/overview\\\\|/api/v1/analytics\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
       "Bash(grep -r \"validate.*coupon\\\\|check.*coupon\\\\|POST.*coupon\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
-      "Bash(grep -r \"applyCoupon\\\\|validateCoupon\\\\|checkCoupon\" /c/Users/sgrgr/Desktop/Ecommerce/web/src --include=*.tsx --include=*.ts)"
+      "Bash(grep -r \"applyCoupon\\\\|validateCoupon\\\\|checkCoupon\" /c/Users/sgrgr/Desktop/Ecommerce/web/src --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"/coupons/validate\\\\|/api/v1/coupons\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(grep -r \"/addresses\\\\|/user\" /c/Users/sgrgr/Desktop/Ecommerce/services/user-service --include=*.ts)",
+      "Bash(grep -r \"seller.*dashboard\\\\|GET.*dashboard\" /c/Users/sgrgr/Desktop/Ecommerce/mobile --include=*.dart)",
+      "Bash(grep -r \"/seller/dashboard\\\\|seller.*dashboard\\\\|getDashboard\" /c/Users/sgrgr/Desktop/Ecommerce/services/seller-service --include=*.ts)",
+      "Bash(grep -r \"delivery/drivers/available\\\\|DELIVERY.*assign\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(find \"c:\\\\Users\\\\sgrgr\\\\Desktop\\\\Ecommerce\\\\web\\\\src\\\\app\\\\\\(buyer\\)\\\\checkout\" -name \"*.tsx\" -type f)",
+      "Bash(grep -r \"BAZZAR10\\\\|coupon.*validate\\\\|apply.*coupon\" c:UserssgrgrDesktopEcommercewebsrc --include=*.ts --include=*.tsx)",
+      "Bash(grep -n \"const { orderId, amount, gateway\" \"c:\\\\Users\\\\sgrgr\\\\Desktop\\\\Ecommerce\\\\services\\\\payment-service\\\\src\\\\controllers\\\\payment.controller.ts\")"
     ]
   }
 }

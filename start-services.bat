@@ -4,15 +4,15 @@ echo  Bazzar — Starting All Microservices
 echo ========================================
 
 :: Copy root .env to each service (if they don't have one)
-for %%s in (user-service product-service cart-service order-service payment-service review-service seller-service notification-service search-service recommendation-service referral-service storefront-designer-service delivery-service analytics-service) do (
+for %%s in (user-service product-service cart-service order-service payment-service review-service seller-service notification-service search-service recommendation-service referral-service storefront-designer-service delivery-service analytics-service support-service) do (
   if not exist "services\%%s\.env" (
     copy ".env" "services\%%s\.env" >/dev/null
   )
 )
 
 echo.
-echo [1/14] Installing dependencies for all services...
-for %%s in (user-service product-service cart-service order-service payment-service review-service seller-service notification-service search-service recommendation-service referral-service storefront-designer-service delivery-service analytics-service) do (
+echo [1/15] Installing dependencies for all services...
+for %%s in (user-service product-service cart-service order-service payment-service review-service seller-service notification-service search-service recommendation-service referral-service storefront-designer-service delivery-service analytics-service support-service) do (
   echo   Installing: %%s
   cd services\%%s
   call npm install --silent 2>/dev/null
@@ -49,6 +49,8 @@ timeout /t 1 /nobreak >/dev/null
 start "Delivery :8013"             cmd /k "cd services\delivery-service && npm run dev"
 timeout /t 1 /nobreak >/dev/null
 start "Analytics :8014"            cmd /k "cd services\analytics-service && npm run dev"
+timeout /t 1 /nobreak >/dev/null
+start "Support :8015"             cmd /k "cd services\support-service && npm run dev"
 
 echo.
 echo [3/3] Starting Frontend...

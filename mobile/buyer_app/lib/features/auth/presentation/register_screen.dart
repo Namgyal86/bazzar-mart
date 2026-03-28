@@ -47,12 +47,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       });
       final data = res.data['data'];
       await ref.read(authStateProvider.notifier).login(
-        accessToken:  data['accessToken'],
-        refreshToken: data['refreshToken'],
-        userId:       data['user']['_id'],
-        role:         data['user']['role'],
-        firstName:    data['user']['firstName'],
-        email:        data['user']['email'],
+        accessToken:  data['accessToken'] as String,
+        refreshToken: data['refreshToken'] as String,
+        userId:       (data['user']['id'] ?? data['user']['_id']) as String,
+        role:         data['user']['role'] as String,
+        firstName:    data['user']['firstName'] as String,
+        lastName:     data['user']['lastName'] as String?,
+        email:        data['user']['email'] as String,
+        referralCode: data['user']['referralCode'] as String?,
       );
       if (mounted) context.go('/home');
     } catch (e) {

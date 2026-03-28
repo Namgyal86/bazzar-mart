@@ -39,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authStateProvider.notifier).login(
         accessToken: data['accessToken'],
         refreshToken: data['refreshToken'],
-        userId: data['user']['_id'],
+        userId: (data['user']['id'] ?? data['user']['_id']) as String,
         role: data['user']['role'],
         firstName: data['user']['firstName'],
         email: data['user']['email'],
