@@ -11,7 +11,8 @@
       "Bash(grep -r \"POST.*order.*create\\\\|POST.*notification.*create\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
       "Bash(grep -r \"notifications.*internal\\\\|notification.*create\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
       "Bash(grep -r \"/analytics/admin/overview\\\\|/api/v1/analytics\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
-      "Bash(grep -r \"validate.*coupon\\\\|check.*coupon\\\\|POST.*coupon\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)"
+      "Bash(grep -r \"validate.*coupon\\\\|check.*coupon\\\\|POST.*coupon\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(grep -r \"applyCoupon\\\\|validateCoupon\\\\|checkCoupon\" /c/Users/sgrgr/Desktop/Ecommerce/web/src --include=*.tsx --include=*.ts)"
     ]
   }
 }
