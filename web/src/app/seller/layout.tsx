@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Package, ShoppingBag, BarChart2, Store, Bell, Settings,
-  Menu, X, TrendingUp, DollarSign, Plus, LogOut, Zap, Star, Users,
+  Menu, X, TrendingUp, DollarSign, Plus, LogOut, Zap, Star, Users, Layers,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ const NAV_SECTIONS = [
       { icon: ShoppingBag, label: 'Orders', href: '/seller/orders' },
       { icon: Users, label: 'Customers', href: '/seller/customers' },
       { icon: Star, label: 'Reviews', href: '/seller/reviews' },
+      { icon: Layers, label: 'Inventory', href: '/seller/inventory' },
       { icon: Plus, label: 'Add Product', href: '/seller/products/new' },
     ],
   },
