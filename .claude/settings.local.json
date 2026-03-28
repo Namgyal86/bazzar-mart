@@ -212,7 +212,14 @@
       "Bash(flutter --version)",
       "Bash(mongosh --version)",
       "Bash(docker info:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(npm install:*)",
+      "Read(//c/Users/sgrgr/AppData/Local/flutter/bin/**)",
+      "Read(//c/flutter/bin/**)",
+      "Read(//c/src/flutter/bin/**)",
+      "Read(//c/Users/sgrgr/**)",
+      "Bash(cmd.exe /c \"where flutter 2>nul\")",
+      "Bash(cmd.exe /c \"flutter --version 2>nul\")"
     ]
   }
 }
