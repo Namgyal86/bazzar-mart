@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Store, Package, ShoppingBag, Truck,
   BarChart2, Bell, Settings, Shield, Tag, MessageSquare, Menu, X,
   LogOut, ChevronRight, Check, AlertCircle, Info, ShoppingCart, Image, Gift,
-  Zap,
+  Zap, CreditCard,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ const NAV_SECTIONS = [
       { icon: Package, label: 'Products', href: '/admin/products' },
       { icon: Tag, label: 'Categories', href: '/admin/categories' },
       { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
+      { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
       { icon: Truck, label: 'Delivery', href: '/admin/delivery' },
     ],
   },

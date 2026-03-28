@@ -318,3 +318,46 @@ export const updateSellerProduct = async (req: AuthRequest, res: Response) => {
     res.status(status).json(err.response?.data || { success: false, error: err.message });
   }
 };
+
+// ─── Seller Reviews ────────────────────────────────────────────────────────────
+// Fetches reviews for this seller's products from review-service
+
+export const getSellerReviews = async (req: AuthRequest, res: Response) => {
+  try {
+    const reviewSvcUrl = process.env.REVIEW_SERVICE_URL || 'http://localhost:8006';
+    const sellerId = req.user!.userId;
+
+    // Get all products for this seller first
+    const productSvcUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8002';
+    let productIds: string[] = [];
+    try {
+      const productsResp = await axios.get(`${productSvcUrl}/api/v1/products`, {
+        params: { sellerId, limit: 100 },
+        headers: { 'x-user-id': sellerId, 'x-user-role': 'SELLER' },
+        timeout: 5000,
+      });
+      productIds = (productsResp.data?.data || []).map((p: any) => String(p._id));
+    } catch {}
+
+    if (productIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // Fetch reviews for each product in parallel (limit first 5 products for performance)
+    const topProductIds = productIds.slice(0, 10);
+    const reviewPromises = topProductIds.map(pid =>
+      axios.get(`${reviewSvcUrl}/api/v1/reviews/${pid}`, { timeout: 5000 })
+        .then(r => (r.data?.data || []).map((rv: any) => ({ ...rv, productId: pid })))
+        .catch(() => [])
+    );
+
+    const reviewArrays = await Promise.all(reviewPromises);
+    const allReviews = reviewArrays.flat().sort(
+      (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    res.json({ success: true, data: allReviews });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

@@ -8,7 +8,7 @@ import {
   getBankDetails, updateBankDetails,
   updateNotificationPreferences,
   updateSellerProduct, deleteSellerProduct,
-  getSellerAnalytics,
+  getSellerAnalytics, getSellerReviews,
 } from '../controllers/seller.controller';
 
 const router = Router();
@@ -27,6 +27,7 @@ router.put('/products/:id', updateSellerProduct);
 router.delete('/products/:id', deleteSellerProduct);
 router.get('/orders', getSellerOrders);
 router.get('/analytics', getSellerAnalytics);
+router.get('/reviews', getSellerReviews);
 
 // Payouts
 router.get('/payouts', getPayouts);

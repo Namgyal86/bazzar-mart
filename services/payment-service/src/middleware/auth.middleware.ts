@@ -9,3 +9,11 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   if (!h?.startsWith('Bearer ')) return res.status(401).json({ success: false, error: 'No token' });
   try { req.user = jwt.verify(h.slice(7), SECRET) as any; next(); } catch { res.status(401).json({ success: false, error: 'Invalid token' }); }
 }
+export function requireRole(...roles: string[]) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+    next();
+  };
+}

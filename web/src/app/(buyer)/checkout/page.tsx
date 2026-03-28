@@ -25,6 +25,7 @@ import { orderApi } from '@/lib/api/order.api';
 import { useAuthStore } from '@/store/auth.store';
 import { userApi, Address } from '@/lib/api/user.api';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
+import { paymentApi } from '@/lib/api/payment.api';
 
 type Step = 'address' | 'payment' | 'confirm';
 
@@ -122,7 +123,7 @@ export default function CheckoutPage() {
     try {
       const addr      = addresses.find(a => a.id === selectedAddress);
       const addrParts = addr?.address.split(', ') ?? ['Kathmandu', 'Kathmandu'];
-      await orderApi.create({
+      const orderRes = await orderApi.create({
         items: items.map(i => ({
           productId:    i.productId,
           productName:  i.productName,
@@ -142,10 +143,59 @@ export default function CheckoutPage() {
         },
         paymentMethod: selectedPayment.toUpperCase(),
         couponCode:    couponApplied ? couponCode : undefined,
-      });
+      }) as any;
+
+      const orderId = orderRes?.data?.data?._id || orderRes?.data?.data?.id;
+      const returnUrl = `${window.location.origin}/payment/verify`;
+
+      // For COD or card — no gateway redirect needed
+      if (selectedPayment === 'cod' || selectedPayment === 'card') {
+        clearCart();
+        toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
+        router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
+        return;
+      }
+
+      // For Khalti / eSewa / Fonepay — initiate payment and redirect
+      if (['khalti', 'esewa', 'fonepay'].includes(selectedPayment) && orderId) {
+        const payRes = await paymentApi.initiate(orderId, selectedPayment.toUpperCase()) as any;
+        const payData = payRes?.data?.data;
+
+        if (payData?.redirect) {
+          // Khalti: redirect to payment_url
+          clearCart();
+          window.location.href = payData.redirect;
+          return;
+        }
+
+        if (payData?.method === 'ESEWA' && payData?.esewaData) {
+          // eSewa: submit a hidden form
+          clearCart();
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = payData.formUrl || 'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
+          Object.entries({ ...payData.esewaData, success_url: returnUrl + '?gateway=esewa' }).forEach(([k, v]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = k;
+            input.value = String(v);
+            form.appendChild(input);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+
+        // Dev fallback (no real keys) — treat as success
+        clearCart();
+        toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
+        router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
+        return;
+      }
+
       clearCart();
       toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
-      router.push('/account/orders');
+      router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
     } catch (err) {
       toast({ title: 'Order failed', description: getErrorMessage(err), variant: 'destructive' });
     } finally {

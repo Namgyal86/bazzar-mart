@@ -52,6 +52,7 @@ const nextConfig = {
     const RF = process.env.REFERRAL_SERVICE_URL         || 'http://localhost:8012';
     const D  = process.env.DELIVERY_SERVICE_URL         || 'http://localhost:8013';
     const AN = process.env.ANALYTICS_SERVICE_URL        || 'http://localhost:8014';
+    const SF = process.env.STOREFRONT_SERVICE_URL       || 'http://localhost:8011';
     return [
       { source: '/api/v1/auth/:path*',             destination: `${U}/api/v1/auth/:path*` },
       { source: '/api/v1/users/:path*',             destination: `${U}/api/v1/users/:path*` },
@@ -79,6 +80,8 @@ const nextConfig = {
       { source: '/api/v1/admin/referral-config',      destination: `${RF}/api/v1/admin/referral-config` },
       { source: '/api/v1/delivery/:path*',          destination: `${D}/api/v1/delivery/:path*` },
       { source: '/api/v1/analytics/:path*',         destination: `${AN}/api/v1/analytics/:path*` },
+      { source: '/api/v1/storefront/:path*',        destination: `${SF}/api/v1/storefront/:path*` },
+      { source: '/api/v1/storefront',               destination: `${SF}/api/v1/storefront` },
     ];
   },
 };

@@ -1,0 +1,86 @@
+name: bazzar_buyer
+description: Bazzar Marketplace — Buyer App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Navigation
+  go_router: ^12.1.3
+
+  # HTTP & API
+  dio: ^5.4.0
+  retrofit: ^4.1.0
+
+  # Storage
+  flutter_secure_storage: ^9.0.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^16.3.0
+
+  # Maps & Location
+  google_maps_flutter: ^2.5.3
+  geolocator: ^10.1.0
+
+  # UI
+  cached_network_image: ^3.3.0
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
+  lottie: ^2.7.0
+  carousel_slider: ^4.2.1
+
+  # Payments
+  khalti_flutter: ^3.0.0
+
+  # Utils
+  intl: ^0.18.1
+  connectivity_plus: ^5.0.2
+  image_picker: ^1.0.7
+  url_launcher: ^6.2.4
+  share_plus: ^7.2.2
+  package_info_plus: ^5.0.1
+
+  # Socket.io
+  socket_io_client: ^2.0.3+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+  riverpod_generator: ^2.3.9
+  retrofit_generator: ^8.1.0
+  hive_generator: ^2.0.1
+  json_annotation: ^4.8.1
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lottie/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700

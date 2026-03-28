@@ -195,7 +195,17 @@
       "Bash(git config:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/*/src/index.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/payment-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/payment-service/src/services/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/payment-service/src/controllers/*.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/seller-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/seller-service/src/controllers/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/seller-service/src/services/*.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/order-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/order-service/src/controllers/*.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/product-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/product-service/src/controllers/*.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\\\\\(buyer\\\\\\)/checkout/page.tsx)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\\\\\(buyer\\\\\\)/account/orders/[orderId]/page.tsx)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\\\\\(buyer\\\\\\)/account/orders/page.tsx)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/search-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/search-service/src/controllers/*.ts)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/routes/*.ts c:/Users/sgrgr/Desktop/Ecommerce/services/notification-service/src/controllers/*.ts)"
     ]
   }
 }

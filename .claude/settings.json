@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/components/home/*.tsx)",
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/infrastructure/k8s/services/*.yaml)"
+    ]
+  }
+}
