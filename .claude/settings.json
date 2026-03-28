@@ -5,7 +5,13 @@
       "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/infrastructure/k8s/services/*.yaml)",
       "Bash(wc -l \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/checkout/page.tsx\" \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/cart/page.tsx\")",
       "Bash(find \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)\" -type f -name \"page.tsx\")",
-      "Bash(ls -la \"/c/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/\")"
+      "Bash(ls -la \"/c/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/\")",
+      "Bash(grep -r \"POST\\\\|GET\\\\|PUT\\\\|PATCH\\\\|DELETE\" /c/Users/sgrgr/Desktop/Ecommerce/web/src/lib/api/*.ts)",
+      "Bash(grep -n \"app\\\\.\\\\\\(get\\\\|post\\\\|patch\\\\|put\\\\|delete\\\\\\)\" /c/Users/sgrgr/Desktop/Ecommerce/services/*/src/index.ts)",
+      "Bash(grep -r \"POST.*order.*create\\\\|POST.*notification.*create\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(grep -r \"notifications.*internal\\\\|notification.*create\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(grep -r \"/analytics/admin/overview\\\\|/api/v1/analytics\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)",
+      "Bash(grep -r \"validate.*coupon\\\\|check.*coupon\\\\|POST.*coupon\" /c/Users/sgrgr/Desktop/Ecommerce/services --include=*.ts)"
     ]
   }
 }

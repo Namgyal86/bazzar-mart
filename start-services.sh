@@ -20,6 +20,7 @@ SERVICES=(
   "referral-service:8012"
   "delivery-service:8013"
   "analytics-service:8014"
+  "support-service:8015"
 )
 
 # Copy root .env to each service

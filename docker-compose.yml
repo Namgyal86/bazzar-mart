@@ -22,6 +22,7 @@ volumes:
   mongo_recommendation_data:
   mongo_storefront_data:
   mongo_analytics_data:
+  mongo_support_data:
   redis_data:
   kafka_data:
   zookeeper_data:
@@ -204,6 +205,16 @@ services:
       - "27028:27017"
     volumes:
       - mongo_analytics_data:/data/db
+    networks: [bazzar-net]
+    restart: unless-stopped
+
+  mongo-support:
+    image: mongo:7
+    container_name: bazzar-mongo-support
+    ports:
+      - "27029:27017"
+    volumes:
+      - mongo_support_data:/data/db
     networks: [bazzar-net]
     restart: unless-stopped
 
@@ -455,6 +466,20 @@ services:
     networks: [bazzar-net]
     restart: unless-stopped
 
+  support-service:
+    build: ./services/support-service
+    container_name: bazzar-support-service
+    ports:
+      - "8015:8015"
+    environment:
+      - NODE_ENV=development
+      - PORT=8015
+      - MONGO_URI_SUPPORT=mongodb://mongo-support:27017/support_db
+      - JWT_ACCESS_SECRET=${JWT_SECRET}
+    depends_on: [mongo-support]
+    networks: [bazzar-net]
+    restart: unless-stopped
+
   # ---- Web Frontend -----------------------------------------
 
   web:
@@ -464,7 +489,26 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
       - NEXT_PUBLIC_WS_URL=ws://localhost:8013
+      - USER_SERVICE_URL=http://user-service:8001
+      - PRODUCT_SERVICE_URL=http://product-service:8002
+      - CART_SERVICE_URL=http://cart-service:8003
+      - ORDER_SERVICE_URL=http://order-service:8004
+      - PAYMENT_SERVICE_URL=http://payment-service:8005
+      - REVIEW_SERVICE_URL=http://review-service:8006
+      - SELLER_SERVICE_URL=http://seller-service:8007
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8008
+      - SEARCH_SERVICE_URL=http://search-service:8009
+      - RECOMMENDATION_SERVICE_URL=http://recommendation-service:8010
+      - STOREFRONT_SERVICE_URL=http://storefront-designer-service:8011
+      - REFERRAL_SERVICE_URL=http://referral-service:8012
+      - DELIVERY_SERVICE_URL=http://delivery-service:8013
+      - ANALYTICS_SERVICE_URL=http://analytics-service:8014
+      - SUPPORT_SERVICE_URL=http://support-service:8015
+    depends_on:
+      - user-service
+      - product-service
+      - support-service
     networks: [bazzar-net]
     restart: unless-stopped

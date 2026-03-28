@@ -52,6 +52,7 @@ const nextConfig = {
     const RF = process.env.REFERRAL_SERVICE_URL         || 'http://localhost:8012';
     const D  = process.env.DELIVERY_SERVICE_URL         || 'http://localhost:8013';
     const AN = process.env.ANALYTICS_SERVICE_URL        || 'http://localhost:8014';
+    const SP = process.env.SUPPORT_SERVICE_URL          || 'http://localhost:8015';
     const SF = process.env.STOREFRONT_SERVICE_URL       || 'http://localhost:8011';
     return [
       { source: '/api/v1/auth/:path*',             destination: `${U}/api/v1/auth/:path*` },
@@ -91,6 +92,8 @@ const nextConfig = {
       { source: '/api/v1/storefront/:path*',        destination: `${SF}/api/v1/storefront/:path*` },
       { source: '/api/v1/storefront',               destination: `${SF}/api/v1/storefront` },
       { source: '/api/v1/upload/:path*',            destination: `${P}/api/v1/upload/:path*` },
+      { source: '/api/v1/support/:path*',           destination: `${SP}/api/v1/support/:path*` },
+      { source: '/api/v1/support',                  destination: `${SP}/api/v1/support` },
     ];
   },
 };
