@@ -156,6 +156,34 @@ export const getSellerOrders = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 };
 
+export const getSellerOrderById = async (req: AuthRequest, res: Response) => {
+  try {
+    const orderSvcUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8004';
+    const resp = await axios.get(`${orderSvcUrl}/api/v1/orders/${req.params.orderId}`, {
+      headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' },
+    });
+    res.json(resp.data);
+  } catch (err: any) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { success: false, error: err.message });
+  }
+};
+
+export const createSellerProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const productSvcUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8002';
+    const resp = await axios.post(
+      `${productSvcUrl}/api/v1/products`,
+      { ...req.body, sellerId: req.user!.userId },
+      { headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' } }
+    );
+    res.status(201).json(resp.data);
+  } catch (err: any) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { success: false, error: err.message });
+  }
+};
+
 // ─── Payouts ──────────────────────────────────────────────────────────────────
 
 export const getPayouts = async (req: AuthRequest, res: Response) => {
@@ -284,6 +312,75 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
+};
+
+// ─── Inventory Management ─────────────────────────────────────────────────────
+
+export const getSellerInventory = async (req: AuthRequest, res: Response) => {
+  try {
+    const productSvcUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8002';
+    const { page = 1, limit = 50 } = req.query;
+    const resp = await axios.get(`${productSvcUrl}/api/v1/products`, {
+      params: { sellerId: req.user!.userId, limit, page },
+      headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' },
+    });
+    // Normalise to inventory shape
+    const products = (resp.data.data || []).map((p: any) => ({
+      _id: p._id,
+      name: p.name,
+      sku: p.sku || `SKU-${String(p._id).slice(-6).toUpperCase()}`,
+      stock: p.stock ?? p.stockQuantity ?? 0,
+      lowStockThreshold: p.lowStockThreshold ?? 10,
+      images: p.images || [],
+      basePrice: p.basePrice || p.price || 0,
+      category: p.category?.name || p.category || '',
+      isActive: p.isActive !== false,
+    }));
+    res.json({ success: true, data: products, meta: resp.data.meta });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
+};
+
+export const updateInventoryStock = async (req: AuthRequest, res: Response) => {
+  try {
+    const productSvcUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8002';
+    const { stock } = req.body;
+    if (stock === undefined || stock < 0) return res.status(400).json({ success: false, error: 'Valid stock quantity required' });
+    const resp = await axios.patch(
+      `${productSvcUrl}/api/v1/products/${req.params.id}/stock`,
+      { stock },
+      { headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' } }
+    );
+    res.json(resp.data);
+  } catch (err: any) {
+    // Fallback: use PUT to update the product
+    try {
+      const productSvcUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8002';
+      const resp = await axios.put(
+        `${productSvcUrl}/api/v1/products/${req.params.id}`,
+        { stock: req.body.stock },
+        { headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' } }
+      );
+      res.json(resp.data);
+    } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+  }
+};
+
+export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['CONFIRMED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
+    if (!validStatuses.includes(status)) return res.status(400).json({ success: false, error: 'Invalid status' });
+    const orderSvcUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8004';
+    const resp = await axios.put(
+      `${orderSvcUrl}/api/v1/orders/${req.params.orderId}/status`,
+      { status },
+      { headers: { 'x-user-id': req.user!.userId, 'x-user-role': 'SELLER' } }
+    );
+    res.json(resp.data);
+  } catch (err: any) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { success: false, error: err.message });
+  }
 };
 
 // ─── Delete Seller Product ────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, getFeaturedProducts, getAdminStats, getFlashDeals, adminSetFlashDeal, adminRemoveFlashDeal } from '../controllers/product.controller';
+import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, getFeaturedProducts, getAdminStats, getFlashDeals, adminSetFlashDeal, adminRemoveFlashDeal, updateStock } from '../controllers/product.controller';
 import { authenticate, optionalAuth, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -12,5 +12,6 @@ router.delete('/admin/flash-deal/:id', authenticate, requireRole('ADMIN'), admin
 router.get('/:id', getProductById);
 router.post('/', authenticate, requireRole('SELLER', 'ADMIN'), createProduct);
 router.put('/:id', authenticate, requireRole('SELLER', 'ADMIN'), updateProduct);
+router.patch('/:id/stock', authenticate, requireRole('SELLER', 'ADMIN'), updateStock);
 router.delete('/:id', authenticate, requireRole('SELLER', 'ADMIN'), deleteProduct);
 export default router;

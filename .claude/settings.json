@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/web/src/components/home/*.tsx)",
-      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/infrastructure/k8s/services/*.yaml)"
+      "Bash(wc -l c:/Users/sgrgr/Desktop/Ecommerce/infrastructure/k8s/services/*.yaml)",
+      "Bash(wc -l \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/checkout/page.tsx\" \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/cart/page.tsx\")",
+      "Bash(find \"c:/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)\" -type f -name \"page.tsx\")",
+      "Bash(ls -la \"/c/Users/sgrgr/Desktop/Ecommerce/web/src/app/\\(buyer\\)/\")"
     ]
   }
 }

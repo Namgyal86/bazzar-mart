@@ -76,6 +76,58 @@ app.get('/api/v1/delivery/track/:orderId', (req, res) => {
   });
 });
 
+// Agent online status (in-memory)
+const agentStatus: Record<string, boolean> = {};
+
+// Delivery agent: toggle online/offline
+app.patch('/api/v1/delivery/agent/status', (req, res) => {
+  const agentId = req.headers['x-user-id'] as string || 'unknown';
+  const { isOnline } = req.body;
+  agentStatus[agentId] = isOnline;
+  res.json({ success: true, data: { agentId, isOnline } });
+});
+
+// Delivery agent: get assigned orders
+app.get('/api/v1/delivery/agent/orders', (req, res) => {
+  const agentId = req.headers['x-user-id'] as string || '';
+  const { status } = req.query;
+  let result = deliveries.filter(d => !agentId || d.driverId === agentId || d.driverId === null);
+  if (status) result = result.filter(d => d.status === status);
+  res.json({ success: true, data: result });
+});
+
+// Delivery agent: get a specific order for delivery
+app.get('/api/v1/delivery/orders/:orderId', (req, res) => {
+  const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
+  if (d) return res.json({ success: true, data: d });
+  // Return a placeholder if not found
+  res.json({
+    success: true,
+    data: {
+      id: req.params.orderId,
+      orderId: req.params.orderId,
+      status: 'ASSIGNED',
+      customer: 'Customer',
+      address: 'Kathmandu, Nepal',
+      phone: '',
+      shippingAddress: { street: '', city: 'Kathmandu', lat: 27.7172, lng: 85.3240 },
+    },
+  });
+});
+
+// Delivery agent: mark order as delivered
+app.patch('/api/v1/delivery/orders/:orderId/complete', (req, res) => {
+  const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
+  if (d) {
+    d.status = 'DELIVERED';
+    d.completedAt = new Date().toISOString();
+    d.agentEarning = 100; // Rs 100 delivery fee
+  }
+  // Emit socket event to buyer
+  io.to(`order:${req.params.orderId}`).emit('order:status_changed', { status: 'DELIVERED' });
+  res.json({ success: true, data: { orderId: req.params.orderId, status: 'DELIVERED' } });
+});
+
 // Socket.io for real-time GPS
 io.on('connection', (socket) => {
   const token = socket.handshake.auth.token;

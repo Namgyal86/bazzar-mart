@@ -37,7 +37,7 @@ export const register = async (req: Request, res: Response) => {
       ...(body.role ? { role: body.role } : {}),
     });
 
-    const accessToken  = signAccessToken({ userId: user.id, role: user.role, email: user.email });
+    const accessToken  = signAccessToken({ userId: user.id, role: user.role, email: user.email, referralCode: user.referralCode });
     const refreshToken = signRefreshToken({ userId: user.id });
 
     await User.findByIdAndUpdate(user.id, { $push: { refreshTokens: refreshToken } });
@@ -79,7 +79,7 @@ export const login = async (req: Request, res: Response) => {
     }
     if (!user.isActive) return res.status(403).json({ success: false, error: 'Account suspended' });
 
-    const accessToken  = signAccessToken({ userId: user.id, role: user.role, email: user.email });
+    const accessToken  = signAccessToken({ userId: user.id, role: user.role, email: user.email, referralCode: user.referralCode });
     const refreshToken = signRefreshToken({ userId: user.id });
 
     // Keep only last 5 refresh tokens
@@ -110,7 +110,7 @@ export const refresh = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Invalid refresh token' });
     }
 
-    const newAccess  = signAccessToken({ userId: user.id, role: user.role, email: user.email });
+    const newAccess  = signAccessToken({ userId: user.id, role: user.role, email: user.email, referralCode: user.referralCode });
     const newRefresh = signRefreshToken({ userId: user.id });
 
     const tokens = user.refreshTokens.filter((t) => t !== refreshToken);

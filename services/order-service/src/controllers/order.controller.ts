@@ -136,6 +136,58 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getRevenueByDay = async (req: AuthRequest, res: Response) => {
+  try {
+    const days = Math.min(Number(req.query.days ?? 7), 90);
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const agg = await Order.aggregate([
+      { $match: { createdAt: { $gte: since }, status: { $nin: ['CANCELLED', 'RETURN_REQUESTED'] } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$total' },
+          orders: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    const result = agg.map((r: any) => ({
+      day: new Date(r._id).toLocaleDateString('en', { weekday: 'short' }),
+      date: r._id,
+      gmv: r.revenue,
+      revenue: r.revenue,
+      orders: r.orders,
+    }));
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const getCategoryBreakdown = async (req: AuthRequest, res: Response) => {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const agg = await Order.aggregate([
+      { $match: { createdAt: { $gte: since }, status: { $nin: ['CANCELLED'] } } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.category', value: { $sum: '$items.totalPrice' } } },
+      { $sort: { value: -1 } },
+      { $limit: 6 },
+    ]);
+    const colors = ['#F97316', '#2563EB', '#7C3AED', '#059669', '#EC4899', '#F59E0B'];
+    const result = agg.map((r: any, i: number) => ({
+      name: r._id || 'Other',
+      value: r.value,
+      color: colors[i % colors.length],
+    }));
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // For seller/admin
 export const getAllOrders = async (req: AuthRequest, res: Response) => {
   try {

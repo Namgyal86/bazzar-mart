@@ -171,6 +171,8 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
     const allowed = ['isActive', 'role', 'isVerified'];
     const updates: any = {};
     allowed.forEach((k) => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+    // Mobile clients send isBanned — map to isActive inverse
+    if (req.body.isBanned !== undefined) updates.isActive = !req.body.isBanned;
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
     if (!user) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true, data: user });

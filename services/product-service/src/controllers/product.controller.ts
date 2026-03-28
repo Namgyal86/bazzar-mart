@@ -85,6 +85,20 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const updateStock = async (req: AuthRequest, res: Response) => {
+  try {
+    const { stock } = req.body;
+    if (stock === undefined || stock < 0) return res.status(400).json({ success: false, error: 'Valid stock required' });
+    const filter: any = { _id: req.params.id };
+    if (req.user!.role !== 'ADMIN') filter.sellerId = req.user!.userId;
+    const product = await Product.findOneAndUpdate(filter, { stock }, { new: true });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    res.json({ success: true, data: product });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const product = await Product.findOne({ _id: req.params.id, sellerId: req.user!.userId });

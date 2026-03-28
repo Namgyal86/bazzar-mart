@@ -6,7 +6,12 @@ import '../../../core/network/api_client.dart';
 final usersProvider = FutureProvider.family<Map<String, dynamic>, int>((ref, page) async {
   final dio = ref.read(apiClientProvider);
   final res = await dio.get('/api/v1/admin/users', queryParameters: {'page': page, 'limit': 20});
-  return res.data['data'] as Map<String, dynamic>? ?? {'users': [], 'total': 0};
+  final d = res.data;
+  // User service returns { success, data: [...], total } — normalize to { users, total }
+  if (d['data'] is List) {
+    return {'users': d['data'] as List, 'total': d['total'] ?? (d['data'] as List).length};
+  }
+  return d['data'] as Map<String, dynamic>? ?? {'users': [], 'total': 0};
 });
 
 class UsersScreen extends ConsumerStatefulWidget {

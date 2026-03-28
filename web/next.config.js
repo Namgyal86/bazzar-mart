@@ -74,6 +74,14 @@ const nextConfig = {
       { source: '/api/v1/recommendations/:path*',   destination: `${RC}/api/v1/recommendations/:path*` },
       { source: '/api/v1/referrals/:path*',           destination: `${RF}/api/v1/referrals/:path*` },
       { source: '/api/v1/referral/:path*',            destination: `${RF}/api/v1/referrals/:path*` },  // singular alias
+      // Admin mobile app routes (must be before generic catches)
+      { source: '/api/v1/admin/dashboard',              destination: `${AN}/api/v1/analytics/admin/overview` },
+      { source: '/api/v1/admin/users',                  destination: `${U}/api/v1/users/admin/list` },
+      { source: '/api/v1/admin/users/:path*',           destination: `${U}/api/v1/users/admin/:path*` },
+      { source: '/api/v1/admin/sellers',                destination: `${S}/api/v1/seller/admin/list` },
+      { source: '/api/v1/admin/sellers/:path*',         destination: `${S}/api/v1/seller/admin/:path*` },
+      { source: '/api/v1/admin/orders',                 destination: `${O}/api/v1/orders/all` },
+      { source: '/api/v1/admin/orders/:path*',          destination: `${O}/api/v1/orders/:path*` },
       { source: '/api/v1/admin/referrals',              destination: `${RF}/api/v1/admin/referrals` },
       { source: '/api/v1/admin/referrals/:path*',     destination: `${RF}/api/v1/admin/referrals/:path*` },
       { source: '/api/v1/admin/referral-config/:path*', destination: `${RF}/api/v1/admin/referral-config/:path*` },
@@ -82,6 +90,7 @@ const nextConfig = {
       { source: '/api/v1/analytics/:path*',         destination: `${AN}/api/v1/analytics/:path*` },
       { source: '/api/v1/storefront/:path*',        destination: `${SF}/api/v1/storefront/:path*` },
       { source: '/api/v1/storefront',               destination: `${SF}/api/v1/storefront` },
+      { source: '/api/v1/upload/:path*',            destination: `${P}/api/v1/upload/:path*` },
     ];
   },
 };
