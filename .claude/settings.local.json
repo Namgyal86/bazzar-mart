@@ -219,7 +219,13 @@
       "Read(//c/src/flutter/bin/**)",
       "Read(//c/Users/sgrgr/**)",
       "Bash(cmd.exe /c \"where flutter 2>nul\")",
-      "Bash(cmd.exe /c \"flutter --version 2>nul\")"
+      "Bash(cmd.exe /c \"flutter --version 2>nul\")",
+      "Bash(cmd.exe /c \"where flutter\")",
+      "Bash(where flutter:*)",
+      "Bash(powershell -Command \"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Read(//c//**)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\\\'' -Filter ''flutter.bat'' -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 3 FullName\")",
+      "Bash(powershell -Command \":*)"
     ]
   }
 }
