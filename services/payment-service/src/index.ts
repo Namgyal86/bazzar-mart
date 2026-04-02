@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import paymentRoutes from './routes/payment.routes';
+import { getPaymentProducer } from './kafka/producer';
 
 const app = express();
 const PORT = process.env.PORT || 8005;
@@ -16,5 +17,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.statusCode || 500).json({ success: false, error: err.message });
 });
 mongoose.connect(MONGO_URI)
-  .then(() => { console.log('✅ Connected to payment_db'); app.listen(PORT, () => console.log(`🚀 Payment Service on port ${PORT}`)); })
+  .then(async () => {
+    console.log('✅ Connected to payment_db');
+    await getPaymentProducer().catch(e => console.warn('⚠️ Kafka producer init failed:', e.message));
+    app.listen(PORT, () => console.log(`🚀 Payment Service on port ${PORT}`));
+  })
   .catch((err) => { console.error('❌ DB error:', err); process.exit(1); });

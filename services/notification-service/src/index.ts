@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { Notification } from './models/notification.model';
+import { startNotificationConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8008;
@@ -91,5 +92,9 @@ app.post('/api/v1/notifications/broadcast', auth, async (req: any, res) => {
 });
 
 mongoose.connect(MONGO_URI)
-  .then(() => { console.log('✅ Connected to notification_db'); app.listen(PORT, () => console.log(`🚀 Notification Service on port ${PORT}`)); })
+  .then(async () => {
+    console.log('✅ Connected to notification_db');
+    await startNotificationConsumers().catch(err => console.warn('⚠️ Kafka consumers failed to start:', err.message));
+    app.listen(PORT, () => console.log(`🚀 Notification Service on port ${PORT}`));
+  })
   .catch((err) => { console.error(err); process.exit(1); });

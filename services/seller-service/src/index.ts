@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import sellerRoutes from './routes/seller.routes';
+import { startSellerConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8007;
@@ -16,5 +17,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.statusCode || 500).json({ success: false, error: err.message });
 });
 mongoose.connect(MONGO_URI)
-  .then(() => { console.log('✅ Connected to seller_db'); app.listen(PORT, () => console.log(`🚀 Seller Service on port ${PORT}`)); })
+  .then(async () => {
+    console.log('✅ Connected to seller_db');
+    await startSellerConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
+    app.listen(PORT, () => console.log(`🚀 Seller Service on port ${PORT}`));
+  })
   .catch((err) => { console.error(err); process.exit(1); });

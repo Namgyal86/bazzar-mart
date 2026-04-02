@@ -6,6 +6,8 @@ import mongoose from 'mongoose';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { startDeliveryConsumers } from './kafka/consumers';
+import { publishDeliveryEvent } from './kafka/producer';
 
 const app = express();
 const httpServer = createServer(app);
@@ -125,6 +127,15 @@ app.patch('/api/v1/delivery/orders/:orderId/complete', (req, res) => {
   }
   // Emit socket event to buyer
   io.to(`order:${req.params.orderId}`).emit('order:status_changed', { status: 'DELIVERED' });
+  // Publish Kafka event so order-service and notification-service can react
+  publishDeliveryEvent('delivery.completed', {
+    taskId: req.params.orderId,
+    orderId: req.params.orderId,
+    buyerId: d?.buyerId || '',
+    agentId: d?.driverId || '',
+    deliveredAt: new Date().toISOString(),
+    agentEarning: 100,
+  }).catch(() => {});
   res.json({ success: true, data: { orderId: req.params.orderId, status: 'DELIVERED' } });
 });
 
@@ -215,6 +226,7 @@ mongoose.connect(MONGO_URI)
   .then(async () => {
     console.log('✅ Connected to delivery_db');
     await loadDeliveriesFromOrders();
+    await startDeliveryConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
     httpServer.listen(PORT, () => console.log(`🚀 Delivery Service on port ${PORT}`));
   })
   .catch((err) => { console.error(err); process.exit(1); });

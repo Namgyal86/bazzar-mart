@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose, { Schema, model } from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { startReferralConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8012;
@@ -298,7 +299,8 @@ app.patch('/api/v1/admin/referral-config/:key', authenticate, (req: any, res) =>
 });
 
 mongoose.connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
+    await startReferralConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
     app.listen(PORT, () => console.log(`🚀 Referral Service running on port ${PORT}`));
   })
   .catch((err) => { console.error('❌ DB connection failed:', err.message); process.exit(1); });

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { Review } from '../models/review.model';
+import { publishReviewPosted } from '../kafka/producer';
 
 export const getProductReviews = async (req: Request, res: Response) => {
   try {
@@ -25,6 +26,13 @@ export const createReview = async (req: AuthRequest, res: Response) => {
       userName: req.body.userName || 'User', userAvatar: req.body.userAvatar,
       rating, title, body, images: images || [], productName,
     });
+    publishReviewPosted({
+      reviewId: (review._id as any).toString(),
+      productId: review.productId,
+      userId: review.userId,
+      sellerId: (review as any).sellerId || '',
+      rating: review.rating,
+    }).catch(() => {});
     res.status(201).json({ success: true, data: review });
   } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 };

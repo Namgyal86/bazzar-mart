@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import mongoose, { Schema, model } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import { startAnalyticsConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8014;
@@ -235,7 +236,8 @@ app.get('/api/v1/analytics/admin/searches', authenticate, requireAdmin, async (r
 });
 
 mongoose.connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
+    await startAnalyticsConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
     app.listen(PORT, () => console.log(`🚀 Analytics Service running on port ${PORT}`));
   })
   .catch((err) => { console.error('❌ DB connection failed:', err.message); process.exit(1); });

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import orderRoutes from './routes/order.routes';
 import { Coupon } from './models/coupon.model';
+import { startOrderConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8004;
@@ -78,5 +79,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.statusCode || 500).json({ success: false, error: err.message });
 });
 mongoose.connect(MONGO_URI)
-  .then(() => { console.log('✅ Connected to order_db'); app.listen(PORT, () => console.log(`🚀 Order Service on port ${PORT}`)); })
+  .then(async () => {
+    console.log('✅ Connected to order_db');
+    await startOrderConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
+    app.listen(PORT, () => console.log(`🚀 Order Service on port ${PORT}`));
+  })
   .catch((err) => { console.error('❌ DB error:', err); process.exit(1); });

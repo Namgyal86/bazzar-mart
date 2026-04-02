@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose, { Schema, model } from 'mongoose';
 import axios from 'axios';
+import { startRecommendationConsumers } from './kafka/consumers';
 
 const app = express();
 const PORT = process.env.PORT || 8010;
@@ -134,7 +135,8 @@ app.get('/api/v1/recommendations/trending', async (req, res) => {
 });
 
 mongoose.connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
+    await startRecommendationConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
     app.listen(PORT, () => console.log(`🚀 Recommendation Service running on port ${PORT}`));
   })
   .catch((err) => { console.error('❌ DB connection failed:', err.message); process.exit(1); });

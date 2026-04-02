@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import reviewRoutes, { helpfulRouter, adminReviewRouter } from './routes/review.routes';
+import { publishReviewPosted } from './kafka/producer';
 
 const app = express();
 const PORT = process.env.PORT || 8006;
