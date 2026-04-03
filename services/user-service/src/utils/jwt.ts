@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 const ACCESS_SECRET  = process.env.JWT_ACCESS_SECRET  || 'access_secret_dev';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret_dev';
 
-export function signAccessToken(payload: { userId: string; role: string; email: string }) {
+export function signAccessToken(payload: { userId: string; role: string; email: string; referralCode?: string }) {
   return jwt.sign(payload, ACCESS_SECRET, { expiresIn: '15m' });
 }
 
