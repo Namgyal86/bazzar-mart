@@ -5,7 +5,7 @@ export interface IPayment extends Document {
   userId: string;
   amount: number;
   currency: string;
-  gateway: 'KHALTI' | 'ESEWA' | 'FONEPAY' | 'STRIPE' | 'COD';
+  gateway: 'KHALTI' | 'ESEWA' | 'FONEPAY' | 'COD';
   status: 'PENDING' | 'INITIATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
   transactionId?: string;
   gatewayResponse?: any;
@@ -18,7 +18,7 @@ const PaymentSchema = new Schema<IPayment>({
   userId:          { type: String, required: true },
   amount:          { type: Number, required: true },
   currency:        { type: String, default: 'NPR' },
-  gateway:         { type: String, enum: ['KHALTI','ESEWA','FONEPAY','STRIPE','COD'], required: true },
+  gateway:         { type: String, enum: ['KHALTI','ESEWA','FONEPAY','COD'], required: true },
   status:          { type: String, enum: ['PENDING','INITIATED','SUCCESS','FAILED','REFUNDED'], default: 'PENDING' },
   transactionId:   { type: String },
   gatewayResponse: { type: Schema.Types.Mixed },

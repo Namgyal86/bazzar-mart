@@ -1,20 +1,14 @@
-import { Router, raw } from 'express';
+import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import {
   initiatePayment,
   verifyPayment,
   khaltiCallback,
   getPaymentByOrder,
-  stripeWebhook,
-  razorpayWebhook,
   getAdminPayments,
 } from '../controllers/payment.controller';
 
 const router = Router();
-
-// ── Public webhook endpoints (no auth, raw body for Stripe signature) ─────────
-router.post('/webhook/stripe',   raw({ type: 'application/json' }), stripeWebhook);
-router.post('/webhook/razorpay', razorpayWebhook);
 
 // ── Khalti browser redirect callback (no auth — Khalti redirects the buyer) ───
 // Khalti calls return_url with: pidx, status, transaction_id, purchase_order_id, etc.

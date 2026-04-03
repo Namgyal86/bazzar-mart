@@ -84,7 +84,7 @@ A production-ready microservices e-commerce platform built for Nepal, supporting
 
 **order-service** — Order lifecycle (PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED), coupon validation, Kafka: `order.created`, `order.confirmed`
 
-**payment-service** — Khalti, eSewa, Fonepay, Stripe, Razorpay, COD. Webhook verification. Kafka: `payment.success`, `payment.failed`, `payment.refunded`
+**payment-service** — Khalti, eSewa, Fonepay, COD. Webhook verification. Kafka: `payment.success`, `payment.failed`, `payment.refunded`
 
 **review-service** — Product reviews and star ratings with seller aggregate updates. Kafka: `review.posted`
 
@@ -390,7 +390,6 @@ All routes are prefixed `/api/v1/` and go through Kong API Gateway.
 | Infrastructure as Code | Terraform |
 | CI/CD | GitHub Actions → ECR → EKS |
 | Nepal Payments | Khalti, eSewa, Fonepay |
-| Global Payments | Stripe, Razorpay |
 | Email | SendGrid |
 | SMS | Sparrow SMS (Nepal) |
 | Push | Firebase Cloud Messaging |
