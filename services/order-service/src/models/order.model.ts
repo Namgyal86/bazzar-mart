@@ -44,7 +44,7 @@ export interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>({
   orderNumber:     { type: String, unique: true },
-  userId:          { type: String, required: true, index: true },
+  userId:          { type: String, required: true },
   items:           { type: Schema.Types.Mixed, required: true },
   shippingAddress: { type: Schema.Types.Mixed, required: true },
   paymentMethod:   { type: String, required: true },
@@ -69,6 +69,5 @@ OrderSchema.pre('save', function (next) {
 });
 
 OrderSchema.index({ userId: 1, createdAt: -1 });
-OrderSchema.index({ orderNumber: 1 });
 
 export const Order = mongoose.model<IOrder>('Order', OrderSchema);

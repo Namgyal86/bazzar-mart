@@ -43,7 +43,7 @@ const ProductSchema = new Schema<IProduct>({
   images:           { type: [String], default: [] },
   category:         { type: String, required: true },
   subCategory:      { type: String },
-  sellerId:         { type: String, required: true, index: true },
+  sellerId:         { type: String, required: true },
   sellerName:       { type: String, required: true },
   brand:            { type: String },
   sku:              { type: String, unique: true },
