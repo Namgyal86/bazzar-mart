@@ -9,6 +9,14 @@ import {
   isKhaltiSuccess,
   khaltiErrorMessage,
 } from '../services/khalti.service';
+import {
+  buildEsewaFormData,
+  decodeEsewaCallbackData,
+  verifyEsewaCallbackSignature,
+  checkEsewaStatus,
+  isEsewaSuccess,
+  ESEWA_FORM_URL,
+} from '../services/esewa.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,27 +98,22 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
 
     // ── ESEWA ──────────────────────────────────────────────────────────────────
     if (gateway === 'ESEWA') {
-      const esewaData = {
-        amount,
-        tax_amount: 0,
-        total_amount: amount,
-        transaction_uuid: payment.id,
-        product_code: process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST',
-        product_service_charge: 0,
-        product_delivery_charge: 0,
-        success_url: returnUrl || `${process.env.WEB_URL}/payment/verify?gateway=esewa`,
-        failure_url: `${process.env.WEB_URL}/payment/failed`,
-        signed_field_names: 'total_amount,transaction_uuid,product_code',
-      };
+      // success_url points to our backend callback which verifies + fires Kafka
+      const apiBase = process.env.API_BASE_URL || 'http://localhost:8005';
+      const successUrl = `${apiBase}/api/v1/payments/esewa/callback`;
+      const failureUrl = `${process.env.WEB_URL || 'http://localhost:3000'}/payment/failed`;
+
+      const esewaData = buildEsewaFormData(payment.id, amount, successUrl, failureUrl);
       payment.status = 'INITIATED';
       await payment.save();
+
       return res.json({
         success: true,
         data: {
           payment,
           esewaData,
+          formUrl: ESEWA_FORM_URL,
           method: 'ESEWA',
-          formUrl: 'https://rc-epay.esewa.com.np/api/epay/main/v2/form',
         },
       });
     }
@@ -191,6 +194,55 @@ export const khaltiCallback = async (req: Request, res: Response) => {
   }
 };
 
+// ─── eSewa Callback (GET redirect from eSewa browser redirect) ───────────────
+// eSewa redirects success_url?data=<base64-json>
+// The base64 JSON contains transaction_code, status, total_amount,
+// transaction_uuid, product_code, signed_field_names, signature
+
+export const esewaCallback = async (req: Request, res: Response) => {
+  const { data: encodedData } = req.query as Record<string, string>;
+  const webUrl = process.env.WEB_URL || 'http://localhost:3000';
+
+  if (!encodedData) {
+    return res.redirect(`${webUrl}/payment/failed?reason=missing_data`);
+  }
+
+  let callbackData;
+  try {
+    callbackData = decodeEsewaCallbackData(encodedData);
+  } catch {
+    return res.redirect(`${webUrl}/payment/failed?reason=invalid_response`);
+  }
+
+  const { transaction_uuid: transactionUuid, total_amount: totalAmount } = callbackData;
+
+  // Verify eSewa's response signature before trusting it
+  if (!verifyEsewaCallbackSignature(callbackData)) {
+    return res.redirect(`${webUrl}/payment/failed?reason=invalid_signature`);
+  }
+
+  try {
+    // transaction_uuid is the payment._id we stored at initiation
+    const payment = await Payment.findById(transactionUuid);
+    if (!payment) {
+      return res.redirect(`${webUrl}/payment/failed?reason=not_found`);
+    }
+
+    // Always confirm with status check API — never trust callback status alone
+    const statusRes = await checkEsewaStatus(transactionUuid, totalAmount);
+
+    if (isEsewaSuccess(statusRes.status)) {
+      await emitPaymentResult(payment, 'SUCCESS', statusRes.ref_id, { ...callbackData, statusCheck: statusRes });
+      return res.redirect(`${webUrl}/payment/success?orderId=${payment.orderId}&txn=${statusRes.ref_id ?? ''}`);
+    } else {
+      await emitPaymentResult(payment, 'FAILED', undefined, { esewaStatus: statusRes.status });
+      return res.redirect(`${webUrl}/payment/failed?orderId=${payment.orderId}&reason=${encodeURIComponent(statusRes.status)}`);
+    }
+  } catch {
+    return res.redirect(`${webUrl}/payment/failed?reason=verification_error`);
+  }
+};
+
 // ─── Verify Payment (API call from frontend after callback) ───────────────────
 
 export const verifyPayment = async (req: AuthRequest, res: Response) => {
@@ -210,8 +262,20 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       } catch (err) {
         return res.status(502).json({ success: false, error: `Khalti lookup failed: ${khaltiErrorMessage(err)}` });
       }
+    } else if (gateway === 'ESEWA') {
+      // eSewa: use status check API with the payment._id as transaction_uuid
+      try {
+        const statusRes = await checkEsewaStatus(payment.id, payment.amount);
+        if (isEsewaSuccess(statusRes.status)) {
+          await emitPaymentResult(payment, 'SUCCESS', statusRes.ref_id, statusRes);
+        } else {
+          await emitPaymentResult(payment, 'FAILED', undefined, { esewaStatus: statusRes.status });
+        }
+      } catch (err: any) {
+        return res.status(502).json({ success: false, error: `eSewa status check failed: ${err.message}` });
+      }
     } else {
-      // Other gateways (eSewa, Fonepay, COD): mark success and emit
+      // Fonepay, COD: mark success and emit
       await emitPaymentResult(payment, 'SUCCESS');
     }
 

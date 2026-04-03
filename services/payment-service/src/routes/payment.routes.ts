@@ -4,15 +4,18 @@ import {
   initiatePayment,
   verifyPayment,
   khaltiCallback,
+  esewaCallback,
   getPaymentByOrder,
   getAdminPayments,
 } from '../controllers/payment.controller';
 
 const router = Router();
 
-// ── Khalti browser redirect callback (no auth — Khalti redirects the buyer) ───
-// Khalti calls return_url with: pidx, status, transaction_id, purchase_order_id, etc.
+// ── Gateway callbacks (no auth — gateway redirects the buyer's browser) ───────
+// Khalti: GET /khalti/callback?pidx=...&purchase_order_id=...
 router.get('/khalti/callback', khaltiCallback);
+// eSewa:  GET /esewa/callback?data=<base64-encoded-json>
+router.get('/esewa/callback', esewaCallback);
 
 // ── Authenticated routes ───────────────────────────────────────────────────────
 router.use(authenticate);
