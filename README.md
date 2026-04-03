@@ -13,6 +13,7 @@ A production-ready microservices e-commerce platform built for Nepal, supporting
 - [Docker Compose (Recommended)](#docker-compose-recommended)
 - [Environment Variables](#environment-variables)
 - [API Reference](#api-reference)
+- [Payment Gateways](#payment-gateways)
 - [Tech Stack](#tech-stack)
 - [Mobile Apps](#mobile-apps)
 - [Deployment](#deployment)
@@ -219,8 +220,10 @@ Each service reads its config from environment variables validated by Zod at sta
 | `JWT_REFRESH_SECRET` | user-service | Sign/verify refresh tokens |
 | `KAFKA_BROKERS` | all services | Comma-separated broker list |
 | `PORT` | each service | Overrides default port |
-| `KHALTI_SECRET_KEY` | payment-service | Khalti payment gateway |
-| `ESEWA_SECRET` | payment-service | eSewa payment gateway |
+| `KHALTI_SECRET_KEY` | payment-service | Khalti secret key (test: from Khalti merchant dashboard) |
+| `ESEWA_SECRET_KEY` | payment-service | eSewa HMAC secret (test: `8gBm/:&EnhH.1/q(`) |
+| `ESEWA_MERCHANT_CODE` | payment-service | eSewa merchant code (test: `EPAYTEST`) |
+| `API_BASE_URL` | payment-service | Public URL of payment-service (used in eSewa success_url) |
 | `SENDGRID_API_KEY` | notification-service | Transactional email |
 | `SPARROW_SMS_TOKEN` | notification-service | Nepal SMS gateway |
 | `FIREBASE_SERVICE_ACCOUNT` | notification-service | FCM push notifications |
@@ -289,11 +292,15 @@ All routes are prefixed `/api/v1/` and go through Kong API Gateway.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/v1/payments/initiate` | Bearer | Start payment (returns redirect URL) |
-| POST | `/api/v1/payments/khalti/verify` | Bearer | Verify Khalti payment |
-| POST | `/api/v1/payments/esewa/verify` | Bearer | Verify eSewa payment |
-| POST | `/api/v1/payments/webhook` | — | Payment gateway webhook |
-| GET | `/api/v1/payments/:orderId` | Bearer | Payment status |
+| POST | `/api/v1/payments/initiate` | Bearer | Initiate payment — returns gateway-specific payload |
+| GET | `/api/v1/payments/khalti/callback` | — | Khalti browser redirect handler (set as `return_url`) |
+| GET | `/api/v1/payments/esewa/callback` | — | eSewa browser redirect handler (set as `success_url`) |
+| POST | `/api/v1/payments/khalti/verify` | Bearer | Manual Khalti lookup (fallback) |
+| POST | `/api/v1/payments/esewa/verify` | Bearer | Manual eSewa status check (fallback) |
+| POST | `/api/v1/payments/fonepay/verify` | Bearer | Confirm Fonepay payment |
+| POST | `/api/v1/payments/verify` | Bearer | Generic verify (pass `gateway` in body) |
+| GET | `/api/v1/payments/order/:orderId` | Bearer | Get payment record by order |
+| GET | `/api/v1/payments/admin/list` | ADMIN | Paginated payment list |
 
 ### Reviews — review-service :8006
 
@@ -365,6 +372,230 @@ All routes are prefixed `/api/v1/` and go through Kong API Gateway.
 |--------|------|------|-------------|
 | GET | `/api/v1/referrals/code` | Bearer | Get own referral code |
 | GET | `/api/v1/referrals/stats` | Bearer | Referral earnings & history |
+
+---
+
+## Payment Gateways
+
+Bazzar supports three Nepal-native payment gateways plus Cash on Delivery. All gateway logic lives in `services/payment-service/src/services/`.
+
+---
+
+### Khalti
+
+**Docs:** https://docs.khalti.com/khalti-epayment/
+
+#### Endpoints
+
+| Environment | URL |
+|-------------|-----|
+| Sandbox | `https://dev.khalti.com/api/v2` |
+| Production | `https://khalti.com/api/v2` |
+
+#### Flow
+
+```
+1. POST /api/v1/payments/initiate  { gateway: "KHALTI", orderId, amount, returnUrl? }
+        ↓ payment-service calls khalti /epayment/initiate/
+        ↓ returns { redirect: "https://test-pay.khalti.com/?pidx=...", pidx, expires_at }
+2. Frontend redirects user to payment_url
+3. User pays on Khalti portal
+4. Khalti redirects to GET /api/v1/payments/khalti/callback?pidx=...&purchase_order_id=...
+        ↓ payment-service calls khalti /epayment/lookup/  (server-side — never trusts query params)
+        ↓ if status === "Completed" → marks SUCCESS → fires Kafka payment.success
+        ↓ else → marks FAILED → fires Kafka payment.failed
+        ↓ redirects browser to /payment/success or /payment/failed
+```
+
+#### Request — Initiate
+
+```json
+POST /api/v1/payments/initiate
+Authorization: Bearer <token>
+
+{
+  "orderId": "order_abc123",
+  "amount": 500,
+  "gateway": "KHALTI",
+  "returnUrl": "https://yourdomain.com/payment/verify",
+  "customerInfo": {
+    "name": "Ram Bahadur",
+    "email": "ram@example.com",
+    "phone": "9800000001"
+  }
+}
+```
+
+#### Response — Initiate
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment": { "_id": "...", "status": "INITIATED", "gateway": "KHALTI", ... },
+    "redirect": "https://test-pay.khalti.com/?pidx=bZcoazBTPECJiKNpBjXtrK",
+    "pidx": "bZcoazBTPECJiKNpBjXtrK",
+    "expires_at": "2025-01-01T12:30:00Z",
+    "method": "KHALTI"
+  }
+}
+```
+
+#### Khalti Payment Statuses
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `Completed` | Payment successful | Fulfil order |
+| `Pending` | Processing | Hold — contact Khalti |
+| `Initiated` | Not yet paid | Hold |
+| `Refunded` | Full refund | Do not fulfil |
+| `User canceled` | User aborted | Reject |
+| `Expired` | Link expired (60 min) | Reject |
+| `Partially Refunded` | Partial refund | Handle separately |
+
+#### Environment Variables
+
+```env
+KHALTI_SECRET_KEY=your_live_secret_key_here
+```
+
+#### Test Credentials (Sandbox)
+
+| Field | Value |
+|-------|-------|
+| Khalti ID | `9800000000` to `9800000005` |
+| MPIN | `1111` |
+| OTP | `987654` |
+
+> Note: E-banking and debit/credit card not supported in sandbox.
+
+---
+
+### eSewa
+
+**Docs:** https://developer.esewa.com.np/pages/Epay
+
+#### Endpoints
+
+| Environment | Form URL | Status Check |
+|-------------|----------|--------------|
+| Sandbox | `https://rc-epay.esewa.com.np/api/epay/main/v2/form` | `https://rc.esewa.com.np/api/epay/transaction/status/` |
+| Production | `https://epay.esewa.com.np/api/epay/main/v2/form` | `https://esewa.com.np/api/epay/transaction/status/` |
+
+#### Flow
+
+```
+1. POST /api/v1/payments/initiate  { gateway: "ESEWA", orderId, amount }
+        ↓ payment-service generates HMAC-SHA256 signature
+        ↓ returns { esewaData: { ...fields, signature }, formUrl }
+2. Frontend submits HTML form (POST) with esewaData to formUrl
+3. User pays on eSewa portal
+4. eSewa redirects to GET /api/v1/payments/esewa/callback?data=<base64-json>
+        ↓ payment-service decodes Base64 JSON
+        ↓ verifies response signature (HMAC-SHA256 over signed_field_names)
+        ↓ calls status check API to confirm (server-side — never trusts callback alone)
+        ↓ if status === "COMPLETE" → marks SUCCESS → fires Kafka payment.success
+        ↓ else → marks FAILED → fires Kafka payment.failed
+        ↓ redirects browser to /payment/success or /payment/failed
+```
+
+#### Request — Initiate
+
+```json
+POST /api/v1/payments/initiate
+Authorization: Bearer <token>
+
+{
+  "orderId": "order_abc123",
+  "amount": 500,
+  "gateway": "ESEWA"
+}
+```
+
+#### Response — Initiate
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment": { "_id": "...", "status": "INITIATED", "gateway": "ESEWA", ... },
+    "formUrl": "https://rc-epay.esewa.com.np/api/epay/main/v2/form",
+    "esewaData": {
+      "amount": 500,
+      "tax_amount": 0,
+      "product_service_charge": 0,
+      "product_delivery_charge": 0,
+      "total_amount": 500,
+      "transaction_uuid": "6789abcdef0123456789abcd",
+      "product_code": "EPAYTEST",
+      "success_url": "https://your-api/api/v1/payments/esewa/callback",
+      "failure_url": "http://localhost:3000/payment/failed",
+      "signed_field_names": "total_amount,transaction_uuid,product_code",
+      "signature": "4Ov7pCI1zIOdwtV2BRMUNjz1upIlT/COTxfLhWvVurE="
+    },
+    "method": "ESEWA"
+  }
+}
+```
+
+#### Signature Generation
+
+eSewa uses HMAC-SHA256 over a specific message string, then Base64-encodes the result.
+
+```
+message = "total_amount=500,transaction_uuid=<id>,product_code=EPAYTEST"
+signature = Base64( HMAC-SHA256(message, secret_key) )
+```
+
+Both the outgoing form POST and the incoming callback response are verified this way.
+
+#### eSewa Transaction Statuses
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `COMPLETE` | Payment successful | Fulfil order |
+| `PENDING` | Initiated, not completed | Hold |
+| `FULL_REFUND` | Full refund issued | Do not fulfil |
+| `PARTIAL_REFUND` | Partial refund | Handle separately |
+| `AMBIGUOUS` | Uncertain state | Contact eSewa |
+| `NOT_FOUND` | Session expired | Reject |
+| `CANCELED` | Reversed by eSewa | Reject |
+
+#### Environment Variables
+
+```env
+ESEWA_SECRET_KEY=8gBm/:&EnhH.1/q(       # UAT default — replace for production
+ESEWA_MERCHANT_CODE=EPAYTEST             # UAT default — replace for production
+API_BASE_URL=http://localhost:8005       # Public URL of payment-service
+```
+
+#### Test Credentials (Sandbox)
+
+| Field | Value |
+|-------|-------|
+| eSewa ID | `9806800001` to `9806800005` |
+| Password | `Nepal@123` |
+| MPIN | `1122` |
+| OTP | `123456` |
+
+#### Frontend Integration (HTML Form)
+
+```html
+<form method="POST" action="<formUrl>">
+  <input type="hidden" name="amount"                  value="<esewaData.amount>" />
+  <input type="hidden" name="tax_amount"              value="<esewaData.tax_amount>" />
+  <input type="hidden" name="product_service_charge"  value="<esewaData.product_service_charge>" />
+  <input type="hidden" name="product_delivery_charge" value="<esewaData.product_delivery_charge>" />
+  <input type="hidden" name="total_amount"            value="<esewaData.total_amount>" />
+  <input type="hidden" name="transaction_uuid"        value="<esewaData.transaction_uuid>" />
+  <input type="hidden" name="product_code"            value="<esewaData.product_code>" />
+  <input type="hidden" name="success_url"             value="<esewaData.success_url>" />
+  <input type="hidden" name="failure_url"             value="<esewaData.failure_url>" />
+  <input type="hidden" name="signed_field_names"      value="<esewaData.signed_field_names>" />
+  <input type="hidden" name="signature"               value="<esewaData.signature>" />
+  <button type="submit">Pay with eSewa</button>
+</form>
+```
 
 ---
 
