@@ -228,7 +228,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8001
-      - MONGO_URI=mongodb://mongo-user:27017/user_db
+      - MONGO_URI_USER=mongodb://mongo-user:27017/user_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - JWT_SECRET=${JWT_SECRET}
@@ -247,7 +247,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8002
-      - MONGO_URI=mongodb://mongo-product:27017/product_db
+      - MONGO_URI_PRODUCT=mongodb://mongo-product:27017/product_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -281,7 +281,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8004
-      - MONGO_URI=mongodb://mongo-order:27017/order_db
+      - MONGO_URI_ORDER=mongodb://mongo-order:27017/order_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - PRODUCT_SERVICE_URL=http://product-service:8002
@@ -300,7 +300,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8005
-      - MONGO_URI=mongodb://mongo-payment:27017/payment_db
+      - MONGO_URI_PAYMENT=mongodb://mongo-payment:27017/payment_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - KHALTI_SECRET_KEY=${KHALTI_SECRET_KEY}
@@ -322,7 +322,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8006
-      - MONGO_URI=mongodb://mongo-review:27017/review_db
+      - MONGO_URI_REVIEW=mongodb://mongo-review:27017/review_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - ORDER_SERVICE_URL=http://order-service:8004
@@ -338,7 +338,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8007
-      - MONGO_URI=mongodb://mongo-seller:27017/seller_db
+      - MONGO_URI_SELLER=mongodb://mongo-seller:27017/seller_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - PRODUCT_SERVICE_URL=http://product-service:8002
@@ -355,7 +355,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8008
-      - MONGO_URI=mongodb://mongo-notification:27017/notification_db
+      - MONGO_URI_NOTIFICATION=mongodb://mongo-notification:27017/notification_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
@@ -390,7 +390,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8010
-      - MONGO_URI=mongodb://mongo-recommendation:27017/recommendation_db
+      - MONGO_URI_RECOMMENDATION=mongodb://mongo-recommendation:27017/recommendation_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
     depends_on: [mongo-recommendation, redis, kafka]
@@ -405,7 +405,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8011
-      - MONGO_URI=mongodb://mongo-storefront:27017/storefront_db
+      - MONGO_URI_STOREFRONT=mongodb://mongo-storefront:27017/storefront_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -424,7 +424,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8012
-      - MONGO_URI=mongodb://mongo-referral:27017/referral_db
+      - MONGO_URI_REFERRAL=mongodb://mongo-referral:27017/referral_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
     depends_on: [mongo-referral, redis, kafka]
@@ -439,7 +439,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8013
-      - MONGO_URI=mongodb://mongo-delivery:27017/delivery_db
+      - MONGO_URI_DELIVERY=mongodb://mongo-delivery:27017/delivery_db
+      - MONGO_URI_ORDER=mongodb://mongo-order:27017/order_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - JWT_SECRET=${JWT_SECRET}
@@ -455,7 +456,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=8014
-      - MONGO_URI=mongodb://mongo-analytics:27017/analytics_db
+      - MONGO_URI_ANALYTICS=mongodb://mongo-analytics:27017/analytics_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - ORDER_SERVICE_URL=http://order-service:8004
