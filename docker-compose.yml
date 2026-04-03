@@ -304,14 +304,12 @@ services:
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - KHALTI_SECRET_KEY=${KHALTI_SECRET_KEY}
-      - ESEWA_MERCHANT_CODE=${ESEWA_MERCHANT_CODE}
       - ESEWA_SECRET_KEY=${ESEWA_SECRET_KEY}
+      - ESEWA_MERCHANT_CODE=${ESEWA_MERCHANT_CODE}
       - FONEPAY_MERCHANT_CODE=${FONEPAY_MERCHANT_CODE}
       - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - WEB_URL=http://localhost:3000
+      - API_BASE_URL=http://payment-service:8005
     depends_on: [mongo-payment, redis, kafka]
     networks: [bazzar-net]
     restart: unless-stopped
