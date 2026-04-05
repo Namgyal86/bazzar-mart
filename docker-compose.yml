@@ -1,14 +1,16 @@
 version: '3.9'
 
 # ============================================================
-# Bazzar — Full Local Development Environment
+# Bazzar — Monolith Stack
 #
-# Changes from original:
-#  - Single MongoDB instance (saves ~3GB RAM vs 13 separate instances)
-#    Each service still gets its own database — isolation is preserved.
-#  - Healthchecks on all infra so services wait before connecting
-#  - WiredTiger cache capped at 256MB
-#  - Kafka depends_on zookeeper healthy (fixes race-condition crash)
+# Services:
+#   Infrastructure  → mongodb, redis, kafka, zookeeper, elasticsearch
+#   API Monolith    → api-monolith:8100   (all merged modules)
+#   Kept separate   → delivery-service:8013, notification-service:8008
+#   Frontend        → web:3000
+#
+# The frontend only needs ONE env var to reach the backend:
+#   MONOLITH_URL=http://api-monolith:8100
 # ============================================================
 
 networks:
@@ -24,7 +26,7 @@ volumes:
 
 services:
 
-  # ---- Infrastructure ----------------------------------------
+  # ── Infrastructure ─────────────────────────────────────────────────────────
 
   mongodb:
     image: mongo:7
@@ -123,142 +125,61 @@ services:
       retries: 5
       start_period: 40s
 
-  # ---- Microservices ----------------------------------------
-  # All services share one MongoDB — each uses its own database name.
+  # ── API Monolith ───────────────────────────────────────────────────────────
+  # Replaces: user, product, cart, order, payment, review, seller,
+  #           search, recommendation, storefront, referral, analytics, support
 
-  user-service:
-    build: ./services/user-service
-    container_name: bazzar-user-service
+  api-monolith:
+    build: ./services/api-monolith
+    container_name: bazzar-api-monolith
     ports:
-      - "8001:8001"
+      - "8100:8100"
     environment:
       - NODE_ENV=development
-      - PORT=8001
-      - MONGO_URI_USER=mongodb://mongodb:27017/user_db
+      - PORT=8100
+      - MONGO_URI=mongodb://mongodb:27017/bazzar_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
+      - KAFKA_CLIENT_ID=api-monolith
+      - KAFKA_GROUP_ID=api-monolith-group
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-      redis:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  product-service:
-    build: ./services/product-service
-    container_name: bazzar-product-service
-    ports:
-      - "8002:8002"
-    environment:
-      - NODE_ENV=development
-      - PORT=8002
-      - MONGO_URI_PRODUCT=mongodb://mongodb:27017/product_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-      redis:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  cart-service:
-    build: ./services/cart-service
-    container_name: bazzar-cart-service
-    ports:
-      - "8003:8003"
-    environment:
-      - NODE_ENV=development
-      - PORT=8003
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
-    depends_on:
-      kafka: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  order-service:
-    build: ./services/order-service
-    container_name: bazzar-order-service
-    ports:
-      - "8004:8004"
-    environment:
-      - NODE_ENV=development
-      - PORT=8004
-      - MONGO_URI_ORDER=mongodb://mongodb:27017/order_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - PRODUCT_SERVICE_URL=http://product-service:8002
-      - CART_SERVICE_URL=http://cart-service:8003
-      - REFERRAL_SERVICE_URL=http://referral-service:8012
-      - NOTIFICATION_SERVICE_URL=http://notification-service:8008
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  payment-service:
-    build: ./services/payment-service
-    container_name: bazzar-payment-service
-    ports:
-      - "8005:8005"
-    environment:
-      - NODE_ENV=development
-      - PORT=8005
-      - MONGO_URI_PAYMENT=mongodb://mongodb:27017/payment_db
-      - KAFKA_BROKERS=kafka:29092
       - KHALTI_SECRET_KEY=${KHALTI_SECRET_KEY}
       - ESEWA_SECRET_KEY=${ESEWA_SECRET_KEY}
       - ESEWA_MERCHANT_CODE=${ESEWA_MERCHANT_CODE}
       - FONEPAY_MERCHANT_CODE=${FONEPAY_MERCHANT_CODE}
       - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
+      - API_BASE_URL=http://api-monolith:8100
       - WEB_URL=http://localhost:3000
-      - API_BASE_URL=http://payment-service:8005
     depends_on:
       mongodb: { condition: service_healthy }
       kafka:   { condition: service_healthy }
+      redis:   { condition: service_healthy }
     networks: [bazzar-net]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8100/health/db || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  review-service:
-    build: ./services/review-service
-    container_name: bazzar-review-service
+  # ── Kept-separate services ─────────────────────────────────────────────────
+  # These were NOT merged: they have distinct runtime concerns
+  # (delivery has driver-side WebSocket; notification has FCM/SMS/email sends)
+
+  delivery-service:
+    build: ./services/delivery-service
+    container_name: bazzar-delivery-service
     ports:
-      - "8006:8006"
+      - "8013:8013"
     environment:
       - NODE_ENV=development
-      - PORT=8006
-      - MONGO_URI_REVIEW=mongodb://mongodb:27017/review_db
+      - PORT=8013
+      - MONGO_URI_DELIVERY=mongodb://mongodb:27017/delivery_db
+      - MONGO_URI_ORDER=mongodb://mongodb:27017/bazzar_db
       - KAFKA_BROKERS=kafka:29092
-      - ORDER_SERVICE_URL=http://order-service:8004
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  seller-service:
-    build: ./services/seller-service
-    container_name: bazzar-seller-service
-    ports:
-      - "8007:8007"
-    environment:
-      - NODE_ENV=development
-      - PORT=8007
-      - MONGO_URI_SELLER=mongodb://mongodb:27017/seller_db
-      - KAFKA_BROKERS=kafka:29092
-      - PRODUCT_SERVICE_URL=http://product-service:8002
-      - ORDER_SERVICE_URL=http://order-service:8004
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
     depends_on:
       mongodb: { condition: service_healthy }
       kafka:   { condition: service_healthy }
@@ -286,161 +207,7 @@ services:
     networks: [bazzar-net]
     restart: unless-stopped
 
-  search-service:
-    build: ./services/search-service
-    container_name: bazzar-search-service
-    ports:
-      - "8009:8009"
-    environment:
-      - NODE_ENV=development
-      - PORT=8009
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-    depends_on:
-      elasticsearch: { condition: service_healthy }
-      kafka:         { condition: service_healthy }
-      redis:         { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  recommendation-service:
-    build: ./services/recommendation-service
-    container_name: bazzar-recommendation-service
-    ports:
-      - "8010:8010"
-    environment:
-      - NODE_ENV=development
-      - PORT=8010
-      - MONGO_URI_RECOMMENDATION=mongodb://mongodb:27017/recommendation_db
-      - KAFKA_BROKERS=kafka:29092
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  storefront-designer-service:
-    build: ./services/storefront-designer-service
-    container_name: bazzar-storefront-service
-    ports:
-      - "8011:8011"
-    environment:
-      - NODE_ENV=development
-      - PORT=8011
-      - MONGO_URI_STOREFRONT=mongodb://mongodb:27017/storefront_db
-      - KAFKA_BROKERS=kafka:29092
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - CLOUDFRONT_URL=${CLOUDFRONT_URL}
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  referral-service:
-    build: ./services/referral-service
-    container_name: bazzar-referral-service
-    ports:
-      - "8012:8012"
-    environment:
-      - NODE_ENV=development
-      - PORT=8012
-      - MONGO_URI_REFERRAL=mongodb://mongodb:27017/referral_db
-      - KAFKA_BROKERS=kafka:29092
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  delivery-service:
-    build: ./services/delivery-service
-    container_name: bazzar-delivery-service
-    ports:
-      - "8013:8013"
-    environment:
-      - NODE_ENV=development
-      - PORT=8013
-      - MONGO_URI_DELIVERY=mongodb://mongodb:27017/delivery_db
-      - MONGO_URI_ORDER=mongodb://mongodb:27017/order_db
-      - KAFKA_BROKERS=kafka:29092
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  analytics-service:
-    build: ./services/analytics-service
-    container_name: bazzar-analytics-service
-    ports:
-      - "8014:8014"
-    environment:
-      - NODE_ENV=development
-      - PORT=8014
-      - MONGO_URI_ANALYTICS=mongodb://mongodb:27017/analytics_db
-      - KAFKA_BROKERS=kafka:29092
-      - ORDER_SERVICE_URL=http://order-service:8004
-      - USER_SERVICE_URL=http://user-service:8001
-      - PRODUCT_SERVICE_URL=http://product-service:8002
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  support-service:
-    build: ./services/support-service
-    container_name: bazzar-support-service
-    ports:
-      - "8015:8015"
-    environment:
-      - NODE_ENV=development
-      - PORT=8015
-      - MONGO_URI_SUPPORT=mongodb://mongodb:27017/support_db
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
-    depends_on:
-      mongodb: { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  # ---- API Monolith -----------------------------------------
-
-  api-monolith:
-    build: ./services/api-monolith
-    container_name: bazzar-api-monolith
-    ports:
-      - "8100:8100"
-    environment:
-      - NODE_ENV=development
-      - PORT=8100
-      - MONGO_URI=mongodb://mongodb:27017/bazzar_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - KAFKA_CLIENT_ID=api-monolith
-      - KAFKA_GROUP_ID=api-monolith-group
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - KHALTI_SECRET_KEY=${KHALTI_SECRET_KEY}
-      - ESEWA_SECRET_KEY=${ESEWA_SECRET_KEY}
-      - ESEWA_MERCHANT_CODE=${ESEWA_MERCHANT_CODE}
-      - FONEPAY_MERCHANT_CODE=${FONEPAY_MERCHANT_CODE}
-      - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
-      - API_BASE_URL=http://localhost:8100
-      - WEB_URL=http://localhost:3000
-    depends_on:
-      mongodb: { condition: service_healthy }
-      kafka:   { condition: service_healthy }
-      redis:   { condition: service_healthy }
-    networks: [bazzar-net]
-    restart: unless-stopped
-
-  # ---- Web Frontend -----------------------------------------
+  # ── Web Frontend ───────────────────────────────────────────────────────────
 
   web:
     build: ./web
@@ -449,14 +216,17 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
       - NEXT_PUBLIC_WS_URL=ws://localhost:8013
+      # Single backend URL — all API traffic proxied through Next.js rewrites
       - MONOLITH_URL=http://api-monolith:8100
       - DELIVERY_SERVICE_URL=http://delivery-service:8013
       - NOTIFICATION_SERVICE_URL=http://notification-service:8008
     depends_on:
-      - api-monolith
-      - delivery-service
-      - notification-service
+      api-monolith:
+        condition: service_healthy
+      delivery-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
     networks: [bazzar-net]
     restart: unless-stopped
