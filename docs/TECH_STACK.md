@@ -7,7 +7,7 @@
 
 ---
 
-## Backend (Node.js + Express — per microservice)
+## Backend (Node.js + Express — Modular Monolith)
 
 | Layer | Technology | Version | Reason |
 |-------|-----------|---------|--------|
@@ -22,7 +22,8 @@
 | File Upload | Multer + AWS SDK v3 | — | S3 multipart upload |
 | HTML Sanitizer | sanitize-html | — | Storefront custom HTML blocks |
 | Template Engine | Handlebars (hbs) | — | Storefront static HTML rendering |
-| HTTP Client | Axios | 1.x | Inter-service REST calls |
+| Event Bus | Node.js EventEmitter | built-in | Typed InternalBus for in-process module events |
+| HTTP Client | Axios | 1.x | External HTTP calls (delivery tracking etc.) |
 | Logging | Winston + morgan | — | Structured JSON logs |
 | Monitoring | prom-client | — | Prometheus `/metrics` endpoint |
 | Testing | Jest + Supertest | — | Unit + integration tests |
@@ -37,7 +38,7 @@
 | Primary DB | **MongoDB** | 7.x | Flexible schema, horizontal scaling, BSON |
 | Hosting (prod) | MongoDB Atlas | — | Managed, auto-backup, global clusters |
 | Cache / Sessions | Redis | 7.x | BullMQ broker, session store, rate limiting |
-| Search Engine | Elasticsearch | 8.x | Full-text product search, faceted filters |
+| Search | MongoDB text/regex queries | — | Full-text product search via shared `products` collection |
 
 > **One MongoDB database per microservice** — separate Atlas projects in prod, separate `mongod` ports in local Docker Compose. Services never read each other's databases.
 

@@ -1,6 +1,13 @@
-# Build Your Own Storefront (BYOS) — Storefront Designer
+# Build Your Own Storefront (BYOS) — Storefront Module
 
-> This is a **new core feature**. Read this file carefully. It must not diverge from the main platform's auth, product catalog, or deployment architecture.
+> **Merged into monolith** (2026-04-05): `storefront-designer-service` is now a module inside
+> `services/api-monolith/src/modules/storefront/`.
+> Storefront data lives in the shared `bazzar_monolith` database.
+
+> Module: `storefront` | Location: `src/modules/storefront/`
+> Was: `storefront-designer-service` | Port: **8011**
+
+> This is a **core feature**. It must not diverge from the main platform's auth, product catalog, or deployment architecture.
 
 ---
 

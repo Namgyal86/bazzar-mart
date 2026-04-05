@@ -9,18 +9,16 @@
     "web"
   ],
   "scripts": {
-    "dev:web": "npm run dev --workspace=web",
-    "dev:user": "npm run dev --workspace=services/user-service",
-    "dev:product": "npm run dev --workspace=services/product-service",
-    "dev:cart": "npm run dev --workspace=services/cart-service",
-    "dev:order": "npm run dev --workspace=services/order-service",
-    "dev:payment": "npm run dev --workspace=services/payment-service",
+    "dev:web":      "npm run dev --workspace=web",
+    "dev:monolith": "npm run dev --workspace=services/api-monolith",
     "dev:delivery": "npm run dev --workspace=services/delivery-service",
-    "build:shared": "npm run build --workspace=packages/shared",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "lint": "eslint . --ext .ts,.tsx",
+    "dev:notify":   "npm run dev --workspace=services/notification-service",
+    "build:shared":  "npm run build --workspace=packages/shared",
+    "build:monolith":"npm run build --workspace=services/api-monolith",
+    "docker:up":    "docker-compose up -d",
+    "docker:down":  "docker-compose down",
+    "docker:logs":  "docker-compose logs -f",
+    "lint":   "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json}\""
   },
   "devDependencies": {

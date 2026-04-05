@@ -1,8 +1,11 @@
-# Payment Service — Full Specification
+# Payment Module — Specification
 
-> Service: `payment-service` | Port: **8005**
-> Database: MongoDB `payment_db`
-> Read `NODE_ARCHITECTURE.md` first for code patterns.
+> **Merged into monolith** (2026-04-05): `payment-service` is now a module inside
+> `services/api-monolith/src/modules/payments/`.
+> Payments collection lives in the shared `bazzar_monolith` database.
+
+> Module: `payments` | Location: `src/modules/payments/`
+> Was: `payment-service` | Port: **8005**
 
 ---
 

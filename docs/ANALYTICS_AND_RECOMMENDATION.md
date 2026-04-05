@@ -1,8 +1,16 @@
-# Analytics Service — Full Specification
+# Analytics & Recommendation — Module Specification
 
-> Service: `analytics-service` | Port: **8014**
-> Database: MongoDB `analytics_db`
-> This is a **Kafka consumer only** — no HTTP calls from other services.
+> **Merged into monolith** (2026-04-05): Both services are now modules inside
+> `services/api-monolith/src/modules/analytics/` and `src/modules/recommendations/`.
+> All Kafka consumers replaced with **internalBus** event handlers.
+> Single shared MongoDB database: `bazzar_monolith`.
+
+---
+
+# Analytics Module
+
+> Module: `analytics` | Location: `src/modules/analytics/`
+> Was: `analytics-service` | Port: **8014** | Database: `analytics_db`
 
 ---
 
@@ -76,7 +84,7 @@ TTL index: { timestamp: 1 } expireAfterSeconds: 7776000
 
 ---
 
-## 3. Kafka Consumers → Metrics Written
+## 3. InternalBus Handlers → Metrics Written (replaces Kafka consumers)
 
 | Topic | Metric Updated |
 |-------|---------------|
@@ -120,10 +128,10 @@ TTL index: { timestamp: 1 } expireAfterSeconds: 7776000
 
 ---
 
-# Recommendation Service — Full Specification
+# Recommendation Module
 
-> Service: `recommendation-service` | Port: **8010**
-> Database: MongoDB `recommendation_db`
+> Module: `recommendations` | Location: `src/modules/recommendations/`
+> Was: `recommendation-service` | Port: **8010** | Database: `recommendation_db`
 
 ---
 
@@ -184,14 +192,13 @@ Indexes: { productId: 1 (unique) }
 
 ---
 
-## 4. Kafka Consumers
+## 4. InternalBus Event Handlers (replaces Kafka consumers)
 
-| Topic | Action |
+| Event | Action |
 |-------|--------|
-| `order.confirmed` | Record purchase interaction (weight=5) for each orderItem |
-| `review.posted` | Record review interaction (weight=4) |
-| `product.created` | Add to content similarity index |
-| `product.updated` | Re-compute content similarity |
+| `order:created` | Record PURCHASE interaction for each order item |
+| `review:posted` | Record REVIEW interaction (weight=4) |
+| `product:created` | Seed `trendingproducts` collection entry |
 
 ---
 

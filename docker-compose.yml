@@ -438,5 +438,7 @@ services:
     depends_on:
       - user-service
       - product-service
+
+
     networks: [bazzar-net]
     restart: unless-stopped

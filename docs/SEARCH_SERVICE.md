@@ -1,8 +1,12 @@
-# Search Service — Full Specification
+# Search Module — Specification
 
-> Service: `search-service` | Port: **8009**
-> Database: **Elasticsearch 8** (no MongoDB for this service)
-> Read `NODE_ARCHITECTURE.md` for code patterns.
+> **Merged into monolith** (2026-04-05): `search-service` is now a module inside
+> `services/api-monolith/src/modules/search/`.
+> Elasticsearch replaced with **direct MongoDB queries** on the shared `products` collection.
+> No separate database or Kafka consumers needed.
+
+> Module: `search` | Location: `src/modules/search/`
+> Was: `search-service` | Port: **8009**
 
 ---
 
@@ -181,7 +185,13 @@ export class SearchService {
 
 ---
 
-## 5. Kafka Consumers (Index Sync)
+## 5. Search Implementation (MongoDB)
+
+> Elasticsearch index sync is no longer needed — queries run directly on the `products`
+> collection using MongoDB regex and index queries. The `PRODUCT_CREATED` internalBus event
+> is handled by the recommendations module (trendingproducts seed).
+
+## 5a. Old Kafka Consumers (Index Sync — superseded)
 
 ```typescript
 // kafka/consumers/productIndexer.consumer.ts

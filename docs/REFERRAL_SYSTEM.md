@@ -1,7 +1,12 @@
-# Referral System — Full Specification
+# Referral System — Module Specification
 
-> This is a **standalone service** (`referral-service`, port 8012).
-> Read `SYSTEM_ARCHITECTURE.md` and `DATABASE_SCHEMA.md` first.
+> **Merged into monolith** (2026-04-05): `referral-service` is now a module inside
+> `services/api-monolith/src/modules/referrals/`.
+> Wallet credit is applied via **internalBus `order:created`** handler (no Kafka needed).
+> Referral application on registration is a **direct function call** in `auth.controller.ts`.
+
+> Module: `referrals` | Location: `src/modules/referrals/`
+> Was: `referral-service` | Port: **8012**
 
 ---
 

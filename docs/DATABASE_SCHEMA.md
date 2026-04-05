@@ -1,7 +1,9 @@
 # Database Schema
 
 > **Database: MongoDB 7 (Mongoose ODM)**
-> One MongoDB database per microservice. Services never share databases or join across service boundaries.
+> **Monolith (2026-04-05):** All 13 merged modules share a single `bazzar_monolith` database.
+> `delivery-service` uses its own `delivery_db`.
+> The per-service DB schemas below are now all collections inside `bazzar_monolith`.
 
 ---
 

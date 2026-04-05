@@ -1,7 +1,31 @@
-# Node.js Service Architecture
+# Node.js Architecture
 
 > Stack: **Node.js 20 + Express.js + TypeScript + Mongoose (MongoDB)**
-> Every microservice follows this exact pattern. No exceptions.
+
+> **Note (2026-04-05):** The platform now uses a **Modular Monolith** (`services/api-monolith/`).
+> The folder structure and code patterns below apply to each **module** inside
+> `src/modules/{module-name}/` rather than to separate service directories.
+> `delivery-service` and `notification-service` still follow the standalone service structure.
+
+---
+
+## Monolith Module Structure
+
+```
+services/api-monolith/src/modules/{module-name}/
+├── models/
+│   └── {entity}.model.ts        # Mongoose schema + TypeScript interface
+├── {module}.controller.ts       # Route handlers + internalBus event registrations
+└── {module}.routes.ts           # Express Router
+
+Shared across all modules (src/shared/ and src/config/):
+  shared/middleware/auth.ts      # Single JWT middleware
+  shared/events/emitter.ts       # Typed InternalBus (replaces inter-service HTTP)
+  config/db.ts                   # Single Mongoose connection
+  config/redis.ts                # Single ioredis client
+  kafka/producer.ts              # Single Kafka producer
+  kafka/consumers/index.ts       # Single Kafka consumer loop
+```
 
 ---
 

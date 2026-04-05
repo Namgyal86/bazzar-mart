@@ -1,137 +1,159 @@
-# Microservice Architecture Diagram
+# Architecture Diagram — Modular Monolith
+
+> **Architecture changed** (2026-04-05): 11 original microservices consolidated into a single
+> **`api-monolith`** (port 8100). Only `delivery-service` and `notification-service` remain
+> independent. All inter-module communication uses the typed **InternalBus (EventEmitter)** instead
+> of HTTP or Kafka.
 
 ---
 
 ## Full System Diagram
 
 ```
-                          ┌──────────────────────────────┐
-                          │        AWS CloudFront CDN     │
-                          │   (images, static, storefronts)│
-                          └──────────────┬───────────────┘
-                                         │
-                          ┌──────────────▼───────────────┐
-                          │      AWS ALB Load Balancer    │
-                          └──────────────┬───────────────┘
-                                         │
-                          ┌──────────────▼───────────────┐
-                          │     Kong API Gateway          │
-                          │  Auth · Rate Limit · Routing  │
-                          └──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-                             │  │  │  │  │  │  │  │  │  │
-              ┌──────────────┘  │  │  │  │  │  │  │  │  └─────────────────────┐
-              │      ┌──────────┘  │  │  │  │  │  │  └───────────────────┐    │
-              │      │     ┌───────┘  │  │  │  │  └─────────────────┐    │    │
-              │      │     │    ┌─────┘  │  │  └──────────────┐     │    │    │
-              │      │     │    │    ┌───┘  └──────────┐       │     │    │    │
-              ▼      ▼     ▼    ▼    ▼          ▼       ▼       ▼     ▼    ▼    ▼
-           ┌────┐ ┌─────┐ ┌────┐ ┌─────┐ ┌────────┐ ┌──────┐ ┌──────┐ ┌─────┐ ┌──────┐ ┌──────────┐
-           │User│ │Prod │ │Cart│ │Order│ │Payment │ │Review│ │Seller│ │Notif│ │Search│ │Storefront│
-           │Svc │ │ Svc │ │Svc │ │ Svc │ │  Svc   │ │ Svc  │ │ Svc  │ │ Svc │ │ Svc  │ │Designer  │
-           │8001│ │8002 │ │8003│ │8004 │ │  8005  │ │ 8006 │ │ 8007 │ │8008 │ │ 8009 │ │   8011   │
-           └─┬──┘ └──┬──┘ └─┬──┘ └──┬──┘ └───┬────┘ └──┬───┘ └──┬───┘ └──┬──┘ └──┬───┘ └────┬─────┘
-             │        │      │       │         │          │        │        │        │           │
-             └────────┴──────┴───────┴─────────┴──────────┴────────┴────────┴────────┴───────────┘
-                                                     │
-                                    ┌────────────────▼──────────────────┐
-                                    │           Apache Kafka             │
-                                    │  (Event Bus — 9 topics)            │
-                                    └────────────────┬──────────────────┘
-                                                     │
-                     ┌───────────────────────────────┼────────────────────────────┐
-                     ▼                               ▼                            ▼
-             ┌───────────────┐             ┌─────────────────┐         ┌──────────────────┐
-             │  Notification  │             │   Rec Engine    │         │  Analytics Svc   │
-             │   Service      │             │    (8010)       │         │  (internal)      │
-             │  Email/SMS/Push│             │  ML-based recs  │         │                  │
-             └───────────────┘             └─────────────────┘         └──────────────────┘
+                         ┌──────────────────────────────┐
+                         │       AWS CloudFront CDN      │
+                         │  (images, static, storefronts)│
+                         └──────────────┬───────────────┘
+                                        │
+                         ┌──────────────▼───────────────┐
+                         │      AWS ALB Load Balancer    │
+                         └──────────────┬───────────────┘
+                                        │
+                         ┌──────────────▼───────────────┐
+                         │     Kong API Gateway          │
+                         │  Auth · Rate Limit · Routing  │
+                         └──────┬────────────┬──────────┘
+                                │            │
+               ┌────────────────▼──┐    ┌────▼──────────────────┐
+               │   API Monolith    │    │  Delivery Service      │
+               │   port 8100       │    │  port 8013             │
+               │                   │    │  Socket.io (real-time) │
+               │  ┌─────────────┐  │    └────────────────────────┘
+               │  │  users      │  │
+               │  │  products   │  │    ┌────────────────────────┐
+               │  │  orders     │  │    │  Notification Service  │
+               │  │  cart       │  │    │  port 8008             │
+               │  │  payments   │  │    │  Email/SMS/FCM          │
+               │  │  sellers    │  │    └────────────────────────┘
+               │  │  reviews    │  │
+               │  │  referrals  │  │
+               │  │  support    │  │
+               │  │  storefront │  │
+               │  │  search     │  │
+               │  │  recommend. │  │
+               │  │  analytics  │  │
+               │  └─────────────┘  │
+               └────────┬──────────┘
+                        │
+           ┌────────────▼──────────────┐
+           │       Apache Kafka         │
+           │  (External event bus)      │
+           │  Topics published by       │
+           │  monolith → kept services  │
+           └────────────┬──────────────┘
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+   delivery-service  notification  (future external)
+   (consumes:        (consumes:
+   order.confirmed)   user.registered,
+                      order.*, payment.*,
+                      delivery.*, seller.approved)
 ```
 
 ---
 
-## Kafka Event Flow
+## Internal Event Bus (InternalBus) — in-process only
+
+Replaces all inter-module Kafka consumers and HTTP calls between merged modules.
 
 ```
-USER_REGISTERED (user.registered)
-    User Svc ──────────────────────────────► Notification Svc (welcome email)
+PAYMENT_SUCCESS (payment:success)
+    payments ──┬──────────────────► orders  (mark PAID, update status)
+               ├──────────────────► sellers (credit seller balance)
+               └──────────────────► analytics (increment daily metrics)
+               ╌╌ Kafka: payment.success ──► notification-service
 
-ORDER_CREATED (order.created)
-    Order Svc ─────┬───────────────────────► Payment Svc (process payment)
-                   ├───────────────────────► Notification Svc (order confirmation)
-                   └───────────────────────► Analytics Svc (GMV tracking)
+PAYMENT_FAILED (payment:failed)
+    payments ──────────────────────► orders  (mark FAILED)
+               ╌╌ Kafka: payment.failed ──► notification-service
 
-PAYMENT_SUCCESS (payment.success)
-    Payment Svc ───┬───────────────────────► Order Svc (confirm order)
-                   ├───────────────────────► Notification Svc (payment receipt)
-                   └───────────────────────► Seller Svc (queue payout)
+ORDER_CREATED (order:created)
+    orders ─────┬─────────────────► referrals (wallet credit on first order)
+                ├─────────────────► recommendations (record PURCHASE interaction)
+                └─────────────────► analytics (increment daily metrics)
+                ╌╌ Kafka: order.created ──► notification-service, delivery-service
 
-PAYMENT_FAILED (payment.failed)
-    Payment Svc ───┬───────────────────────► Order Svc (cancel order)
-                   └───────────────────────► Notification Svc (payment failed alert)
+REVIEW_POSTED (review:posted)
+    reviews ────┬─────────────────► reviews (recalculate product rating)
+                └─────────────────► recommendations (record REVIEW interaction)
+                ╌╌ Kafka: review.posted (future analytics extension)
 
-ORDER_STATUS_CHANGED (order.status_changed)
-    Order Svc ─────┬───────────────────────► Notification Svc (status email/push)
-                   └───────────────────────► Analytics Svc
+USER_REGISTERED (user:registered)
+    auth.controller ──────────────► analytics (new user daily metrics)
+                ╌╌ Kafka: user.registered ──► notification-service
 
-PRODUCT_CREATED (product.created)
-    Product Svc ───┬───────────────────────► Search Svc (index in Elasticsearch)
-                   └───────────────────────► Rec Engine (update model)
+PRODUCT_CREATED (product:created)
+    products ──────────────────────► recommendations (seed trendingproducts)
 
-INVENTORY_UPDATED (inventory.updated)
-    Product Svc ───┬───────────────────────► Cart Svc (invalidate cache)
-                   └───────────────────────► Notification Svc (back-in-stock alerts)
-
-REVIEW_POSTED (review.posted)
-    Review Svc ────┬───────────────────────► Rec Engine (update ratings model)
-                   └───────────────────────► Analytics Svc
-
-STOREFRONT_PUBLISHED (storefront.published) ← NEW
-    Storefront Svc ─────────────────────────► CDN Invalidation (clear CloudFront cache)
-
-REFERRAL_REWARD_ISSUED (referral.reward_issued) ← NEW
-    Referral Svc ──────────────────────────► Notification Svc (alert referrer + referee)
-
-REFERRAL_REWARD_REVOKED (referral.reward_revoked) ← NEW
-    Referral Svc ──────────────────────────► Notification Svc (alert both users)
-
-REFERRAL_CREDIT_EXPIRED (referral.credit_expired) ← NEW
-    Referral Svc ──────────────────────────► Notification Svc (expiry warning emails)
+DELIVERY_COMPLETED (delivery:completed)
+    Kafka consumer ─┬─────────────► orders (mark DELIVERED)
+    (from delivery  └─────────────► analytics (deliveriesCompleted++)
+     service)
 ```
 
 ---
 
-## Synchronous REST Call Map
+## Kafka Topics — External Only
 
-```
-Cart Svc ──────── GET /products/{id}/ ──────────► Product Svc  (validate item before adding)
-Order Svc ──────── GET /payments/{id}/ ──────────► Payment Svc (confirm payment on checkout)
-Order Svc ──────── PATCH /inventory/ ────────────► Product Svc (reserve stock on order)
-Storefront Svc ─── GET /seller/products/ ────────► Product Svc (load seller's products for designer)
-Notification Svc ── GET /users/{id}/ ────────────► User Svc    (get email/phone for notification)
-```
+Only events crossing process boundaries go through Kafka.
+
+| Topic | Producer | Consumers |
+|-------|----------|-----------|
+| `order.created` | api-monolith | notification-service, delivery-service |
+| `order.status_updated` | api-monolith | notification-service |
+| `payment.success` | api-monolith | notification-service |
+| `payment.failed` | api-monolith | notification-service |
+| `user.registered` | api-monolith | notification-service |
+| `review.posted` | api-monolith | (notification-service, future) |
+| `seller.approved` | api-monolith | notification-service |
+| `delivery.assigned` | delivery-service | notification-service |
+| `delivery.picked_up` | delivery-service | notification-service |
+| `delivery.completed` | delivery-service | api-monolith (order + analytics) |
+| `delivery.failed` | delivery-service | api-monolith, notification-service |
 
 ---
 
 ## Data Store Map
 
 ```
-User Svc            ──► MongoDB: user_db
-Product Svc         ──► MongoDB: product_db
-                    ──► Elasticsearch (search/suggestions index)
-Cart Svc            ──► Redis (ephemeral cart state — no MongoDB)
-Order Svc           ──► MongoDB: order_db
-Payment Svc         ──► MongoDB: payment_db
-Review Svc          ──► MongoDB: review_db
-Seller Svc          ──► MongoDB: seller_db
-Notification Svc    ──► MongoDB: notification_db
-Search Svc          ──► Elasticsearch (no MongoDB)
-Recommendation Svc  ──► MongoDB: recommendation_db
-Storefront Svc      ──► MongoDB: storefront_db
-                    ──► S3: platform-storefronts bucket
-                    ──► CloudFront (CDN distribution)
-Referral Svc        ──► MongoDB: referral_db
-Delivery Svc        ──► MongoDB: delivery_db
-Analytics Svc       ──► MongoDB: analytics_db
+api-monolith       ──► MongoDB: bazzar_monolith   (single DB, all collections)
+                       Collections: users, addresses, products, categories, banners,
+                                    orders, coupons, payments, sellers, reviews,
+                                    referrals, wallets, messages, storefronts,
+                                    views, analyticsevents, platformsettings,
+                                    platformmetrics, sellermetrics,
+                                    userproductinteractions, trendingproducts
+                   ──► Redis: cart store (TTL 7 days), rate limit counters
 
-All services        ──► Redis (caching, BullMQ queues, rate limits, sessions)
+delivery-service   ──► MongoDB: delivery_db
+notification-service ──► (stateless — delivers emails/SMS/push via external providers)
+```
+
+---
+
+## Eliminated Synchronous HTTP Calls
+
+The following cross-service HTTP calls existed in the original microservice architecture
+and have been removed. All are now direct Mongoose queries or internalBus events.
+
+| Was | Now |
+|-----|-----|
+| `seller-service → GET /products?sellerId=` | `Product.find({ sellerId })` |
+| `seller-service → GET /orders?sellerId=` | `Order.find({ 'items.sellerId' })` |
+| `auth → POST /referrals/apply` | `handleUserRegistered()` direct call |
+| `analytics → GET /orders/admin/stats` | `Order.aggregate(...)` |
+| `analytics → GET /users/admin/stats` | `db.collection('users').countDocuments()` |
+| `search → GET /products?search=` | `Product.find({ $or: [{ name: re }] })` |
+| `recommendations → GET /products?category=` | `Product.find({ category })` |
 ```

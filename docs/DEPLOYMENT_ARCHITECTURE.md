@@ -24,101 +24,94 @@ All services run in **AWS EKS (Kubernetes)**. External infrastructure (PostgreSQ
 EKS Cluster: ecommerce-platform
 │
 ├── Namespace: services
-│   ├── Deployment: user-service          (2-10 replicas, HPA)
-│   ├── Deployment: product-service       (2-10 replicas, HPA)
-│   ├── Deployment: cart-service          (2-5 replicas)
-│   ├── Deployment: order-service         (2-8 replicas, HPA)
-│   ├── Deployment: payment-service       (2-4 replicas)
-│   ├── Deployment: review-service        (2-4 replicas)
-│   ├── Deployment: seller-service        (2-4 replicas)
-│   ├── Deployment: notification-service  (2-4 replicas)
-│   ├── Deployment: search-service        (2-4 replicas)
-│   ├── Deployment: recommendation-engine (1-3 replicas)
-│   └── Deployment: storefront-designer   (2-4 replicas) ← NEW
+│   ├── Deployment: api-monolith          (3-20 replicas, HPA)  ← all 13 modules
+│   ├── Deployment: delivery-service      (2-6 replicas, HPA)
+│   └── Deployment: notification-service  (2-4 replicas)
 │
 ├── Namespace: infrastructure
 │   ├── Deployment: kong-api-gateway
 │   └── Deployment: nginx-ingress
 │
 └── Namespace: workers
-    ├── Deployment: bullmq-worker-notifications
-    ├── Deployment: bullmq-worker-recommendation
-    └── Deployment: bullmq-worker-storefront  (async Handlebars rendering)
+    └── Deployment: bullmq-worker-notifications
 ```
 
 ---
 
-## 4. Kubernetes Manifest Pattern (per service)
-
-Each service has these manifests in `infrastructure/k8s/{service-name}/`:
+## 4. Kubernetes Manifest Pattern (api-monolith)
 
 ```yaml
 # deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: product-service
+  name: api-monolith
   namespace: services
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
-      app: product-service
+      app: api-monolith
   template:
     metadata:
       labels:
-        app: product-service
+        app: api-monolith
     spec:
       containers:
-        - name: product-service
-          image: your-registry/product-service:latest
+        - name: api-monolith
+          image: your-registry/api-monolith:latest
           ports:
-            - containerPort: 8002
+            - containerPort: 8100
           env:
-            - name: DATABASE_URL
+            - name: MONGO_URI
               valueFrom:
                 secretKeyRef:
-                  name: product-service-secrets
-                  key: database-url
+                  name: monolith-secrets
+                  key: mongo-uri
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
                   name: shared-secrets
                   key: redis-url
+            - name: KAFKA_BROKERS
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: kafka-brokers
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
               memory: "512Mi"
               cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
           livenessProbe:
             httpGet:
-              path: /health/
-              port: 8002
+              path: /health
+              port: 8100
             initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
-              path: /health/
-              port: 8002
+              path: /health
+              port: 8100
             initialDelaySeconds: 5
             periodSeconds: 10
 
 ---
-# hpa.yaml (Horizontal Pod Autoscaler)
+# hpa.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: product-service-hpa
+  name: api-monolith-hpa
   namespace: services
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: product-service
-  minReplicas: 2
-  maxReplicas: 10
+    name: api-monolith
+  minReplicas: 3
+  maxReplicas: 20
   metrics:
     - type: Resource
       resource:
@@ -132,14 +125,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: product-service
+  name: api-monolith
   namespace: services
 spec:
   selector:
-    app: product-service
+    app: api-monolith
   ports:
-    - port: 8002
-      targetPort: 8002
+    - port: 8100
+      targetPort: 8100
 ```
 
 ---
@@ -148,10 +141,10 @@ spec:
 
 | Service | AWS Product / Technology | Config |
 |---------|--------------------------|--------|
-| MongoDB (per microservice) | MongoDB Atlas | One cluster per service, automated backups |
-| Redis | ElastiCache Redis 7 | Cluster mode, 2 shards — BullMQ + cache + sessions |
-| Kafka | Amazon MSK | 3 brokers, replication factor 3 |
-| Elasticsearch | Amazon OpenSearch 8 | 3 data nodes (search-service only) |
+| MongoDB (monolith) | MongoDB Atlas | Single `bazzar_monolith` cluster, automated backups |
+| MongoDB (delivery) | MongoDB Atlas | Separate `delivery_db` cluster |
+| Redis | ElastiCache Redis 7 | Cart store + rate limit counters |
+| Kafka | Amazon MSK | 3 brokers, replication factor 3 — external events only |
 | Object Storage | S3 | Separate buckets: media, storefronts, backups |
 | CDN | CloudFront | Distribution per environment |
 | Secrets | AWS Secrets Manager | Rotated every 30 days |
@@ -190,42 +183,33 @@ services:
     ports: ["9092:9092"]
     depends_on: [zookeeper]
 
-  elasticsearch:
-    image: elasticsearch:8.13.0
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports: ["9200:9200"]
-
   # Services
-  user-service:
-    build: ./services/user-service
-    ports: ["8001:8001"]
+  api-monolith:
+    build: ./services/api-monolith
+    ports: ["8100:8100"]
     environment:
-      MONGO_URI: mongodb://mongodb:27017/user_db
+      MONGO_URI: mongodb://mongodb:27017/bazzar_monolith
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      JWT_ACCESS_SECRET: dev_access_secret
+      JWT_REFRESH_SECRET: dev_refresh_secret
+    depends_on: [mongodb, redis, kafka]
+
+  delivery-service:
+    build: ./services/delivery-service
+    ports: ["8013:8013"]
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/delivery_db
       REDIS_URL: redis://redis:6379
       KAFKA_BROKERS: kafka:9092
     depends_on: [mongodb, redis, kafka]
 
-  product-service:
-    build: ./services/product-service
-    ports: ["8002:8002"]
+  notification-service:
+    build: ./services/notification-service
+    ports: ["8008:8008"]
     environment:
-      MONGO_URI: mongodb://mongodb:27017/product_db
-      REDIS_URL: redis://redis:6379
       KAFKA_BROKERS: kafka:9092
-    depends_on: [mongodb, redis, kafka, elasticsearch]
-
-  storefront-designer-service:
-    build: ./services/storefront-designer-service
-    ports: ["8011:8011"]
-    environment:
-      MONGO_URI: mongodb://mongodb:27017/storefront_db
-      REDIS_URL: redis://redis:6379
-      KAFKA_BROKERS: kafka:9092
-      AWS_S3_BUCKET: local-storefronts
-      CLOUDFRONT_URL: http://localhost:9000
-    depends_on: [mongodb, redis, kafka]
+    depends_on: [kafka]
 
   # Frontend
   web:
