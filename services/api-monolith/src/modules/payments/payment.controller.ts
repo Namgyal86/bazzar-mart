@@ -215,3 +215,15 @@ export const getAdminPayments = async (req: Request, res: Response): Promise<voi
     res.json({ success: true, data: payments, meta: { page, limit, total } });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
 };
+
+export const getPaymentStats = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const [total, successCount, failedCount] = await Promise.all([
+      Payment.countDocuments(),
+      Payment.countDocuments({ status: 'SUCCESS' }),
+      Payment.countDocuments({ status: 'FAILED' }),
+    ]);
+    const successRate = total > 0 ? (successCount / total) * 100 : 0;
+    res.json({ success: true, data: { total, successCount, failedCount, successRate: Number(successRate.toFixed(2)) } });
+  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+};

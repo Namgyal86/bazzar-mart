@@ -3,7 +3,7 @@ import { authenticate, requireRole } from '../../shared/middleware/auth';
 import {
   initiatePayment, verifyPayment,
   khaltiCallback, esewaCallback,
-  getPaymentByOrder, getAdminPayments,
+  getPaymentByOrder, getAdminPayments, getPaymentStats,
 } from './payment.controller';
 
 const router = Router();
@@ -24,5 +24,6 @@ router.post('/payments/fonepay/verify', authenticate, (req, _res, next) => { (re
 
 router.get('/payments/order/:orderId', authenticate, getPaymentByOrder);
 router.get('/payments/admin/list',     authenticate, requireRole('ADMIN'), getAdminPayments);
+router.get('/payments/admin/stats',    authenticate, requireRole('ADMIN'), getPaymentStats);
 
 export default router;

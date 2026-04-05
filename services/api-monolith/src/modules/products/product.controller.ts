@@ -156,11 +156,6 @@ export const getAdminStats = async (_req: Request, res: Response): Promise<void>
   }
 };
 
-/** Called internally by reviews module via direct function call (not HTTP). */
-export async function updateProductRating(productId: string, rating: number, reviewCount: number): Promise<void> {
-  await Product.findByIdAndUpdate(productId, { rating, reviewCount });
-}
-
 export const getFlashDeals = async (_req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();

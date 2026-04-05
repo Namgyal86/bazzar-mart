@@ -81,9 +81,6 @@ export const productApi = {
   getById: (id: string) =>
     apiClient.get<{ success: true; data: Product }>(`/api/v1/products/${id}`),
 
-  getBySlug: (slug: string) =>
-    apiClient.get<{ success: true; data: Product }>(`/api/v1/products/slug/${slug}`),
-
   getFeatured: () =>
     apiClient.get<{ success: true; data: Product[] }>('/api/v1/products/featured'),
 

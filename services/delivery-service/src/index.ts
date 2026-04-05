@@ -37,6 +37,14 @@ app.get('/api/v1/delivery/admin/list', (req, res) => {
   res.json({ success: true, data: deliveries });
 });
 
+// Admin: delivery stats (used by platform-health dashboard)
+app.get('/api/v1/delivery/admin/stats', (req, res) => {
+  const total = deliveries.length;
+  const completedCount = deliveries.filter(d => d.status === 'DELIVERED').length;
+  const onTimeRate = total > 0 ? (completedCount / total) * 100 : 0;
+  res.json({ success: true, data: { total, completedCount, onTimeRate: Number(onTimeRate.toFixed(2)) } });
+});
+
 // Admin: get available drivers
 app.get('/api/v1/delivery/drivers/available', (req, res) => {
   res.json({ success: true, data: availableDrivers });
