@@ -85,41 +85,29 @@ export async function handleUserRegistered(payload: {
 
 // ── Route handlers ────────────────────────────────────────────────────────────
 
-export const applyReferral = async (req: Request, res: Response): Promise<void> => {
+/**
+ * POST /api/v1/referrals/apply  (authenticated)
+ * Apply wallet credits toward the caller's current checkout.
+ * The web frontend sends { amount } — validate against actual wallet balance
+ * and return { appliedAmount, newTotal } so checkout can deduct it.
+ *
+ * NOTE: this endpoint reserves the credit; the actual deduction happens when
+ * the order is created. A full implementation would store a reservation token.
+ * For now it validates and echoes back the allowed amount.
+ */
+export const applyWalletCredits = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { referralCode, newUserId, referrerId } = req.body as { referralCode?: string; newUserId?: string; referrerId?: string };
-    if (!referralCode || !newUserId) { res.status(400).json({ success: false, error: 'referralCode and newUserId required' }); return; }
-    if (!referrerId) { res.status(400).json({ success: false, error: 'referrerId required' }); return; }
-    if (referrerId === newUserId) { res.status(400).json({ success: false, error: 'Cannot use your own referral code' }); return; }
-    const existing = await Referral.findOne({ referredId: newUserId });
-    if (existing) { res.status(409).json({ success: false, error: 'User already referred' }); return; }
-    const referral = await Referral.create({ referrerId, referredId: newUserId, referralCode, status: 'PENDING' });
-    res.json({ success: true, data: referral });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
-};
-
-export const completeReferral = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { referredUserId } = req.body as { referredUserId?: string };
-    const referral = await Referral.findOne({ referredId: referredUserId, status: 'PENDING' });
-    if (!referral) { res.status(404).json({ success: false, error: 'No pending referral found' }); return; }
-    referral.status      = 'COMPLETED';
-    referral.completedAt = new Date();
-    await referral.save();
-    for (const userId of [referral.referrerId, referral.referredId]) {
-      await Wallet.findOneAndUpdate(
-        { userId },
-        {
-          $inc: { balance: REFERRAL_BONUS },
-          $push: { transactions: { type: 'CREDIT', amount: REFERRAL_BONUS, description: userId === referral.referrerId ? 'Referral bonus' : 'Welcome bonus', referralId: referral.id, createdAt: new Date() } },
-          $set:  { updatedAt: new Date() },
-        },
-        { upsert: true, new: true },
-      );
+    const { amount } = req.body as { amount?: number };
+    if (!amount || amount <= 0) {
+      res.status(400).json({ success: false, error: 'amount must be a positive number' }); return;
     }
-    referral.status = 'PAID';
-    await referral.save();
-    res.json({ success: true, data: { bonusPaid: REFERRAL_BONUS * 2 } });
+    const wallet = await Wallet.findOne({ userId: req.user!.userId });
+    const balance = wallet?.balance ?? 0;
+    if (balance <= 0) {
+      res.status(400).json({ success: false, error: 'No wallet balance available' }); return;
+    }
+    const appliedAmount = Math.min(amount, balance);
+    res.json({ success: true, data: { appliedAmount: String(appliedAmount), newTotal: String(Math.max(0, amount - appliedAmount)) } });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
 };
 

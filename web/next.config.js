@@ -39,61 +39,79 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const U  = process.env.USER_SERVICE_URL             || 'http://localhost:8001';
-    const P  = process.env.PRODUCT_SERVICE_URL          || 'http://localhost:8002';
-    const CA = process.env.CART_SERVICE_URL             || 'http://localhost:8003';
-    const O  = process.env.ORDER_SERVICE_URL            || 'http://localhost:8004';
-    const PY = process.env.PAYMENT_SERVICE_URL          || 'http://localhost:8005';
-    const RV = process.env.REVIEW_SERVICE_URL           || 'http://localhost:8006';
-    const S  = process.env.SELLER_SERVICE_URL           || 'http://localhost:8007';
-    const N  = process.env.NOTIFICATION_SERVICE_URL     || 'http://localhost:8008';
-    const SE = process.env.SEARCH_SERVICE_URL           || 'http://localhost:8009';
-    const RC = process.env.RECOMMENDATION_SERVICE_URL   || 'http://localhost:8010';
-    const RF = process.env.REFERRAL_SERVICE_URL         || 'http://localhost:8012';
-    const D  = process.env.DELIVERY_SERVICE_URL         || 'http://localhost:8013';
-    const AN = process.env.ANALYTICS_SERVICE_URL        || 'http://localhost:8014';
-    const SP = process.env.SUPPORT_SERVICE_URL          || 'http://localhost:8015';
-    const SF = process.env.STOREFRONT_SERVICE_URL       || 'http://localhost:8011';
+    // Monolith handles all modules on a single port.
+    // Only delivery-service and notification-service remain as separate processes.
+    const M  = process.env.MONOLITH_URL          || 'http://localhost:8100';
+    const D  = process.env.DELIVERY_SERVICE_URL  || 'http://localhost:8013';
+    const N  = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8008';
     return [
-      { source: '/api/v1/auth/:path*',             destination: `${U}/api/v1/auth/:path*` },
-      { source: '/api/v1/users/:path*',             destination: `${U}/api/v1/users/:path*` },
-      { source: '/api/v1/products',                  destination: `${P}/api/v1/products` },
-      { source: '/api/v1/products/:path*',          destination: `${P}/api/v1/products/:path*` },
-      { source: '/api/v1/categories',               destination: `${P}/api/v1/categories` },
-      { source: '/api/v1/categories/:path*',        destination: `${P}/api/v1/categories/:path*` },
-      { source: '/api/v1/banners/:path*',           destination: `${P}/api/v1/banners/:path*` },
-      { source: '/api/v1/banners',                  destination: `${P}/api/v1/banners` },
-      { source: '/api/v1/cart/:path*',              destination: `${CA}/api/v1/cart/:path*` },
-      { source: '/api/v1/orders/:path*',            destination: `${O}/api/v1/orders/:path*` },
-      { source: '/api/v1/coupons/:path*',           destination: `${O}/api/v1/coupons/:path*` },
-      { source: '/api/v1/coupons',                  destination: `${O}/api/v1/coupons` },
-      { source: '/api/v1/payments/:path*',          destination: `${PY}/api/v1/payments/:path*` },
-      { source: '/api/v1/reviews/:path*',           destination: `${RV}/api/v1/reviews/:path*` },
-      { source: '/api/v1/seller/:path*',            destination: `${S}/api/v1/seller/:path*` },
-      { source: '/api/v1/notifications/:path*',     destination: `${N}/api/v1/notifications/:path*` },
-      { source: '/api/v1/search/:path*',            destination: `${SE}/api/v1/search/:path*` },
-      { source: '/api/v1/recommendations/:path*',   destination: `${RC}/api/v1/recommendations/:path*` },
-      { source: '/api/v1/referrals/:path*',           destination: `${RF}/api/v1/referrals/:path*` },
-      { source: '/api/v1/referral/:path*',            destination: `${RF}/api/v1/referrals/:path*` },  // singular alias
-      // Admin mobile app routes (must be before generic catches)
-      { source: '/api/v1/admin/dashboard',              destination: `${AN}/api/v1/analytics/admin/overview` },
-      { source: '/api/v1/admin/users',                  destination: `${U}/api/v1/users/admin/list` },
-      { source: '/api/v1/admin/users/:path*',           destination: `${U}/api/v1/users/admin/:path*` },
-      { source: '/api/v1/admin/sellers',                destination: `${S}/api/v1/seller/admin/list` },
-      { source: '/api/v1/admin/sellers/:path*',         destination: `${S}/api/v1/seller/admin/:path*` },
-      { source: '/api/v1/admin/orders',                 destination: `${O}/api/v1/orders/all` },
-      { source: '/api/v1/admin/orders/:path*',          destination: `${O}/api/v1/orders/:path*` },
-      { source: '/api/v1/admin/referrals',              destination: `${RF}/api/v1/admin/referrals` },
-      { source: '/api/v1/admin/referrals/:path*',     destination: `${RF}/api/v1/admin/referrals/:path*` },
-      { source: '/api/v1/admin/referral-config/:path*', destination: `${RF}/api/v1/admin/referral-config/:path*` },
-      { source: '/api/v1/admin/referral-config',      destination: `${RF}/api/v1/admin/referral-config` },
-      { source: '/api/v1/delivery/:path*',          destination: `${D}/api/v1/delivery/:path*` },
-      { source: '/api/v1/analytics/:path*',         destination: `${AN}/api/v1/analytics/:path*` },
-      { source: '/api/v1/storefront/:path*',        destination: `${SF}/api/v1/storefront/:path*` },
-      { source: '/api/v1/storefront',               destination: `${SF}/api/v1/storefront` },
-      { source: '/api/v1/upload/:path*',            destination: `${P}/api/v1/upload/:path*` },
-      { source: '/api/v1/support/:path*',           destination: `${SP}/api/v1/support/:path*` },
-      { source: '/api/v1/support',                  destination: `${SP}/api/v1/support` },
+      // ── Auth & Users ──────────────────────────────────────────────────────
+      { source: '/api/v1/auth/:path*',                  destination: `${M}/api/v1/auth/:path*` },
+      { source: '/api/v1/users/:path*',                 destination: `${M}/api/v1/users/:path*` },
+
+      // ── Products, Categories, Banners, Upload ─────────────────────────────
+      { source: '/api/v1/products',                     destination: `${M}/api/v1/products` },
+      { source: '/api/v1/products/:path*',              destination: `${M}/api/v1/products/:path*` },
+      { source: '/api/v1/categories',                   destination: `${M}/api/v1/categories` },
+      { source: '/api/v1/categories/:path*',            destination: `${M}/api/v1/categories/:path*` },
+      { source: '/api/v1/banners',                      destination: `${M}/api/v1/banners` },
+      { source: '/api/v1/banners/:path*',               destination: `${M}/api/v1/banners/:path*` },
+      { source: '/api/v1/upload/:path*',                destination: `${M}/api/v1/upload/:path*` },
+
+      // ── Cart ──────────────────────────────────────────────────────────────
+      { source: '/api/v1/cart/:path*',                  destination: `${M}/api/v1/cart/:path*` },
+
+      // ── Orders & Coupons ──────────────────────────────────────────────────
+      { source: '/api/v1/orders/:path*',                destination: `${M}/api/v1/orders/:path*` },
+      { source: '/api/v1/coupons',                      destination: `${M}/api/v1/coupons` },
+      { source: '/api/v1/coupons/:path*',               destination: `${M}/api/v1/coupons/:path*` },
+
+      // ── Payments ──────────────────────────────────────────────────────────
+      { source: '/api/v1/payments/:path*',              destination: `${M}/api/v1/payments/:path*` },
+
+      // ── Reviews ───────────────────────────────────────────────────────────
+      { source: '/api/v1/reviews/:path*',               destination: `${M}/api/v1/reviews/:path*` },
+
+      // ── Sellers ───────────────────────────────────────────────────────────
+      { source: '/api/v1/seller/:path*',                destination: `${M}/api/v1/seller/:path*` },
+
+      // ── Search ────────────────────────────────────────────────────────────
+      { source: '/api/v1/search/:path*',                destination: `${M}/api/v1/search/:path*` },
+
+      // ── Recommendations ───────────────────────────────────────────────────
+      { source: '/api/v1/recommendations/:path*',       destination: `${M}/api/v1/recommendations/:path*` },
+
+      // ── Referrals ─────────────────────────────────────────────────────────
+      { source: '/api/v1/referrals/:path*',             destination: `${M}/api/v1/referrals/:path*` },
+      { source: '/api/v1/referral/:path*',              destination: `${M}/api/v1/referrals/:path*` }, // singular alias
+
+      // ── Support ───────────────────────────────────────────────────────────
+      { source: '/api/v1/support',                      destination: `${M}/api/v1/support` },
+      { source: '/api/v1/support/:path*',               destination: `${M}/api/v1/support/:path*` },
+
+      // ── Storefront ────────────────────────────────────────────────────────
+      { source: '/api/v1/storefront',                   destination: `${M}/api/v1/storefront` },
+      { source: '/api/v1/storefront/:path*',            destination: `${M}/api/v1/storefront/:path*` },
+
+      // ── Analytics ─────────────────────────────────────────────────────────
+      { source: '/api/v1/analytics/:path*',             destination: `${M}/api/v1/analytics/:path*` },
+
+      // ── Admin routes (all served by monolith) ─────────────────────────────
+      { source: '/api/v1/admin/dashboard',              destination: `${M}/api/v1/analytics/admin/overview` },
+      { source: '/api/v1/admin/users',                  destination: `${M}/api/v1/users/admin/list` },
+      { source: '/api/v1/admin/users/:path*',           destination: `${M}/api/v1/users/admin/:path*` },
+      { source: '/api/v1/admin/sellers',                destination: `${M}/api/v1/seller/admin/list` },
+      { source: '/api/v1/admin/sellers/:path*',         destination: `${M}/api/v1/seller/admin/:path*` },
+      { source: '/api/v1/admin/orders',                 destination: `${M}/api/v1/orders/all` },
+      { source: '/api/v1/admin/orders/:path*',          destination: `${M}/api/v1/orders/:path*` },
+      { source: '/api/v1/admin/referrals',              destination: `${M}/api/v1/admin/referrals` },
+      { source: '/api/v1/admin/referrals/:path*',       destination: `${M}/api/v1/admin/referrals/:path*` },
+      { source: '/api/v1/admin/referral-config',        destination: `${M}/api/v1/admin/referral-config` },
+      { source: '/api/v1/admin/referral-config/:path*', destination: `${M}/api/v1/admin/referral-config/:path*` },
+
+      // ── Separate services (not merged into monolith) ──────────────────────
+      { source: '/api/v1/delivery/:path*',              destination: `${D}/api/v1/delivery/:path*` },
+      { source: '/api/v1/notifications/:path*',         destination: `${N}/api/v1/notifications/:path*` },
     ];
   },
 };

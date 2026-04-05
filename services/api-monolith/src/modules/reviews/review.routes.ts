@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, optionalAuth } from '../../shared/middleware/auth';
+import { authenticate, optionalAuth, requireRole } from '../../shared/middleware/auth';
 import {
   getProductReviews, createReview, deleteReview, markHelpful,
   adminListReviews, adminApproveReview, adminRejectReview, adminDeleteReview,
@@ -18,7 +18,7 @@ router.post  ('/reviews/:productId',                authenticate, createReview);
 router.post('/reviews/:reviewId/helpful', authenticate, markHelpful);
 
 // Admin
-router.get   ('/reviews/admin/list',       adminListReviews);
+router.get   ('/reviews/admin/list',       authenticate, requireRole('ADMIN'), adminListReviews);
 router.patch ('/reviews/admin/:id/approve', authenticate, adminApproveReview);
 router.patch ('/reviews/admin/:id/reject',  authenticate, adminRejectReview);
 router.delete('/reviews/admin/:id',         authenticate, adminDeleteReview);

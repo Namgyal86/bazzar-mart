@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:8014';
+const MONOLITH_URL = process.env.MONOLITH_URL || 'http://localhost:8100';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     if (userId) forwardHeaders['x-user-id'] = userId;
     if (userRole) forwardHeaders['x-user-role'] = userRole;
 
-    const res = await fetch(`${ANALYTICS_URL}/api/v1/analytics/admin/overview`, {
+    const res = await fetch(`${MONOLITH_URL}/api/v1/analytics/admin/overview`, {
       headers: forwardHeaders,
       signal: AbortSignal.timeout(5000),
     });

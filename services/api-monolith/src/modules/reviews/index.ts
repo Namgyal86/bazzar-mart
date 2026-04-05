@@ -1,15 +1,8 @@
 /**
- * Reviews module — Phase 3 migration stub.
+ * Reviews module — migration COMPLETE.
  *
  * After posting a review:
- *  BEFORE: Kafka review.posted → recommendation-service (kept separate, still needed)
- *  AFTER:
- *    1. emit internalBus REVIEW_POSTED → products module updateProductRating() (direct function)
- *    2. publish Kafka review.posted → recommendation-service (still separate)
- *
- * Import to use for #1:
- *    import { updateProductRating } from '../products/product.controller';
- *
- * Port to migrate from: 8006
+ *   1. internalBus REVIEW_POSTED → products module recalculates rating (in-process)
+ *   2. Kafka review.posted       → recommendation-service (remains separate)
  */
 export {};

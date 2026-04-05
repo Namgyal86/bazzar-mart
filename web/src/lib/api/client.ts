@@ -1,8 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/auth.store';
 
-// In dev: empty baseURL → Next.js rewrites route /api/v1/* to each microservice
-// In prod: set NEXT_PUBLIC_API_BASE_URL to Kong Gateway (e.g. https://api.bazzar.com)
+// In dev: empty baseURL → Next.js rewrites route /api/v1/* to the api-monolith
+// In prod: set NEXT_PUBLIC_API_BASE_URL to your CDN/load-balancer (e.g. https://api.bazzar.com)
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
   headers: { 'Content-Type': 'application/json' },

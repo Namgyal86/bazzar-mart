@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const SERVICES = {
-  user:     process.env.USER_SERVICE_URL     || 'http://localhost:8001',
-  product:  process.env.PRODUCT_SERVICE_URL  || 'http://localhost:8002',
-  order:    process.env.ORDER_SERVICE_URL    || 'http://localhost:8004',
-  payment:  process.env.PAYMENT_SERVICE_URL  || 'http://localhost:8005',
+  monolith: process.env.MONOLITH_URL         || 'http://localhost:8100',
   delivery: process.env.DELIVERY_SERVICE_URL || 'http://localhost:8013',
 };
 
@@ -29,16 +26,13 @@ async function fetchJson(url: string) {
 }
 
 export async function GET() {
-  // 1. Measure response times for all services in parallel
-  const [userPing, productPing, orderPing, paymentPing, deliveryPing] = await Promise.all([
-    ping(SERVICES.user),
-    ping(SERVICES.product),
-    ping(SERVICES.order),
-    ping(SERVICES.payment),
+  // 1. Ping monolith + delivery service in parallel
+  const [monolithPing, deliveryPing] = await Promise.all([
+    ping(SERVICES.monolith),
     ping(SERVICES.delivery),
   ]);
 
-  const responseTimes = [userPing, productPing, orderPing, paymentPing, deliveryPing]
+  const responseTimes = [monolithPing, deliveryPing]
     .filter((p) => p.ok && p.ms >= 0)
     .map((p) => p.ms);
 
@@ -46,13 +40,13 @@ export async function GET() {
     ? Math.round(responseTimes.sort((a, b) => a - b)[Math.floor(responseTimes.length * 0.95)] ?? responseTimes[responseTimes.length - 1])
     : null;
 
-  // 2. Fetch order stats
-  const orderStats = await fetchJson(`${SERVICES.order}/api/v1/orders/admin/stats`);
+  // 2. Fetch order stats from monolith
+  const orderStats = await fetchJson(`${SERVICES.monolith}/api/v1/orders/admin/stats`);
 
-  // 3. Fetch payment stats
-  const paymentStats = await fetchJson(`${SERVICES.payment}/api/v1/payments/admin/stats`);
+  // 3. Fetch payment stats from monolith
+  const paymentStats = await fetchJson(`${SERVICES.monolith}/api/v1/payments/admin/stats`);
 
-  // 4. Fetch delivery stats
+  // 4. Fetch delivery stats from delivery-service (still separate)
   const deliveryStats = await fetchJson(`${SERVICES.delivery}/api/v1/delivery/admin/stats`);
 
   // ── Build metrics ──────────────────────────────────────────────────────────

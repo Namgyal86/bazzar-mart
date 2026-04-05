@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../../shared/middleware/auth';
 import {
-  applyReferral, completeReferral,
+  applyWalletCredits,
   getWallet, getMyReferrals, getMyDashboard, getMyCode,
   getReferralDashboard, getReferralHistory, validateCode,
   adminListReferrals, adminRevokeReferral, adminGetConfig, adminUpdateConfig,
@@ -9,18 +9,17 @@ import {
 
 const router = Router();
 
-// Public / semi-public
-router.post('/referrals/apply',       applyReferral);
-router.post('/referrals/complete',    completeReferral);
-router.get ('/referrals/validate/:code', validateCode);
+// Public
+router.get('/referrals/validate/:code', validateCode);
 
 // Authenticated buyer routes
-router.get('/referrals/wallet',    authenticate, getWallet);
-router.get('/referrals/mine',      authenticate, getMyReferrals);
-router.get('/referrals/my',        authenticate, getMyDashboard);   // combined wallet + referrals
-router.get('/referrals/my-code',   authenticate, getMyCode);
-router.get('/referrals/dashboard', authenticate, getReferralDashboard);
-router.get('/referrals/history',   authenticate, getReferralHistory);
+router.post('/referrals/apply',    authenticate, applyWalletCredits); // apply wallet credits at checkout
+router.get ('/referrals/wallet',   authenticate, getWallet);
+router.get ('/referrals/mine',     authenticate, getMyReferrals);
+router.get ('/referrals/my',       authenticate, getMyDashboard);   // combined wallet + referrals
+router.get ('/referrals/my-code',  authenticate, getMyCode);
+router.get ('/referrals/dashboard', authenticate, getReferralDashboard);
+router.get ('/referrals/history',  authenticate, getReferralHistory);
 
 // Admin
 router.get  ('/admin/referrals',              authenticate, requireRole('ADMIN'), adminListReferrals);

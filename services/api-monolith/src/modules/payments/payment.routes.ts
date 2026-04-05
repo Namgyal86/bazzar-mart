@@ -12,17 +12,17 @@ const router = Router();
 router.get('/payments/khalti/callback', khaltiCallback);
 router.get('/payments/esewa/callback',  esewaCallback);
 
-// Authenticated routes
-router.use('/payments', authenticate);
-router.post('/payments/initiate',  initiatePayment);
-router.post('/payments/verify',    verifyPayment);
+// Authenticated routes — explicit authenticate on every route instead of router.use()
+// (router.use('/payments', fn) in a sub-router does not reliably cover all sub-paths)
+router.post('/payments/initiate',  authenticate, initiatePayment);
+router.post('/payments/verify',    authenticate, verifyPayment);
 
 // Gateway-specific verify aliases
-router.post('/payments/khalti/verify',  (req, _res, next) => { (req.body as { gateway: string }).gateway = 'KHALTI';  next(); }, verifyPayment);
-router.post('/payments/esewa/verify',   (req, _res, next) => { (req.body as { gateway: string }).gateway = 'ESEWA';   next(); }, verifyPayment);
-router.post('/payments/fonepay/verify', (req, _res, next) => { (req.body as { gateway: string }).gateway = 'FONEPAY'; next(); }, verifyPayment);
+router.post('/payments/khalti/verify',  authenticate, (req, _res, next) => { (req.body as { gateway: string }).gateway = 'KHALTI';  next(); }, verifyPayment);
+router.post('/payments/esewa/verify',   authenticate, (req, _res, next) => { (req.body as { gateway: string }).gateway = 'ESEWA';   next(); }, verifyPayment);
+router.post('/payments/fonepay/verify', authenticate, (req, _res, next) => { (req.body as { gateway: string }).gateway = 'FONEPAY'; next(); }, verifyPayment);
 
-router.get('/payments/order/:orderId', getPaymentByOrder);
-router.get('/payments/admin/list',     requireRole('ADMIN'), getAdminPayments);
+router.get('/payments/order/:orderId', authenticate, getPaymentByOrder);
+router.get('/payments/admin/list',     authenticate, requireRole('ADMIN'), getAdminPayments);
 
 export default router;

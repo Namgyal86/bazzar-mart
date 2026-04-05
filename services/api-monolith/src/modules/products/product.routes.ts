@@ -18,7 +18,7 @@ const router = Router();
 // ── Products ─────────────────────────────────────────────────────────────────
 router.get ('/products',                          getProducts);
 router.get ('/products/featured',                 getFeaturedProducts);
-router.get ('/products/admin/stats',              getAdminStats);
+router.get ('/products/admin/stats',              authenticate, requireRole('ADMIN'), getAdminStats);
 router.get ('/products/admin/flash-deals',        authenticate, requireRole('ADMIN'), getFlashDeals);
 router.put ('/products/admin/flash-deal/:id',     authenticate, requireRole('ADMIN'), adminSetFlashDeal);
 router.delete('/products/admin/flash-deal/:id',   authenticate, requireRole('ADMIN'), adminRemoveFlashDeal);
@@ -40,8 +40,8 @@ router.delete('/categories/:id',                  authenticate, requireRole('ADM
 // ── Banners ───────────────────────────────────────────────────────────────────
 router.get   ('/banners',     getBanners);
 router.get   ('/banners/all', getAllBanners);
-router.post  ('/banners',     createBanner);
-router.put   ('/banners/:id', updateBanner);
-router.delete('/banners/:id', deleteBanner);
+router.post  ('/banners',     authenticate, requireRole('ADMIN'), createBanner);
+router.put   ('/banners/:id', authenticate, requireRole('ADMIN'), updateBanner);
+router.delete('/banners/:id', authenticate, requireRole('ADMIN'), deleteBanner);
 
 export default router;

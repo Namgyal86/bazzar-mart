@@ -90,10 +90,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         .catch(() => {});
     }
 
-    // Notify other in-process modules
+    // Notify other in-process modules (analytics counts new users via this event)
     internalBus.emit(EVENTS.USER_REGISTERED, {
       userId:       user.id as string,
-      referredBy:   body.referralCode ? undefined : undefined, // resolved above
       referralCode: body.referralCode,
     });
 
