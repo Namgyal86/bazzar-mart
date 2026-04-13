@@ -9,20 +9,20 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   metadataBase: new URL('https://bazzar.com'),
   title: {
-    default: 'Bazzar — Nepal\'s Multi-Vendor Marketplace',
+    default: 'Bazzar — Nepal\'s Online Grocery & Mart Store',
     template: '%s | Bazzar',
   },
   description:
-    'Shop from thousands of sellers across Nepal. Fast delivery, secure payments with Khalti, eSewa, and more.',
-  keywords: ['ecommerce', 'nepal', 'online shopping', 'khalti', 'esewa', 'marketplace'],
+    'Order fresh groceries, daily essentials, and mart items online in Nepal. Fast delivery, secure payments with Khalti, eSewa, and more.',
+  keywords: ['grocery', 'nepal', 'online grocery', 'khalti', 'esewa', 'fresh produce', 'mart', 'supermarket'],
   authors: [{ name: 'Bazzar Team' }],
   creator: 'Bazzar',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://bazzar.com',
-    title: 'Bazzar — Nepal\'s Multi-Vendor Marketplace',
-    description: 'Shop from thousands of sellers across Nepal.',
+    title: 'Bazzar — Nepal\'s Online Grocery & Mart Store',
+    description: 'Order fresh groceries and daily essentials online in Nepal.',
     siteName: 'Bazzar',
   },
 };

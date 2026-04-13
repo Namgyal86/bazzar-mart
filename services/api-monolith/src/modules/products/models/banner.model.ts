@@ -31,31 +31,37 @@ const BannerSchema = new Schema<IBanner>({
 export const Banner = mongoose.models.Banner as mongoose.Model<IBanner>
   ?? mongoose.model<IBanner>('Banner', BannerSchema);
 
+const GROCERY_BANNERS = [
+  {
+    title: 'Fresh Produce', subtitle: 'Delivered Daily',
+    description: 'Farm-fresh fruits and vegetables sourced directly from local farmers. Free delivery above Rs. 1000.',
+    cta: 'Shop Fresh', ctaLink: '/categories/fruits-vegetables',
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1400&q=80',
+    accentColor: '#22c55e', eyebrow: "Nepal's Fresh Grocery Store", badge: '🥦 Fresh Every Morning', order: 1,
+  },
+  {
+    title: 'Dairy, Grains', subtitle: '& Pantry Staples',
+    description: 'Stock up on milk, eggs, rice, lentils and everyday kitchen essentials at the best prices.',
+    cta: 'Shop Essentials', ctaLink: '/categories/dairy-eggs',
+    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=1400&q=80',
+    accentColor: '#eab308', eyebrow: 'Daily Essentials', badge: '🛒 Best Value Packs', order: 2,
+  },
+  {
+    title: 'Beverages &', subtitle: 'Snack Time',
+    description: 'Chips, biscuits, juices, tea, coffee and your favourite beverages — all in one place.',
+    cta: 'Shop Snacks', ctaLink: '/categories/snacks-beverages',
+    image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=1400&q=80',
+    accentColor: '#f97316', eyebrow: 'Snacks & More', badge: '🍿 Top Sellers', order: 3,
+  },
+];
+
 export async function seedBanners(): Promise<void> {
-  const count = await Banner.countDocuments();
-  if (count > 0) return;
-  await Banner.insertMany([
-    {
-      title: "Discover Nepal's Best Deals", subtitle: 'Shop the Latest Electronics',
-      description: 'Explore thousands of products at unbeatable prices, delivered right to your doorstep.',
-      cta: 'Shop Now', ctaLink: '/products',
-      image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1400&q=80',
-      accentColor: '#f97316', eyebrow: "Nepal's #1 Marketplace", badge: 'New Arrivals', order: 1,
-    },
-    {
-      title: 'Fashion Forward', subtitle: 'Style That Speaks For You',
-      description: 'Curated collections from top brands and local designers for every occasion.',
-      cta: 'Explore Fashion', ctaLink: '/categories/fashion',
-      image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1400&q=80',
-      accentColor: '#ec4899', eyebrow: 'Trending Now', badge: 'Up to 50% Off', order: 2,
-    },
-    {
-      title: 'Home & Living', subtitle: 'Transform Your Space',
-      description: 'Everything you need to make your house a home, from furniture to décor.',
-      cta: 'Shop Home', ctaLink: '/categories/home-living',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&q=80',
-      accentColor: '#10b981', eyebrow: 'Featured Collection', badge: 'Free Delivery', order: 3,
-    },
-  ]);
-  console.log('✅ Default banners seeded');
+  // Remove legacy non-grocery banners
+  await Banner.deleteMany({ ctaLink: { $in: ['/products', '/categories/fashion', '/categories/home-living'] } });
+
+  // Upsert grocery banners by order so re-runs are idempotent
+  for (const banner of GROCERY_BANNERS) {
+    await Banner.updateOne({ order: banner.order }, { $setOnInsert: banner }, { upsert: true });
+  }
+  console.log('✅ Grocery banners seeded');
 }

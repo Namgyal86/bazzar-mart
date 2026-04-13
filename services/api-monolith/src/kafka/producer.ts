@@ -23,6 +23,7 @@ function getKafka(): Kafka {
   return new Kafka({
     clientId: env.KAFKA_CLIENT_ID,
     brokers:  env.KAFKA_BROKERS.split(','),
+    retry: { retries: 1 },
   });
 }
 
