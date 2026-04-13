@@ -64,10 +64,10 @@ export const registerSeller = async (req: AuthRequest, res: Response): Promise<v
       phone:            body.phone,
       email:            body.email ?? `${req.user!.userId}@bazzar.com`,
       category:         body.category ?? body.businessType ?? 'General',
-      ...(body.logo       && { logo:        body.logo }),
-      ...(body.banner     && { banner:      body.banner }),
-      ...(body.panNumber  && { panNumber:   body.panNumber }),
-      ...(body.bankDetails && { bankDetails: body.bankDetails }),
+      ...(body.logo        ? { logo:        body.logo as string }        : {}),
+      ...(body.banner      ? { banner:      body.banner as string }      : {}),
+      ...(body.panNumber   ? { panNumber:   body.panNumber as string }   : {}),
+      ...(body.bankDetails ? { bankDetails: body.bankDetails as object } : {}),
     });
     res.status(201).json({ success: true, data: seller });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }

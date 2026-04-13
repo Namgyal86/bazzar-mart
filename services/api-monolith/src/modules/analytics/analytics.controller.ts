@@ -29,7 +29,7 @@ export function registerAnalyticsEventHandlers(): void {
       // Fetch order detail for totalAmount and sellerId
       const order = await db.collection('orders')
         .findOne({ _id: new mongoose.Types.ObjectId(p.orderId) }, { projection: { total: 1, items: 1 } });
-      const totalAmount = (order as Record<string, unknown> | null)?.total || p.total || 0;
+      const totalAmount = Number((order as Record<string, unknown> | null)?.total ?? p.total ?? 0);
 
       await db.collection('platformmetrics').updateOne(
         { date: today },

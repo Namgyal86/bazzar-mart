@@ -158,7 +158,7 @@ services:
     networks: [bazzar-net]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8100/health/db || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8100/health || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 5

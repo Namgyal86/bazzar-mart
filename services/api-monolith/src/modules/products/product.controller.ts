@@ -89,7 +89,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       productId: String(product._id),
       sellerId:  req.user!.userId,
       name:      product.name as string,
-      category:  (product as Record<string, unknown>).category as string | undefined,
+      category:  (product as unknown as Record<string, unknown>).category as string | undefined,
     });
     res.status(201).json({ success: true, data: product });
   } catch (err: unknown) {
@@ -103,7 +103,7 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
     const product = await Product.findOne({ _id: req.params.id, sellerId: req.user!.userId });
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     const allowed = ['name', 'description', 'price', 'salePrice', 'images', 'stock', 'isActive', 'isFeatured', 'tags', 'specifications', 'shortDescription', 'brand'];
-    allowed.forEach((k) => { if (req.body[k] !== undefined) (product as Record<string, unknown>)[k] = req.body[k]; });
+    allowed.forEach((k) => { if (req.body[k] !== undefined) (product as unknown as Record<string, unknown>)[k] = req.body[k]; });
     await product.save();
     res.json({ success: true, data: product });
   } catch (err: unknown) {

@@ -46,7 +46,7 @@ function buildSortObj(sort?: string): Record<string, 1 | -1> {
 
 function toSearchHit(p: IProduct) {
   return {
-    productId:     String((p as Record<string, unknown>)._id),
+    productId:     String((p as unknown as Record<string, unknown>)._id),
     name:          p.name,
     slug:          p.slug,
     brand:         p.brand || '',

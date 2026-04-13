@@ -43,6 +43,8 @@ export interface IOrder extends Document {
   trackingNumber?:   string;
   statusHistory:     Array<{ status: string; timestamp: Date; note?: string }>;
   estimatedDelivery?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const OrderSchema = new Schema<IOrder>({

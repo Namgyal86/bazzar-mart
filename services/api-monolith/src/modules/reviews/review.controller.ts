@@ -88,7 +88,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
     // In-process: update product rating immediately
     internalBus.emit(EVENTS.REVIEW_POSTED, payload);
     // External: recommendation-service via Kafka
-    publishEvent('review.posted', payload).catch(() => {});
+    publishEvent('review.posted', payload as unknown as Record<string, unknown>).catch(() => {});
 
     res.status(201).json({ success: true, data: review });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
