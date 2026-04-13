@@ -1,8 +1,13 @@
 # =============================================================
 # Bazzar — Nginx Ingress Configuration
+#
 # Routes:
-#   api.bazzar.com.np/*  → Kong API Gateway (port 8000)
-#   bazzar.com.np/*      → Web Frontend (Next.js, port 3000)
+#   api.bazzar.com.np/*  → api-monolith (port 8100)  ← direct, Kong removed
+#   bazzar.com.np/*      → web frontend  (port 3000)
+#   www.bazzar.com.np/*  → web frontend  (redirect)
+#
+# Delivery WebSocket is served through the web frontend rewrite proxy
+# so Flutter apps connect via wss://bazzar.com.np/api/v1/delivery/*
 # =============================================================
 
 apiVersion: networking.k8s.io/v1
@@ -17,20 +22,20 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     # TLS / SSL
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # Timeouts — needed for Socket.io long-polling and large uploads
+    # Timeouts — allow long-polling for Socket.io and large image uploads
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
-    # Body size (matches Kong's 10 MB limit)
+    # Body size matches 10 MB upload limit in multer
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     # WebSocket upgrade for delivery service Socket.io
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header Upgrade $http_upgrade;
       proxy_set_header Connection "upgrade";
-    # Rate limiting at Nginx layer (first line of defence before Kong)
+    # Rate limiting at Nginx layer
     nginx.ingress.kubernetes.io/limit-rps: "50"
-    # HSTS
+    # Force HTTPS
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
@@ -42,7 +47,7 @@ spec:
       secretName: bazzar-tls-secret
 
   rules:
-    # --- API subdomain → Kong Gateway ----------------------------
+    # --- API subdomain → api-monolith (Kong removed) ----------------------
     - host: api.bazzar.com.np
       http:
         paths:
@@ -50,11 +55,11 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: kong-proxy
+                name: api-monolith
                 port:
-                  number: 8000
+                  number: 8100
 
-    # --- Root domain → Next.js web frontend ---------------------
+    # --- Root domain → Next.js web frontend --------------------------------
     - host: bazzar.com.np
       http:
         paths:
@@ -66,7 +71,7 @@ spec:
                 port:
                   number: 3000
 
-    # --- www redirect → root domain ----------------------------
+    # --- www redirect → root domain ----------------------------------------
     - host: www.bazzar.com.np
       http:
         paths:
@@ -77,30 +82,6 @@ spec:
                 name: web-frontend
                 port:
                   number: 3000
-
----
-# Kong proxy service (exposes Kong's proxy port inside the cluster)
-apiVersion: v1
-kind: Service
-metadata:
-  name: kong-proxy
-  namespace: bazzar
-  labels:
-    app: kong
-    app.kubernetes.io/part-of: bazzar
-spec:
-  type: ClusterIP
-  selector:
-    app: kong
-  ports:
-    - name: proxy
-      port: 8000
-      targetPort: 8000
-      protocol: TCP
-    - name: proxy-ssl
-      port: 8443
-      targetPort: 8443
-      protocol: TCP
 
 ---
 # Web frontend service (Next.js)
@@ -163,10 +144,16 @@ spec:
           env:
             - name: NODE_ENV
               value: "production"
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://api.bazzar.com.np"
+            # Monolith URL — used by Next.js server-side rewrites
+            - name: MONOLITH_URL
+              value: "http://api-monolith.bazzar.svc.cluster.local:8100"
+            - name: DELIVERY_SERVICE_URL
+              value: "http://delivery-service.bazzar.svc.cluster.local:8013"
+            - name: NOTIFICATION_SERVICE_URL
+              value: "http://notification-service.bazzar.svc.cluster.local:8008"
+            # Public WebSocket URL for browser/Flutter clients
             - name: NEXT_PUBLIC_WS_URL
-              value: "wss://api.bazzar.com.np/api/v1/delivery"
+              value: "wss://bazzar.com.np/api/v1/delivery"
           resources:
             requests:
               cpu: 200m

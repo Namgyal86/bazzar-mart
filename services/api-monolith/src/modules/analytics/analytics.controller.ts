@@ -254,9 +254,13 @@ export const adminOverview = async (req: AuthRequest, res: Response): Promise<vo
     { message: `${newToday} new users registered today`,               urgent: false,                time: 'Today' },
   ];
 
+  // revenueChart: mobile alias for revenueByDay with 'revenue' field name
+  const revenueChart = revenueByDay.map(r => ({ ...r, revenue: r.gmv }));
+
   res.json({
     success: true,
     data: {
+      // Web frontend fields
       gmv:            totalRevenue,
       gmvChange:      null,
       totalUsers,
@@ -268,6 +272,13 @@ export const adminOverview = async (req: AuthRequest, res: Response): Promise<vo
       revenueByDay,
       categoryData,
       recentActions,
+      // Mobile app field aliases
+      totalRevenue,
+      totalOrders,
+      activeSellers:  totalSellers,
+      pendingOrders,
+      totalProducts,
+      revenueChart,
     },
   });
 };

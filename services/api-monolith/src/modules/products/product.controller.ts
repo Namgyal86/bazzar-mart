@@ -79,7 +79,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const body = createProductSchema.parse({ ...req.body, price: Number(req.body.price), stock: Number(req.body.stock ?? 0) });
+    const body = createProductSchema.parse({ ...req.body, price: Number(req.body.price ?? req.body.basePrice), stock: Number(req.body.stock ?? 0) });
     const product = await Product.create({
       ...body,
       sellerId:   req.user!.userId,

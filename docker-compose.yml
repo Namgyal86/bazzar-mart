@@ -23,6 +23,7 @@ volumes:
   kafka_data:
   zookeeper_data:
   elasticsearch_data:
+  uploads_data:
 
 services:
 
@@ -151,6 +152,9 @@ services:
       - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
       - API_BASE_URL=http://api-monolith:8100
       - WEB_URL=http://localhost:3000
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       mongodb: { condition: service_healthy }
       kafka:   { condition: service_healthy }

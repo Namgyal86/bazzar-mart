@@ -8,35 +8,35 @@ metadata:
     app.kubernetes.io/managed-by: kubectl
 data:
   NODE_ENV: "production"
+
+  # ── Infrastructure (ClusterIP DNS) ───────────────────────────────────────────
   KAFKA_BROKERS: "bazzar-kafka-bootstrap.bazzar.svc.cluster.local:9092"
-  KAFKA_BROKER: "bazzar-kafka-bootstrap.bazzar.svc.cluster.local:9092"
+  KAFKA_CLIENT_ID: "api-monolith"
+  KAFKA_GROUP_ID: "api-monolith-group"
   REDIS_URL: "redis://bazzar-redis.bazzar.svc.cluster.local:6379"
-  ELASTICSEARCH_URL: "http://bazzar-elasticsearch.bazzar.svc.cluster.local:9200"
+  MONGO_URI: "mongodb://bazzar-mongodb.bazzar.svc.cluster.local:27017/bazzar_db"
 
-  # Inter-service URLs (ClusterIP DNS)
-  USER_SERVICE_URL: "http://user-service.bazzar.svc.cluster.local:8001"
-  PRODUCT_SERVICE_URL: "http://product-service.bazzar.svc.cluster.local:8002"
-  CART_SERVICE_URL: "http://cart-service.bazzar.svc.cluster.local:8003"
-  ORDER_SERVICE_URL: "http://order-service.bazzar.svc.cluster.local:8004"
-  PAYMENT_SERVICE_URL: "http://payment-service.bazzar.svc.cluster.local:8005"
-  REVIEW_SERVICE_URL: "http://review-service.bazzar.svc.cluster.local:8006"
-  SELLER_SERVICE_URL: "http://seller-service.bazzar.svc.cluster.local:8007"
-  NOTIFICATION_SERVICE_URL: "http://notification-service.bazzar.svc.cluster.local:8008"
-  SEARCH_SERVICE_URL: "http://search-service.bazzar.svc.cluster.local:8009"
-  RECOMMENDATION_SERVICE_URL: "http://recommendation-service.bazzar.svc.cluster.local:8010"
-  STOREFRONT_SERVICE_URL: "http://storefront-designer-service.bazzar.svc.cluster.local:8011"
-  REFERRAL_SERVICE_URL: "http://referral-service.bazzar.svc.cluster.local:8012"
+  # ── Monolith replaces 12 merged services ─────────────────────────────────────
+  # Only delivery-service and notification-service remain separate.
+  MONOLITH_URL: "http://api-monolith.bazzar.svc.cluster.local:8100"
   DELIVERY_SERVICE_URL: "http://delivery-service.bazzar.svc.cluster.local:8013"
-  ANALYTICS_SERVICE_URL: "http://analytics-service.bazzar.svc.cluster.local:8014"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.bazzar.svc.cluster.local:8008"
 
-  # JWT config (non-secret)
+  # ── Public URLs (used by payment gateway callbacks) ──────────────────────────
+  API_BASE_URL: "https://api.bazzar.com.np"
+  WEB_URL: "https://bazzar.com.np"
+
+  # ── Upload storage ────────────────────────────────────────────────────────────
+  UPLOAD_DIR: "/app/uploads"
+
+  # ── JWT config (non-secret) ───────────────────────────────────────────────────
   JWT_EXPIRES_IN: "15m"
   JWT_REFRESH_EXPIRES_IN: "7d"
 
-  # AWS region
+  # ── AWS ───────────────────────────────────────────────────────────────────────
   AWS_REGION: "ap-south-1"
 
-  # Misc
+  # ── Misc ─────────────────────────────────────────────────────────────────────
   LOG_LEVEL: "info"
   RATE_LIMIT_WINDOW_MS: "60000"
   RATE_LIMIT_MAX_REQUESTS: "100"

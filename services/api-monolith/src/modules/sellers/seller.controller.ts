@@ -77,7 +77,7 @@ export const getMyStore = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const seller = await Seller.findOne({ userId: req.user!.userId });
     if (!seller) { res.status(404).json({ success: false, error: 'Seller profile not found' }); return; }
-    const data = { ...seller.toObject(), description: seller.storeDescription };
+    const data = { ...seller.toObject(), description: seller.storeDescription, shopName: seller.storeName };
     res.json({ success: true, data });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
 };
@@ -90,7 +90,7 @@ export const updateStore = async (req: AuthRequest, res: Response): Promise<void
     allowed.forEach(k => { if (body[k] !== undefined) updates[k] = body[k]; });
     if (body.description !== undefined && updates.storeDescription === undefined) updates.storeDescription = body.description;
     const seller = await Seller.findOneAndUpdate({ userId: req.user!.userId }, updates, { new: true });
-    const data   = seller ? { ...seller.toObject(), description: seller.storeDescription } : null;
+    const data   = seller ? { ...seller.toObject(), description: seller.storeDescription, shopName: seller.storeName } : null;
     res.json({ success: true, data });
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
 };
@@ -103,11 +103,25 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
     const seller   = await Seller.findOne({ userId: sellerId });
     if (!seller) { res.status(404).json({ success: false, error: 'Seller not found' }); return; }
 
-    const [recentOrderDocs, productCount, topProductDocs] = await Promise.all([
+    const [recentOrderDocs, productCount, topProductDocs, pendingOrderCount] = await Promise.all([
       Order.find({ 'items.sellerId': sellerId }).sort('-createdAt').limit(5),
       Product.countDocuments({ sellerId, isActive: true }),
       Product.find({ sellerId, isActive: true }).sort('-soldCount').limit(4),
+      Order.countDocuments({ 'items.sellerId': sellerId, status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING'] } }),
     ]);
+
+    // Revenue chart: last 7 days
+    const revenueChart: { day: string; revenue: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const end   = new Date(start.getTime() + 86400000);
+      const dayOrders = recentOrderDocs.filter(o => o.createdAt >= start && o.createdAt < end);
+      const revenue = dayOrders.reduce((s, o) => {
+        return s + o.items.filter(it => it.sellerId === sellerId).reduce((a, it) => a + it.totalPrice, 0);
+      }, 0);
+      revenueChart.push({ day: start.toLocaleDateString('en', { weekday: 'short' }), revenue });
+    }
 
     const recentOrders = recentOrderDocs.map(o => ({
       id:      o.id,
@@ -120,6 +134,7 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
     const topProducts = topProductDocs.map(p => ({ name: p.name, sales: p.soldCount, _id: p.id }));
 
     res.json({ success: true, data: {
+      // Web frontend fields
       revenue:      seller.totalEarnings,
       orders:       seller.totalOrders,
       products:     productCount,
@@ -127,6 +142,12 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
       rating:       seller.rating,
       recentOrders,
       topProducts,
+      // Mobile app aliases
+      totalRevenue:  seller.totalEarnings,
+      totalOrders:   seller.totalOrders,
+      totalProducts: productCount,
+      pendingOrders: pendingOrderCount,
+      revenueChart,
     }});
   } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
 };

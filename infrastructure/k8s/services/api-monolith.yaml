@@ -1,24 +1,26 @@
 # =============================================================
-# Bazzar — Payment Service Kubernetes Manifests
-# Handles: Khalti, eSewa, FonePay, Stripe, Razorpay, COD
-# Port: 8005
+# Bazzar — API Monolith Kubernetes Manifests
+# Replaces: user, product, cart, order, payment, review,
+#           seller, search, recommendation, storefront,
+#           referral, analytics, support services
+# Port: 8100
 # =============================================================
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: payment-service
+  name: api-monolith
   namespace: bazzar
   labels:
-    app: payment-service
-    app.kubernetes.io/name: payment-service
+    app: api-monolith
+    app.kubernetes.io/name: api-monolith
     app.kubernetes.io/part-of: bazzar
     app.kubernetes.io/version: latest
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: payment-service
+      app: api-monolith
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -27,55 +29,57 @@ spec:
   template:
     metadata:
       labels:
-        app: payment-service
-        app.kubernetes.io/name: payment-service
+        app: api-monolith
+        app.kubernetes.io/name: api-monolith
         app.kubernetes.io/part-of: bazzar
     spec:
       terminationGracePeriodSeconds: 30
       containers:
-        - name: payment-service
-          image: ghcr.io/your-org/bazzar/payment-service:latest
+        - name: api-monolith
+          image: ghcr.io/your-org/bazzar/api-monolith:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8005
+              containerPort: 8100
               protocol: TCP
           envFrom:
             - configMapRef:
                 name: bazzar-config
             - secretRef:
                 name: bazzar-secrets
-            - secretRef:
-                name: bazzar-payment-secrets
           env:
             - name: PORT
-              value: "8005"
-            - name: MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  name: bazzar-db-secrets
-                  key: PAYMENT_SERVICE_MONGO_URI
+              value: "8100"
+            - name: UPLOAD_DIR
+              value: "/app/uploads"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
+              cpu: 300m
               memory: 512Mi
+            limits:
+              cpu: 1500m
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /health
-              port: 8005
-            initialDelaySeconds: 10
+              port: 8100
+            initialDelaySeconds: 15
             periodSeconds: 10
             failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /health
-              port: 8005
+              port: 8100
             initialDelaySeconds: 30
             periodSeconds: 20
             failureThreshold: 3
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: api-monolith-uploads-pvc
       imagePullSecrets:
         - name: ghcr-pull-secret
 
@@ -83,36 +87,36 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: payment-service
+  name: api-monolith
   namespace: bazzar
   labels:
-    app: payment-service
-    app.kubernetes.io/name: payment-service
+    app: api-monolith
+    app.kubernetes.io/name: api-monolith
     app.kubernetes.io/part-of: bazzar
 spec:
   type: ClusterIP
   selector:
-    app: payment-service
+    app: api-monolith
   ports:
     - name: http
-      port: 8005
-      targetPort: 8005
+      port: 8100
+      targetPort: 8100
       protocol: TCP
 
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: payment-service-hpa
+  name: api-monolith-hpa
   namespace: bazzar
   labels:
-    app: payment-service
+    app: api-monolith
     app.kubernetes.io/part-of: bazzar
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: payment-service
+    name: api-monolith
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -128,3 +132,22 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
+
+---
+# PersistentVolumeClaim for uploaded images
+# In production, swap for an EFS/S3 CSI driver for multi-pod access.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: api-monolith-uploads-pvc
+  namespace: bazzar
+  labels:
+    app: api-monolith
+    app.kubernetes.io/part-of: bazzar
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp2
+  resources:
+    requests:
+      storage: 10Gi
