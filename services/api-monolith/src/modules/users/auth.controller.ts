@@ -27,7 +27,7 @@ const registerSchema = z.object({
   password:     z.string().min(6),
   phone:        z.string().optional(),
   referralCode: z.string().optional(),
-  role:         z.enum(['BUYER', 'SELLER', 'ADMIN', 'DELIVERY']).optional(),
+  role:         z.enum(['BUYER', 'SELLER']).optional(),
 });
 
 const loginSchema = z.object({
