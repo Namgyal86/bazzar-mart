@@ -37,6 +37,20 @@ const io = new Server(httpServer, { cors: { origin: allowedOrigins } });
 
 app.use(helmet()); app.use(cors(corsOptions)); app.use(express.json());
 
+function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    res.status(401).json({ success: false, error: 'No token' });
+    return;
+  }
+  try {
+    (req as any).user = jwt.verify(header.slice(7), SECRET);
+    next();
+  } catch {
+    res.status(401).json({ success: false, error: 'Invalid token' });
+  }
+}
+
 // Delivery agent locations (in-memory for demo)
 const agentLocations: Record<string, { lat: number; lng: number; orderId: string; agentName: string }> = {};
 
@@ -52,12 +66,12 @@ const availableDrivers = [
 app.get('/health', (_, res) => res.json({ status: 'ok', service: 'delivery-service' }));
 
 // Admin: list all deliveries
-app.get('/api/v1/delivery/admin/list', (req, res) => {
+app.get('/api/v1/delivery/admin/list', authenticateJWT, (req, res) => {
   res.json({ success: true, data: deliveries });
 });
 
 // Admin: delivery stats (used by platform-health dashboard)
-app.get('/api/v1/delivery/admin/stats', (req, res) => {
+app.get('/api/v1/delivery/admin/stats', authenticateJWT, (req, res) => {
   const total = deliveries.length;
   const completedCount = deliveries.filter(d => d.status === 'DELIVERED').length;
   const onTimeRate = total > 0 ? (completedCount / total) * 100 : 0;
@@ -65,12 +79,12 @@ app.get('/api/v1/delivery/admin/stats', (req, res) => {
 });
 
 // Admin: get available drivers
-app.get('/api/v1/delivery/drivers/available', (req, res) => {
+app.get('/api/v1/delivery/drivers/available', authenticateJWT, (req, res) => {
   res.json({ success: true, data: availableDrivers });
 });
 
 // Admin: assign driver to delivery
-app.patch('/api/v1/delivery/:id/assign', (req, res) => {
+app.patch('/api/v1/delivery/:id/assign', authenticateJWT, (req, res) => {
   const { driverId } = req.body;
   const driver = availableDrivers.find(d => d.id === driverId);
   const delivery = deliveries.find(d => d.id === req.params.id);
@@ -109,16 +123,16 @@ app.get('/api/v1/delivery/track/:orderId', (req, res) => {
 const agentStatus: Record<string, boolean> = {};
 
 // Delivery agent: toggle online/offline
-app.patch('/api/v1/delivery/agent/status', (req, res) => {
-  const agentId = req.headers['x-user-id'] as string || 'unknown';
+app.patch('/api/v1/delivery/agent/status', authenticateJWT, (req, res) => {
+  const agentId = (req as any).user?.userId || 'unknown';
   const { isOnline } = req.body;
   agentStatus[agentId] = isOnline;
   res.json({ success: true, data: { agentId, isOnline } });
 });
 
 // Delivery agent: get assigned orders
-app.get('/api/v1/delivery/agent/orders', (req, res) => {
-  const agentId = req.headers['x-user-id'] as string || '';
+app.get('/api/v1/delivery/agent/orders', authenticateJWT, (req, res) => {
+  const agentId = (req as any).user?.userId || '';
   const { status } = req.query;
   let result = deliveries.filter(d => !agentId || d.driverId === agentId || d.driverId === null);
   if (status) result = result.filter(d => d.status === status);
@@ -126,7 +140,7 @@ app.get('/api/v1/delivery/agent/orders', (req, res) => {
 });
 
 // Delivery agent: get a specific order for delivery
-app.get('/api/v1/delivery/orders/:orderId', (req, res) => {
+app.get('/api/v1/delivery/orders/:orderId', authenticateJWT, (req, res) => {
   const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
   if (d) return res.json({ success: true, data: d });
   // Return a placeholder if not found
@@ -145,7 +159,7 @@ app.get('/api/v1/delivery/orders/:orderId', (req, res) => {
 });
 
 // Delivery agent: mark order as delivered
-app.patch('/api/v1/delivery/orders/:orderId/complete', (req, res) => {
+app.patch('/api/v1/delivery/orders/:orderId/complete', authenticateJWT, (req, res) => {
   const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
   if (d) {
     d.status = 'DELIVERED';
