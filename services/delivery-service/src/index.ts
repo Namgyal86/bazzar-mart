@@ -11,12 +11,31 @@ import { publishDeliveryEvent } from './kafka/producer';
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 8013;
 const MONGO_URI = process.env.MONGO_URI_DELIVERY || 'mongodb://localhost:27024/delivery_db';
 const SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret_dev';
+const WEB_URL = process.env.WEB_URL || 'http://localhost:3000';
+const allowedOrigins = Array.from(new Set([WEB_URL, 'http://localhost:3000']));
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-app.use(helmet()); app.use(cors({ origin: '*', credentials: true })); app.use(express.json());
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) { callback(null, true); return; }
+    if (NODE_ENV === 'development' || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin "${origin}" is not allowed`));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400,
+};
+
+const io = new Server(httpServer, { cors: { origin: allowedOrigins } });
+
+app.use(helmet()); app.use(cors(corsOptions)); app.use(express.json());
 
 // Delivery agent locations (in-memory for demo)
 const agentLocations: Record<string, { lat: number; lng: number; orderId: string; agentName: string }> = {};

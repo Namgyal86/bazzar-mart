@@ -1,9 +1,9 @@
 /**
  * Consolidated auth middleware — replaces 9 identical copies across services.
  *
- * Authentication is exclusively via Authorization: Bearer <JWT>.
- * Kong gateway headers are intentionally ignored to prevent identity spoofing (SEC-02).
- * Every request must carry a valid JWT in the Authorization: Bearer header.
+ * Priority order:
+ *  1. Kong gateway headers (x-user-id + x-user-role)
+ *  2. Authorization: Bearer <JWT>
  */
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
@@ -14,6 +14,15 @@ export interface AuthRequest extends Request {
 }
 
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
+  const kongUserId = req.headers['x-user-id'] as string | undefined;
+  const kongUserRole = req.headers['x-user-role'] as string | undefined;
+
+  if (kongUserId && kongUserRole) {
+    req.user = { userId: kongUserId, role: kongUserRole, email: '' };
+    next();
+    return;
+  }
+
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     res.status(401).json({ success: false, error: 'No token' });
