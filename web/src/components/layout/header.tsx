@@ -185,7 +185,7 @@ export function Header() {
               </div>
               <div className="hidden sm:block">
                 <span className="text-xl font-black text-gray-900 dark:text-white tracking-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{siteName || 'Bazzar'}</span>
-                <div className="text-[9px] font-medium text-orange-500 -mt-1 tracking-widest uppercase">Nepal's Marketplace</div>
+                <div className="text-[9px] font-medium text-orange-500 -mt-1 tracking-widest uppercase">Grocery & Mart Store</div>
               </div>
             </Link>
 
@@ -201,7 +201,7 @@ export function Header() {
                   <Search className={cn('absolute left-3.5 w-4 h-4 transition-colors duration-200', searchFocused ? 'text-orange-500' : 'text-muted-foreground')} />
                   <input
                     type="search"
-                    placeholder="Search products, brands, categories..."
+                    placeholder="Search groceries, fresh produce, brands..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     onFocus={() => setSearchFocused(true)}

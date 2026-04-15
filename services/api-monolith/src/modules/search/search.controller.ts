@@ -7,6 +7,7 @@
 import { Request, Response } from 'express';
 import { FilterQuery } from 'mongoose';
 import { Product, IProduct } from '../products/models/product.model';
+import { handleError } from '../../shared/middleware/error';
 
 // Build a shared Mongoose filter from common search query params
 function buildProductFilter(query: Request['query']): FilterQuery<IProduct> {
@@ -71,7 +72,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
     }
     await searchProducts(req, res);
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -103,7 +104,7 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
       meta: { total, page, limit, pages: Math.ceil(total / limit) },
     });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -126,7 +127,7 @@ export const suggestions = async (req: Request, res: Response): Promise<void> =>
 
     res.json({ success: true, data });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -143,6 +144,6 @@ export const similarProducts = async (req: Request, res: Response): Promise<void
 
     res.json({ success: true, data: products.map(p => toSearchHit(p as unknown as IProduct)) });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };

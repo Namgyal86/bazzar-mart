@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { User } from './models/user.model';
 import { Address } from './models/address.model';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       avatar:       user.avatar,
       referralCode: user.referralCode,
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateMe = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -31,7 +32,7 @@ export const updateMe = async (req: AuthRequest, res: Response): Promise<void> =
     allowed.forEach(k => { if (body[k] !== undefined) updates[k] = body[k]; });
     const user = await User.findByIdAndUpdate(req.user!.userId, updates, { new: true });
     res.json({ success: true, data: user });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Wishlist ──────────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ export const getWishlist = async (req: AuthRequest, res: Response): Promise<void
   try {
     const user = await User.findById(req.user!.userId).select('wishlist');
     res.json({ success: true, data: user?.wishlist ?? [] });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const syncWishlist = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -49,7 +50,7 @@ export const syncWishlist = async (req: AuthRequest, res: Response): Promise<voi
     if (!Array.isArray(productIds)) { res.status(400).json({ success: false, error: 'productIds must be array' }); return; }
     const user = await User.findByIdAndUpdate(req.user!.userId, { wishlist: productIds }, { new: true }).select('wishlist');
     res.json({ success: true, data: user?.wishlist ?? [] });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const addToWishlist = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -60,7 +61,7 @@ export const addToWishlist = async (req: AuthRequest, res: Response): Promise<vo
       { new: true },
     ).select('wishlist');
     res.json({ success: true, data: user?.wishlist ?? [] });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const removeFromWishlist = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -71,7 +72,7 @@ export const removeFromWishlist = async (req: AuthRequest, res: Response): Promi
       { new: true },
     ).select('wishlist');
     res.json({ success: true, data: user?.wishlist ?? [] });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Addresses ─────────────────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ export const getAddresses = async (req: AuthRequest, res: Response): Promise<voi
   try {
     const addresses = await Address.find({ userId: req.user!.userId });
     res.json({ success: true, data: addresses });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const addAddress = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -102,8 +103,7 @@ export const addAddress = async (req: AuthRequest, res: Response): Promise<void>
     const address = await Address.create({ ...body, userId: req.user!.userId });
     res.status(201).json({ success: true, data: address });
   } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ZodError') { res.status(400).json({ success: false, error: (err as { errors: unknown }).errors }); return; }
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -119,14 +119,14 @@ export const updateAddress = async (req: AuthRequest, res: Response): Promise<vo
     const address = await Address.findOneAndUpdate({ _id: req.params.id, userId: req.user!.userId }, updates, { new: true });
     if (!address) { res.status(404).json({ success: false, error: 'Address not found' }); return; }
     res.json({ success: true, data: address });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteAddress = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Address.findOneAndDelete({ _id: req.params.id, userId: req.user!.userId });
     res.json({ success: true, data: null });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Public / lookup ───────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
     const user = await User.findById(req.params.id);
     if (!user) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, avatar: user.avatar } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ export const adminListUsers = async (req: Request, res: Response): Promise<void>
       User.countDocuments(query),
     ]);
     res.json({ success: true, data: users, total });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminGetStats = async (_req: Request, res: Response): Promise<void> => {
@@ -166,7 +166,7 @@ export const adminGetStats = async (_req: Request, res: Response): Promise<void>
       User.countDocuments({ role: 'SELLER' }),
     ]);
     res.json({ success: true, data: { totalUsers, newToday, buyers, sellers } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminUpdateUser = async (req: Request, res: Response): Promise<void> => {
@@ -180,5 +180,5 @@ export const adminUpdateUser = async (req: Request, res: Response): Promise<void
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
     if (!user) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: user });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };

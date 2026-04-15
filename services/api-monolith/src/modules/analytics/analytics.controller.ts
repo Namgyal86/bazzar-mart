@@ -17,6 +17,7 @@ import { AnalyticsEvent, Settings } from './analytics.model';
 import { Product } from '../products/models/product.model';
 import { internalBus, EVENTS, OrderCreatedPayload, PaymentSuccessPayload, UserRegisteredPayload, DeliveryCompletedPayload } from '../../shared/events/emitter';
 import { AuthRequest } from '../../shared/middleware/auth';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Internal event handlers ───────────────────────────────────────────────────
 
@@ -142,7 +143,7 @@ export const trackEvent = async (req: Request, res: Response): Promise<void> => 
     await AnalyticsEvent.create({ type, userId, sessionId, productId, categorySlug, searchQuery, metadata });
     res.json({ success: true });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -153,7 +154,7 @@ export const getSettings = async (_req: Request, res: Response): Promise<void> =
     for (const d of docs) result[d.section] = d.data;
     res.json({ success: true, data: result });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -168,7 +169,7 @@ export const saveSettings = async (req: Request, res: Response): Promise<void> =
     );
     res.json({ success: true, data: { section, data } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -346,7 +347,7 @@ export const adminRevenue = async (req: AuthRequest, res: Response): Promise<voi
 
     res.json({ success: true, data: result });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -361,6 +362,6 @@ export const adminSearches = async (_req: Request, res: Response): Promise<void>
     ]);
     res.json({ success: true, data: topSearches });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };

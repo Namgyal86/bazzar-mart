@@ -13,6 +13,7 @@ import { Payment, IPayment } from './models/payment.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS } from '../../shared/events/emitter';
 import { env } from '../../config/env';
+import { handleError } from '../../shared/middleware/error';
 import {
   khaltiInitiate, khaltiLookup, toKhaltiPaisa,
   isKhaltiSuccess, khaltiErrorMessage,
@@ -120,7 +121,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response): Promise<
     }
 
     res.status(400).json({ success: false, error: `Unsupported gateway: ${gateway}` });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Khalti browser callback ───────────────────────────────────────────────────
@@ -191,7 +192,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<vo
       await emitPaymentResult(payment, 'SUCCESS');
     }
     res.json({ success: true, data: payment });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Read ──────────────────────────────────────────────────────────────────────
@@ -201,7 +202,7 @@ export const getPaymentByOrder = async (req: AuthRequest, res: Response): Promis
     const payment = await Payment.findOne({ orderId: req.params.orderId });
     if (!payment) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: payment });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getAdminPayments = async (req: Request, res: Response): Promise<void> => {
@@ -213,7 +214,7 @@ export const getAdminPayments = async (req: Request, res: Response): Promise<voi
       Payment.countDocuments(),
     ]);
     res.json({ success: true, data: payments, meta: { page, limit, total } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getPaymentStats = async (_req: Request, res: Response): Promise<void> => {
@@ -225,5 +226,5 @@ export const getPaymentStats = async (_req: Request, res: Response): Promise<voi
     ]);
     const successRate = total > 0 ? (successCount / total) * 100 : 0;
     res.json({ success: true, data: { total, successCount, failedCount, successRate: Number(successRate.toFixed(2)) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };

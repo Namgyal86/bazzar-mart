@@ -79,7 +79,7 @@ export function WhyBazzar() {
             Why Shop on <span className="gradient-text">Bazzar?</span>
           </h2>
           <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
-            Nepal's most trusted online marketplace with the best selection, prices, and service.
+            Nepal's most trusted online grocery & mart store — farm-fresh produce, daily essentials, and fast delivery.
           </p>
         </motion.div>
 

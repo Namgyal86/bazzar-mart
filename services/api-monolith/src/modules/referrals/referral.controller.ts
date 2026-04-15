@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { Referral, Wallet } from './models/referral.model';
 import { internalBus, EVENTS, OrderCreatedPayload } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 const REFERRAL_BONUS = 200; // Rs.
 
@@ -108,21 +109,21 @@ export const applyWalletCredits = async (req: AuthRequest, res: Response): Promi
     }
     const appliedAmount = Math.min(amount, balance);
     res.json({ success: true, data: { appliedAmount: String(appliedAmount), newTotal: String(Math.max(0, amount - appliedAmount)) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getWallet = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const wallet = await Wallet.findOne({ userId: req.user!.userId });
     res.json({ success: true, data: wallet ?? { userId: req.user!.userId, balance: 0, transactions: [] } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getMyReferrals = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const referrals = await Referral.find({ referrerId: req.user!.userId }).sort('-createdAt').limit(20);
     res.json({ success: true, data: referrals });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getMyDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -148,7 +149,7 @@ export const getMyDashboard = async (req: AuthRequest, res: Response): Promise<v
         createdAt:    r.createdAt,
       })),
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getMyCode = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -166,7 +167,7 @@ export const getMyCode = async (req: AuthRequest, res: Response): Promise<void> 
       rewardedCount: rewarded.length,
       totalEarned:   String(rewarded.length * REFERRAL_BONUS),
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getReferralDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -184,7 +185,7 @@ export const getReferralDashboard = async (req: AuthRequest, res: Response): Pro
       rewardedReferrals: rewarded.length,
       totalEarned:       String(totalEarned),
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getReferralHistory = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -203,7 +204,7 @@ export const getReferralHistory = async (req: AuthRequest, res: Response): Promi
       rewardedAt:   r.completedAt,
       createdAt:    r.createdAt,
     })), meta: { total, page: Number(page), limit: Number(limit) }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const validateCode = async (req: Request, res: Response): Promise<void> => {
@@ -211,7 +212,7 @@ export const validateCode = async (req: Request, res: Response): Promise<void> =
     const { code } = req.params;
     const valid = /^[A-Z0-9]{4,12}$/.test(code);
     res.json({ success: true, data: { valid, referrerName: valid ? 'Bazzar User' : undefined } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -234,7 +235,7 @@ export const adminListReferrals = async (req: AuthRequest, res: Response): Promi
       Referral.countDocuments(filter),
     ]);
     res.json({ success: true, data: referrals, meta: { total, page: Number(page), limit: Number(limit) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminRevokeReferral = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -242,7 +243,7 @@ export const adminRevokeReferral = async (req: AuthRequest, res: Response): Prom
     const referral = await Referral.findByIdAndUpdate(req.params.id, { status: 'REVOKED' }, { new: true });
     if (!referral) { res.status(404).json({ success: false, error: 'Referral not found' }); return; }
     res.json({ success: true, data: referral });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminGetConfig = (_req: Request, res: Response): void => {

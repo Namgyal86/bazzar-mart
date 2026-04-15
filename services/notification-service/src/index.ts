@@ -12,7 +12,26 @@ const PORT = process.env.PORT || 8008;
 const MONGO_URI = process.env.MONGO_URI_NOTIFICATION || 'mongodb://localhost:27023/notification_db';
 const SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret_dev';
 
-app.use(helmet()); app.use(cors({ origin: '*', credentials: true })); app.use(express.json());
+const WEB_URL = process.env.WEB_URL || 'http://localhost:3000';
+const allowedOrigins = Array.from(new Set([WEB_URL, 'http://localhost:3000']));
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) { callback(null, true); return; }
+    if (NODE_ENV === 'development' || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin "${origin}" is not allowed`));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400,
+};
+
+app.use(helmet()); app.use(cors(corsOptions)); app.use(express.json());
 
 function auth(req: any, res: express.Response, next: express.NextFunction) {
   const k = req.headers['x-user-id'];

@@ -21,6 +21,7 @@ import { Order } from '../orders/models/order.model';
 import { Review } from '../reviews/models/review.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 // ── EventEmitter subscription ─────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ export const registerSeller = async (req: AuthRequest, res: Response): Promise<v
       ...(body.bankDetails ? { bankDetails: body.bankDetails as object } : {}),
     });
     res.status(201).json({ success: true, data: seller });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getMyStore = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -79,7 +80,7 @@ export const getMyStore = async (req: AuthRequest, res: Response): Promise<void>
     if (!seller) { res.status(404).json({ success: false, error: 'Seller profile not found' }); return; }
     const data = { ...seller.toObject(), description: seller.storeDescription, shopName: seller.storeName };
     res.json({ success: true, data });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateStore = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -92,7 +93,7 @@ export const updateStore = async (req: AuthRequest, res: Response): Promise<void
     const seller = await Seller.findOneAndUpdate({ userId: req.user!.userId }, updates, { new: true });
     const data   = seller ? { ...seller.toObject(), description: seller.storeDescription, shopName: seller.storeName } : null;
     res.json({ success: true, data });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Dashboard — direct DB queries, no HTTP ────────────────────────────────────
@@ -149,7 +150,7 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
       pendingOrders: pendingOrderCount,
       revenueChart,
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Products — direct Mongoose ────────────────────────────────────────────────
@@ -163,7 +164,7 @@ export const getSellerProducts = async (req: AuthRequest, res: Response): Promis
       Product.countDocuments({ sellerId: req.user!.userId, isActive: true }),
     ]);
     res.json({ success: true, data: products, meta: { total, page: Number(page), limit: Number(limit) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const createSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -171,7 +172,7 @@ export const createSellerProduct = async (req: AuthRequest, res: Response): Prom
     const body    = req.body as Record<string, unknown>;
     const product = await Product.create({ ...body, sellerId: req.user!.userId });
     res.status(201).json({ success: true, data: product });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -179,14 +180,14 @@ export const updateSellerProduct = async (req: AuthRequest, res: Response): Prom
     const product = await Product.findOneAndUpdate({ _id: req.params.id, sellerId: req.user!.userId }, req.body, { new: true });
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Product.findOneAndUpdate({ _id: req.params.id, sellerId: req.user!.userId }, { isActive: false });
     res.json({ success: true, data: null });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Orders — direct Mongoose ──────────────────────────────────────────────────
@@ -202,7 +203,7 @@ export const getSellerOrders = async (req: AuthRequest, res: Response): Promise<
       Order.countDocuments(filter),
     ]);
     res.json({ success: true, data: orders, meta: { total, page: Number(page), limit: Number(limit) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getSellerOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -213,7 +214,7 @@ export const getSellerOrderById = async (req: AuthRequest, res: Response): Promi
     const hasSeller = order.items.some(i => i.sellerId === req.user!.userId);
     if (!hasSeller) { res.status(403).json({ success: false, error: 'Forbidden' }); return; }
     res.json({ success: true, data: order });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -229,7 +230,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     order.statusHistory.push({ status, timestamp: new Date() });
     await order.save();
     res.json({ success: true, data: order });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Analytics — direct Mongoose aggregation ───────────────────────────────────
@@ -282,7 +283,7 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
       topProducts,
       revenueByMonth: Object.entries(monthMap).map(([month, revenue]) => ({ month, revenue })),
     }});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Reviews — direct Mongoose ─────────────────────────────────────────────────
@@ -295,7 +296,7 @@ export const getSellerReviews = async (req: AuthRequest, res: Response): Promise
     if (productIds.length === 0) { res.json({ success: true, data: [] }); return; }
     const reviews = await Review.find({ productId: { $in: productIds }, isActive: true }).sort('-createdAt').limit(200);
     res.json({ success: true, data: reviews });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Inventory ─────────────────────────────────────────────────────────────────
@@ -320,7 +321,7 @@ export const getSellerInventory = async (req: AuthRequest, res: Response): Promi
       isActive:          p.isActive,
     }));
     res.json({ success: true, data: inventory, meta: { total, page: Number(page), limit: Number(limit) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateInventoryStock = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -334,7 +335,7 @@ export const updateInventoryStock = async (req: AuthRequest, res: Response): Pro
     );
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Payouts ───────────────────────────────────────────────────────────────────
@@ -344,7 +345,7 @@ export const getPayouts = async (req: AuthRequest, res: Response): Promise<void>
     const seller = await Seller.findOne({ userId: req.user!.userId });
     if (!seller) { res.status(404).json({ success: false, error: 'Seller not found' }); return; }
     res.json({ success: true, data: { balance: { available: seller.balance, pending: 0, total: seller.totalEarnings }, payouts: [] } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const requestPayout = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -356,7 +357,7 @@ export const requestPayout = async (req: AuthRequest, res: Response): Promise<vo
     if (seller.balance < amount) { res.status(400).json({ success: false, error: 'Insufficient balance' }); return; }
     await Seller.findOneAndUpdate({ userId: req.user!.userId }, { $inc: { balance: -amount } });
     res.json({ success: true, data: { id: `PAY-${Date.now()}`, amount, bankName, accountNumber, status: 'PENDING', createdAt: new Date().toISOString() } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Bank details ──────────────────────────────────────────────────────────────
@@ -365,7 +366,7 @@ export const getBankDetails = async (req: AuthRequest, res: Response): Promise<v
   try {
     const seller = await Seller.findOne({ userId: req.user!.userId }).select('bankDetails');
     res.json({ success: true, data: seller?.bankDetails ?? {} });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateBankDetails = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -373,14 +374,14 @@ export const updateBankDetails = async (req: AuthRequest, res: Response): Promis
     const { bankName, accountNumber, accountHolder } = req.body as { bankName: string; accountNumber: string; accountHolder: string };
     const seller = await Seller.findOneAndUpdate({ userId: req.user!.userId }, { bankDetails: { bankName, accountNumber, accountName: accountHolder } }, { new: true });
     res.json({ success: true, data: seller?.bankDetails });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateNotificationPreferences = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Seller.findOneAndUpdate({ userId: req.user!.userId }, { notificationPreferences: req.body });
     res.json({ success: true, data: req.body });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -392,7 +393,7 @@ export const getAllSellers = async (req: AuthRequest, res: Response): Promise<vo
     if (status) filter.status = status;
     const sellers = await Seller.find(filter).sort('-createdAt').skip((Number(page) - 1) * Number(limit)).limit(Number(limit));
     res.json({ success: true, data: sellers });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const approveSeller = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -400,12 +401,12 @@ export const approveSeller = async (req: AuthRequest, res: Response): Promise<vo
     const seller = await Seller.findByIdAndUpdate(req.params.id, { status: 'ACTIVE' }, { new: true });
     if (seller) publishEvent('seller.approved', { sellerId: seller.id, userId: seller.userId }).catch(() => {});
     res.json({ success: true, data: seller });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const suspendSeller = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const seller = await Seller.findByIdAndUpdate(req.params.id, { status: 'SUSPENDED' }, { new: true });
     res.json({ success: true, data: seller });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };

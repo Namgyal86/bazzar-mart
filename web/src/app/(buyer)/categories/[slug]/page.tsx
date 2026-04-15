@@ -13,13 +13,17 @@ import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 
 const CATEGORY_META: Record<string, { name: string; emoji: string; gradient: string; desc: string }> = {
-  electronics:   { name: 'Electronics',    emoji: '💻', gradient: 'from-blue-600 to-cyan-500',    desc: 'Latest gadgets, phones, laptops & more' },
-  fashion:       { name: 'Fashion',         emoji: '👗', gradient: 'from-pink-500 to-rose-400',    desc: 'Trending styles for men, women & kids' },
-  'home-living': { name: 'Home & Living',   emoji: '🏠', gradient: 'from-amber-500 to-orange-400', desc: 'Furniture, decor & kitchen essentials' },
-  sports:        { name: 'Sports',          emoji: '⚽', gradient: 'from-green-600 to-teal-500',   desc: 'Fitness gear, outdoor & sporting goods' },
-  beauty:        { name: 'Beauty',          emoji: '✨', gradient: 'from-purple-600 to-pink-500',  desc: 'Skincare, makeup, hair & wellness' },
-  books:         { name: 'Books',           emoji: '📚', gradient: 'from-orange-500 to-amber-400', desc: 'Fiction, non-fiction, academic & more' },
-  grocery:       { name: 'Grocery',         emoji: '🛒', gradient: 'from-teal-600 to-green-500',   desc: 'Daily essentials, fresh & packaged foods' },
+  'fruits-vegetables': { name: 'Fruits & Vegetables', emoji: '🥦', gradient: 'from-green-600 to-emerald-500',  desc: 'Farm-fresh fruits and vegetables daily' },
+  'dairy-eggs':        { name: 'Dairy & Eggs',         emoji: '🥛', gradient: 'from-yellow-500 to-amber-400',  desc: 'Fresh milk, curd, paneer, eggs & more' },
+  'grains-pulses':     { name: 'Grains & Pulses',      emoji: '🌾', gradient: 'from-amber-600 to-yellow-500',  desc: 'Rice, dal, flour, atta & whole grains' },
+  'meat-seafood':      { name: 'Meat & Seafood',        emoji: '🍗', gradient: 'from-red-600 to-rose-500',      desc: 'Fresh chicken, mutton, fish & more' },
+  'snacks-beverages':  { name: 'Snacks & Beverages',   emoji: '🍿', gradient: 'from-orange-500 to-amber-400',  desc: 'Chips, biscuits, tea, coffee & juices' },
+  'spices-condiments': { name: 'Spices & Condiments',  emoji: '🌶️', gradient: 'from-red-500 to-orange-400',    desc: 'Masala, sauces, oils & kitchen essentials' },
+  'personal-care':     { name: 'Personal Care',         emoji: '🧴', gradient: 'from-purple-600 to-violet-500', desc: 'Soap, shampoo, toothpaste & hygiene' },
+  'household-items':   { name: 'Household Items',       emoji: '🧹', gradient: 'from-teal-600 to-cyan-500',    desc: 'Cleaning supplies & home essentials' },
+  'frozen-foods':      { name: 'Frozen Foods',          emoji: '🧊', gradient: 'from-cyan-600 to-blue-500',    desc: 'Frozen vegetables, meals & snacks' },
+  'bakery-bread':      { name: 'Bakery & Bread',        emoji: '🍞', gradient: 'from-amber-500 to-orange-400', desc: 'Fresh bread, buns, cakes & pastries' },
+  grocery:             { name: 'Grocery',                emoji: '🛒', gradient: 'from-teal-600 to-green-500',   desc: 'Daily essentials, fresh & packaged foods' },
 };
 
 const SORT_OPTIONS = [
