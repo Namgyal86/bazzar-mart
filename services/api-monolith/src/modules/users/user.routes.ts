@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authenticate, requireRole } from '../../shared/middleware/auth';
-import { register, login, refresh, logout } from './auth.controller';
+import { register, login, refresh, logout, forgotPassword, resetPassword, sendVerificationEmail, verifyEmail } from './auth.controller';
 import {
   getMe, updateMe,
   getWishlist, syncWishlist, addToWishlist, removeFromWishlist,
@@ -26,6 +26,10 @@ router.post('/auth/login',         authLimiter, login);
 router.post('/auth/token/refresh', refresh);
 router.post('/auth/refresh',       refresh);     // mobile alias
 router.post('/auth/logout',        logout);
+router.post('/auth/password/forgot',     authLimiter, forgotPassword);
+router.post('/auth/password/reset',      authLimiter, resetPassword);
+router.get ('/auth/verify-email',        verifyEmail);
+router.post('/auth/resend-verification', authLimiter, sendVerificationEmail);
 
 // ── Users (/api/v1/users) ─────────────────────────────────────────────────────
 router.use('/users', authenticate);
