@@ -90,7 +90,7 @@ export function createApp(): Application {
   app.use(helmet());
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions)); // explicit preflight handler for all routes
-  app.use(morgan('dev'));
+  app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
