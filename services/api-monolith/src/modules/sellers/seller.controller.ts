@@ -14,6 +14,7 @@
  *   each seller their 90% share of the order items they fulfilled.
  */
 import { Response } from 'express';
+import { z } from 'zod';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { Seller } from './models/seller.model';
 import { Product } from '../products/models/product.model';
@@ -23,6 +24,24 @@ import { User } from '../users/models/user.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
+
+const createSellerProductSchema = z.object({
+  name:             z.string().min(3),
+  description:      z.string().min(10),
+  shortDescription: z.string().optional(),
+  price:            z.number().positive(),
+  salePrice:        z.number().positive().optional(),
+  images:           z.array(z.string()).default([]),
+  category:         z.string().min(1),
+  subCategory:      z.string().optional(),
+  brand:            z.string().optional(),
+  stock:            z.number().int().min(0).default(0),
+  tags:             z.array(z.string()).default([]),
+  specifications:   z.record(z.string()).default({}),
+  sellerName:       z.string().optional(),
+  // isFeatured intentionally excluded — sellers cannot self-feature
+  // sellerId intentionally excluded — always set from req.user!.userId
+});
 
 // ── EventEmitter subscription ─────────────────────────────────────────────────
 
@@ -177,7 +196,11 @@ export const getSellerProducts = async (req: AuthRequest, res: Response): Promis
 
 export const createSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const body    = req.body as Record<string, unknown>;
+    const body = createSellerProductSchema.parse({
+      ...req.body,
+      price: Number(req.body.price ?? req.body.basePrice),
+      stock: Number(req.body.stock ?? 0),
+    });
     const product = await Product.create({ ...body, sellerId: req.user!.userId });
     res.status(201).json({ success: true, data: product });
   } catch (err: unknown) { handleError(err, res); }
@@ -279,15 +302,43 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     });
     const topProducts = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
+    // Prior period: same 6-month window shifted back 6 months (D-18)
+    const prevEnd   = new Date(since);
+    const prevSince = new Date(since);
+    prevSince.setMonth(prevSince.getMonth() - 6);
+
+    const prevOrders = await Order.find({
+      'items.sellerId': sellerId,
+      createdAt:        { $gte: prevSince, $lt: prevEnd },
+    }).lean();
+
+    let prevRevenue = 0;
+    const prevCustomerSet = new Set<string>();
+    for (const o of prevOrders) {
+      const sellerItems = (o.items as Array<{ sellerId: string; totalPrice: number }>)
+        .filter(i => i.sellerId === sellerId);
+      prevRevenue += sellerItems.reduce((s, i) => s + i.totalPrice, 0);
+      prevCustomerSet.add(o.userId as string);
+    }
+    const prevOrderCount = prevOrders.length;
+    const prevAvgOrder   = prevOrderCount > 0 ? prevRevenue / prevOrderCount : 0;
+
     const totalRevenue = seller.totalEarnings;
     const totalOrders  = seller.totalOrders;
     const avgOrder     = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+    const currentCustomerSet = new Set<string>(orders.map(o => o.userId as unknown as string));
+
+    function pctChange(current: number, prev: number): number {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - prev) / prev) * 100);
+    }
+
     res.json({ success: true, data: {
-      revenue:        { current: totalRevenue, prev: Math.round(totalRevenue * 0.85), change: 15 },
-      orders:         { current: totalOrders,  prev: Math.floor(totalOrders * 0.9),   change: 10 },
-      customers:      { current: Math.floor(totalOrders * 0.8), prev: Math.floor(totalOrders * 0.7), change: 8 },
-      avgOrder:       { current: avgOrder, prev: Math.round(avgOrder * 0.9), change: 5 },
+      revenue:        { current: totalRevenue, prev: prevRevenue,    change: pctChange(totalRevenue, prevRevenue) },
+      orders:         { current: totalOrders,  prev: prevOrderCount, change: pctChange(totalOrders, prevOrderCount) },
+      customers:      { current: currentCustomerSet.size, prev: prevCustomerSet.size, change: pctChange(currentCustomerSet.size, prevCustomerSet.size) },
+      avgOrder:       { current: avgOrder, prev: prevAvgOrder, change: pctChange(avgOrder, prevAvgOrder) },
       topProducts,
       revenueByMonth: Object.entries(monthMap).map(([month, revenue]) => ({ month, revenue })),
     }});
