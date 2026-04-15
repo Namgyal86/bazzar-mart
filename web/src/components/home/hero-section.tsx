@@ -132,7 +132,7 @@ export function HeroSection() {
   const bg = BG_GRADIENTS[current % BG_GRADIENTS.length];
 
   return (
-    <section className={`relative min-h-[90vh] bg-gradient-to-br ${bg} overflow-hidden transition-colors duration-700`}>
+    <section className={`relative min-h-[90vh] bg-gradient-to-br ${bg} overflow-x-hidden transition-colors duration-700`}>
       {/* Background image */}
       {slide.image && (
         <div className="absolute inset-0 opacity-15">
@@ -144,19 +144,21 @@ export function HeroSection() {
       <div className="absolute inset-0 opacity-[0.04]"
         style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px)', backgroundSize: '72px 72px' }} />
 
-      {/* Animated glowing orbs */}
-      <motion.div
-        className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
-        animate={{ opacity: [0.06, 0.12, 0.06], scale: [1, 1.1, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ background: slide.accentColor }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full blur-3xl"
-        animate={{ opacity: [0.04, 0.10, 0.04], scale: [1, 1.15, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        style={{ background: slide.accentColor }}
-      />
+      {/* Animated glowing orbs — wrapped to contain blur overflow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
+          animate={{ opacity: [0.06, 0.12, 0.06], scale: [1, 1.1, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ background: slide.accentColor }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full blur-3xl"
+          animate={{ opacity: [0.04, 0.10, 0.04], scale: [1, 1.15, 1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          style={{ background: slide.accentColor }}
+        />
+      </div>
 
       <div className="relative z-10 container mx-auto px-4 flex flex-col lg:flex-row items-center gap-10 min-h-[90vh] py-16">
         {/* LEFT: Text */}
@@ -334,8 +336,8 @@ export function HeroSection() {
       </div>
 
       {/* Wave */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-        <svg viewBox="0 0 1440 56" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <div className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none">
+        <svg viewBox="0 0 1440 56" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full">
           <path d="M0 56L1440 56L1440 18C1200 56 960 0 720 20C480 40 240 0 0 18L0 56Z" className="fill-white dark:fill-background" />
         </svg>
       </div>
