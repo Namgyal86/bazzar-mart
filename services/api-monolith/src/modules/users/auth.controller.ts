@@ -17,6 +17,7 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from './utils/j
 import { handleUserRegistered } from '../referrals/referral.controller';
 import { internalBus, EVENTS } from '../../shared/events/emitter';
 import { publishEvent } from '../../kafka/producer';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -105,8 +106,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }).catch(() => {});
 
   } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ZodError') { res.status(400).json({ success: false, error: (err as { errors: unknown }).errors }); return; }
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -129,8 +129,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true, data: { accessToken, refreshToken, user: publicUser(user) } });
   } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ZodError') { res.status(400).json({ success: false, error: (err as { errors: unknown }).errors }); return; }
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 

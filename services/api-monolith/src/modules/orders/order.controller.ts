@@ -20,6 +20,7 @@ import { Coupon } from './models/coupon.model';
 import { Product } from '../products/models/product.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload, PaymentFailedPayload, DeliveryCompletedPayload } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -228,8 +229,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     }).catch(() => {});
 
   } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ZodError') { res.status(400).json({ success: false, error: (err as { errors: unknown }).errors }); return; }
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -245,7 +245,7 @@ export const getOrders = async (req: AuthRequest, res: Response): Promise<void> 
     ]);
     res.json({ success: true, data: orders, meta: { total, page: Number(page), limit: Number(limit) } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -255,7 +255,7 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
     if (!order) { res.status(404).json({ success: false, error: 'Order not found' }); return; }
     res.json({ success: true, data: order });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -284,7 +284,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
       publishEvent('order.status_updated', { orderId: order.id, userId: order.userId, status, message }).catch(() => {});
     }
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -300,7 +300,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
     await order.save();
     res.json({ success: true, data: order });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -316,7 +316,7 @@ export const returnOrder = async (req: AuthRequest, res: Response): Promise<void
     await order.save();
     res.json({ success: true, data: order });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -333,7 +333,7 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
     ]);
     res.json({ success: true, data: orders, meta: { total, page: Number(page), limit: Number(limit) } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -348,7 +348,7 @@ export const getAdminStats = async (_req: AuthRequest, res: Response): Promise<v
     ]);
     res.json({ success: true, data: { totalOrders, todayOrders, pendingOrders, totalRevenue: revenueAgg[0]?.total ?? 0 } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -370,7 +370,7 @@ export const getRevenueByDay = async (req: AuthRequest, res: Response): Promise<
     }));
     res.json({ success: true, data: result });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -386,7 +386,7 @@ export const getCategoryBreakdown = async (_req: AuthRequest, res: Response): Pr
     const colors = ['#F97316', '#2563EB', '#7C3AED', '#059669', '#EC4899', '#F59E0B'];
     res.json({ success: true, data: agg.map((r: { _id: string; value: number }, i) => ({ name: r._id || 'Other', value: r.value, color: colors[i % colors.length] })) });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -408,26 +408,26 @@ export const validateCoupon = async (req: AuthRequest, res: Response): Promise<v
     if (coupon.maxDiscount > 0) discount = Math.min(discount, coupon.maxDiscount);
     res.json({ success: true, data: { valid: true, discount, type: coupon.type, value: coupon.value } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
 export const listCoupons = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     res.json({ success: true, data: await Coupon.find().sort('-createdAt') });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const createCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const coupon = await Coupon.create(req.body);
     res.status(201).json({ success: true, data: coupon });
-  } catch (err: unknown) { res.status(400).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Coupon.findByIdAndDelete(req.params.id);
     res.json({ success: true });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../../shared/middleware/auth';
 import * as cartService from './cart.service';
+import { handleError } from '../../shared/middleware/error';
 
 const addItemSchema = z.object({
   productId:    z.string().min(1),
@@ -27,7 +28,7 @@ function validationMiddleware<T>(schema: z.ZodSchema<T>) {
 export const getCart = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     res.json({ success: true, data: await cartService.getCart(req.user!.userId) });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const addItem = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -36,7 +37,7 @@ export const addItem = async (req: AuthRequest, res: Response): Promise<void> =>
     if (!parsed.success) { res.status(400).json({ success: false, error: parsed.error.flatten() }); return; }
     const items = await cartService.addItem(req.user!.userId, parsed.data);
     res.json({ success: true, data: { items } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateItem = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -45,21 +46,21 @@ export const updateItem = async (req: AuthRequest, res: Response): Promise<void>
     if (!parsed.success) { res.status(400).json({ success: false, error: parsed.error.flatten() }); return; }
     const items = await cartService.updateItem(req.user!.userId, req.params.productId, parsed.data.quantity);
     res.json({ success: true, data: { items } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const removeItem = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const items = await cartService.removeItem(req.user!.userId, req.params.productId);
     res.json({ success: true, data: { items } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const clearCart = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await cartService.clearCart(req.user!.userId);
     res.json({ success: true, data: { items: [] } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // Suppress unused warning

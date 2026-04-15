@@ -11,6 +11,7 @@ import { Review } from './models/review.model';
 import { Product } from '../products/models/product.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, ReviewPostedPayload } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 // ── EventEmitter subscription ─────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ export const getProductReviews = async (req: Request, res: Response): Promise<vo
       ? Number((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1))
       : 0;
     res.json({ success: true, data: { reviews, avgRating, total, page: Number(page), limit: Number(limit) } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const createReview = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -91,14 +92,14 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
     publishEvent('review.posted', payload as unknown as Record<string, unknown>).catch(() => {});
 
     res.status(201).json({ success: true, data: review });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteReview = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Review.findOneAndDelete({ _id: req.params.id, userId: req.user!.userId });
     res.json({ success: true, data: null });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const markHelpful = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -106,7 +107,7 @@ export const markHelpful = async (req: AuthRequest, res: Response): Promise<void
     const review = await Review.findByIdAndUpdate(req.params.reviewId, { $inc: { helpfulCount: 1 } }, { new: true });
     if (!review) { res.status(404).json({ success: false, error: 'Review not found' }); return; }
     res.json({ success: true, data: { helpfulCount: review.helpfulCount } });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminListReviews = async (_req: Request, res: Response): Promise<void> => {
@@ -122,7 +123,7 @@ export const adminListReviews = async (_req: Request, res: Response): Promise<vo
       helpful:   r.helpfulCount,
       createdAt: r.createdAt,
     }))});
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminApproveReview = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -130,7 +131,7 @@ export const adminApproveReview = async (req: AuthRequest, res: Response): Promi
     const review = await Review.findByIdAndUpdate(req.params.id, { status: 'APPROVED' }, { new: true });
     if (!review) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: review });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminRejectReview = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -138,12 +139,12 @@ export const adminRejectReview = async (req: AuthRequest, res: Response): Promis
     const review = await Review.findByIdAndUpdate(req.params.id, { status: 'REJECTED' }, { new: true });
     if (!review) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: review });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const adminDeleteReview = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await Review.findByIdAndDelete(req.params.id);
     res.json({ success: true, data: null });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };

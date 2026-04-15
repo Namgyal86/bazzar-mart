@@ -5,6 +5,7 @@ import { Category } from './models/category.model';
 import { Banner } from './models/banner.model';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { internalBus, EVENTS } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Validation schemas ───────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
     res.json({ success: true, data: products, meta: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / Number(limit)) } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -73,7 +74,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -93,8 +94,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
     });
     res.status(201).json({ success: true, data: product });
   } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ZodError') { res.status(400).json({ success: false, error: (err as { errors: unknown }).errors }); return; }
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -107,7 +107,7 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
     await product.save();
     res.json({ success: true, data: product });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -121,7 +121,7 @@ export const updateStock = async (req: AuthRequest, res: Response): Promise<void
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -130,7 +130,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response): Promise<vo
     await Product.findOneAndUpdate({ _id: req.params.id, sellerId: req.user!.userId }, { isActive: false });
     res.json({ success: true, data: null });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -139,7 +139,7 @@ export const getFeaturedProducts = async (_req: Request, res: Response): Promise
     const products = await Product.find({ isActive: true, isFeatured: true }).limit(12).sort('-createdAt');
     res.json({ success: true, data: products });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -152,7 +152,7 @@ export const getAdminStats = async (_req: Request, res: Response): Promise<void>
     ]);
     res.json({ success: true, data: { totalProducts, totalSellers: sellerIds.length, outOfStock } });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -165,7 +165,7 @@ export const getFlashDeals = async (_req: Request, res: Response): Promise<void>
     }).sort('-createdAt');
     res.json({ success: true, data: deals });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -181,7 +181,7 @@ export const adminSetFlashDeal = async (req: AuthRequest, res: Response): Promis
     await product.save();
     res.json({ success: true, data: product });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -191,7 +191,7 @@ export const adminRemoveFlashDeal = async (req: Request, res: Response): Promise
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -202,13 +202,13 @@ export const getCategories = async (req: Request, res: Response): Promise<void> 
     const filter: Record<string, unknown> = { isActive: true };
     if (req.query.navOnly === 'true') filter.showInNav = true;
     res.json({ success: true, data: await Category.find(filter).sort('sortOrder') });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getAllCategories = async (_req: Request, res: Response): Promise<void> => {
   try {
     res.json({ success: true, data: await Category.find().sort('sortOrder') });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getCategoriesWithSubs = async (_req: Request, res: Response): Promise<void> => {
@@ -217,7 +217,7 @@ export const getCategoriesWithSubs = async (_req: Request, res: Response): Promi
     const parents = all.filter(c => !c.parentCategory);
     const result = parents.map(p => ({ ...p.toObject(), subcategories: all.filter(c => c.parentCategory === p.slug) }));
     res.json({ success: true, data: result });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const getCategoryBySlug = async (req: Request, res: Response): Promise<void> => {
@@ -225,7 +225,7 @@ export const getCategoryBySlug = async (req: Request, res: Response): Promise<vo
     const cat = await Category.findOne({ slug: req.params.slug, isActive: true });
     if (!cat) { res.status(404).json({ success: false, error: 'Category not found' }); return; }
     res.json({ success: true, data: cat });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
@@ -241,7 +241,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       isActive:       req.body.isActive !== false,
     });
     res.status(201).json({ success: true, data: cat });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateCategory = async (req: Request, res: Response): Promise<void> => {
@@ -258,7 +258,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     const cat = await Category.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!cat) { res.status(404).json({ success: false, error: 'Category not found' }); return; }
     res.json({ success: true, data: cat });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
@@ -266,24 +266,24 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     const cat = await Category.findByIdAndDelete(req.params.id);
     if (!cat) { res.status(404).json({ success: false, error: 'Category not found' }); return; }
     res.json({ success: true, message: 'Category deleted' });
-  } catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 // ── Banner handlers ──────────────────────────────────────────────────────────
 
 export const getBanners = async (_req: Request, res: Response): Promise<void> => {
   try { res.json({ success: true, data: await Banner.find({ isActive: true }).sort({ order: 1 }) }); }
-  catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  catch (err: unknown) { handleError(err, res); }
 };
 
 export const getAllBanners = async (_req: Request, res: Response): Promise<void> => {
   try { res.json({ success: true, data: await Banner.find().sort({ order: 1 }) }); }
-  catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  catch (err: unknown) { handleError(err, res); }
 };
 
 export const createBanner = async (req: Request, res: Response): Promise<void> => {
   try { res.status(201).json({ success: true, data: await Banner.create(req.body) }); }
-  catch (err: unknown) { res.status(400).json({ success: false, error: (err as Error).message }); }
+  catch (err: unknown) { handleError(err, res); }
 };
 
 export const updateBanner = async (req: Request, res: Response): Promise<void> => {
@@ -291,10 +291,10 @@ export const updateBanner = async (req: Request, res: Response): Promise<void> =
     const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!banner) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: banner });
-  } catch (err: unknown) { res.status(400).json({ success: false, error: (err as Error).message }); }
+  } catch (err: unknown) { handleError(err, res); }
 };
 
 export const deleteBanner = async (req: Request, res: Response): Promise<void> => {
   try { await Banner.findByIdAndDelete(req.params.id); res.json({ success: true }); }
-  catch (err: unknown) { res.status(500).json({ success: false, error: (err as Error).message }); }
+  catch (err: unknown) { handleError(err, res); }
 };

@@ -15,6 +15,7 @@ import mongoose from 'mongoose';
 import { View } from './recommendation.model';
 import { Product, IProduct } from '../products/models/product.model';
 import { internalBus, EVENTS, ReviewPostedPayload, OrderCreatedPayload, ProductCreatedPayload } from '../../shared/events/emitter';
+import { handleError } from '../../shared/middleware/error';
 
 // ── Internal event handlers ───────────────────────────────────────────────────
 
@@ -110,7 +111,7 @@ export const trackView = async (req: Request, res: Response): Promise<void> => {
     }
     res.json({ success: true });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -131,7 +132,7 @@ export const forUser = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true, data: products.map(p => toSearchHit(p as unknown as IProduct)) });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -148,7 +149,7 @@ export const similarProducts = async (req: Request, res: Response): Promise<void
     const products = await Product.find(filter).sort({ rating: -1 }).limit(6).lean();
     res.json({ success: true, data: products.map(p => toSearchHit(p as unknown as IProduct)) });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
@@ -172,6 +173,6 @@ export const trending = async (req: Request, res: Response): Promise<void> => {
     const products   = await Product.find({ _id: { $in: productIds }, isActive: true }).lean();
     res.json({ success: true, data: products.map(p => toSearchHit(p as unknown as IProduct)) });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    handleError(err, res);
   }
 };
