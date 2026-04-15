@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Auth middleware — ADMIN role block + JWT-required guard (SEC-01, SEC-02)
-- [ ] 01-02: Service hardening — CORS restriction on delivery/notification + JWT guard on delivery routes (SEC-03, SEC-05)
-- [ ] 01-03: Production hygiene — error response sanitization + Morgan environment config (SEC-04, SEC-06)
+- [x] 01-01: Auth middleware — ADMIN role block + JWT-required guard (SEC-01, SEC-02)
+- [x] 01-02: Service hardening — CORS restriction on delivery/notification + JWT guard on delivery routes (SEC-03, SEC-05)
+- [x] 01-03: Production hygiene — error response sanitization + Morgan environment config (SEC-04, SEC-06)
 
 ### Phase 2: Feature Completions
 **Goal**: Every user-facing flow that was partially built works end-to-end with correct data side effects.
