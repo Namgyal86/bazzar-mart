@@ -18,6 +18,7 @@ import { AuthRequest } from '../../shared/middleware/auth';
 import { Order } from './models/order.model';
 import { Coupon } from './models/coupon.model';
 import { Product } from '../products/models/product.model';
+import { Wallet } from '../referrals/models/referral.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload, PaymentFailedPayload, DeliveryCompletedPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
@@ -46,6 +47,7 @@ const createOrderSchema = z.object({
   paymentMethod: z.string(),
   couponCode:    z.string().optional(),
   notes:         z.string().optional(),
+  walletAmount:  z.number().min(0).optional().default(0),
 });
 
 // ── Internal EventEmitter subscriptions ──────────────────────────────────────
@@ -114,6 +116,16 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
   try {
     const body = createOrderSchema.parse(req.body);
 
+    // ── Wallet balance pre-check (FEAT-03, D-10) ─────────────────────────────
+    const walletAmount = body.walletAmount ?? 0;
+    if (walletAmount > 0) {
+      const wallet = await Wallet.findOne({ userId: req.user!.userId });
+      const balance = wallet?.balance ?? 0;
+      if (balance < walletAmount) {
+        res.status(400).json({ success: false, error: 'Insufficient wallet balance' }); return;
+      }
+    }
+
     // ── 1. Fetch products and validate availability + prices ──────────────────
     const productIds = [...new Set(body.items.map(i => i.productId))];
     const products   = await Product.find({ _id: { $in: productIds }, isActive: true }).lean();
@@ -162,6 +174,40 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    // ── Atomic wallet deduction (FEAT-03, D-11) ───────────────────────────────
+    let walletDeducted = false;
+    if (walletAmount > 0) {
+      const walletResult = await Wallet.findOneAndUpdate(
+        { userId: req.user!.userId, balance: { $gte: walletAmount } },
+        {
+          $inc: { balance: -walletAmount },
+          $push: {
+            transactions: {
+              type:        'DEBIT',
+              amount:      walletAmount,
+              description: 'Applied to order at checkout',
+              createdAt:   new Date(),
+            },
+          },
+          $set: { updatedAt: new Date() },
+        },
+        { new: true },
+      );
+
+      if (!walletResult) {
+        // Concurrent depletion — roll back stock and reject (D-11)
+        await Promise.all(
+          body.items.map((item, i) =>
+            decrements[i] !== null
+              ? Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+              : null
+          )
+        ).catch(e => console.error('[orders] stock rollback (wallet race) error:', e));
+        res.status(409).json({ success: false, error: 'Wallet balance changed. Please try again.' }); return;
+      }
+      walletDeducted = true;
+    }
+
     // ── 3. Build items with server-side prices + category ─────────────────────
     const items = body.items.map(i => {
       const product   = productMap.get(i.productId)!;
@@ -194,30 +240,61 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     }
 
     const total = Math.max(0, subtotal + shippingFee - discount);
+    const finalTotal = Math.max(0, total - walletAmount);
 
     // ── 4. Create order ───────────────────────────────────────────────────────
-    const order = await Order.create({
-      userId: req.user!.userId,
-      items, shippingAddress: body.shippingAddress,
-      paymentMethod: body.paymentMethod,
-      subtotal, shippingFee, discount, total,
-      couponCode: body.couponCode, notes: body.notes,
-      statusHistory:     [{ status: 'PENDING', timestamp: new Date() }],
-      estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    });
+    let order;
+    try {
+      order = await Order.create({
+        userId: req.user!.userId,
+        items, shippingAddress: body.shippingAddress,
+        paymentMethod: body.paymentMethod,
+        subtotal, shippingFee, discount, total: finalTotal,
+        couponCode: body.couponCode, notes: body.notes,
+        statusHistory:     [{ status: 'PENDING', timestamp: new Date() }],
+        estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      });
+    } catch (createErr) {
+      // Roll back stock and wallet if order creation fails (D-12)
+      await Promise.all(
+        body.items.map((item, i) =>
+          decrements[i] !== null
+            ? Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+            : null
+        )
+      ).catch(e => console.error('[orders] stock rollback (order.create fail) error:', e));
+      if (walletDeducted) {
+        await Wallet.findOneAndUpdate(
+          { userId: req.user!.userId },
+          {
+            $inc: { balance: walletAmount },
+            $push: {
+              transactions: {
+                type:        'CREDIT',
+                amount:      walletAmount,
+                description: 'Wallet refund — order creation failed',
+                createdAt:   new Date(),
+              },
+            },
+            $set: { updatedAt: new Date() },
+          },
+        ).catch(e => console.error('[orders] wallet rollback error:', e));
+      }
+      throw createErr;
+    }
 
     res.status(201).json({ success: true, data: order });
 
     // In-process: referrals module checks for first-order reward
     internalBus.emit(EVENTS.ORDER_CREATED, {
-      orderId: order.id, userId: req.user!.userId, total, couponCode: body.couponCode,
+      orderId: order.id, userId: req.user!.userId, total: finalTotal, couponCode: body.couponCode,
     });
 
     // External: notification-service via Kafka
     publishEvent('order.created', {
       orderId:    order.id,
       userId:     req.user!.userId,
-      total,
+      total:      finalTotal,
       items:      items.map(i => ({ productId: i.productId, quantity: i.quantity, sellerId: i.sellerId })),
       couponCode: body.couponCode,
     }).catch(() => {});
@@ -225,7 +302,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     publishEvent('order.status_updated', {
       orderId: order.id, userId: req.user!.userId, status: 'PENDING',
       message: `Your order #${order.id.toString().slice(-8).toUpperCase()} has been placed successfully.`,
-      type: 'ORDER_PLACED',
+      type:    'ORDER_PLACED',
     }).catch(() => {});
 
   } catch (err: unknown) {
@@ -297,6 +374,17 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
     }
     order.status = 'CANCELLED';
     order.statusHistory.push({ status: 'CANCELLED', timestamp: new Date(), note: (req.body as { reason?: string }).reason });
+
+    // Restore stock for all order items (FEAT-04, D-14)
+    await Promise.all(
+      order.items.map(item =>
+        Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { stock: item.quantity } },
+        ).catch((err: unknown) => console.error(`[orders] stock restore failed for product ${item.productId}:`, err))
+      )
+    );
+
     await order.save();
     res.json({ success: true, data: order });
   } catch (err: unknown) {
