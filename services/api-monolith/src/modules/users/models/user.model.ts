@@ -15,6 +15,10 @@ export interface IUser extends Document {
   isActive:        boolean;
   refreshTokens:   string[];
   wishlist:        string[];
+  passwordResetToken?:        string;
+  passwordResetExpiry?:       number;
+  emailVerificationToken?:    string;
+  emailVerificationExpiry?:   number;
   comparePassword(candidate: string): Promise<boolean>;
 }
 
@@ -32,6 +36,10 @@ const UserSchema = new Schema<IUser>({
   isActive:        { type: Boolean, default: true },
   refreshTokens:   { type: [String], default: [], select: false },
   wishlist:        { type: [String], default: [] },
+  passwordResetToken:        { type: String, select: false },
+  passwordResetExpiry:       { type: Number, select: false },
+  emailVerificationToken:    { type: String, select: false },
+  emailVerificationExpiry:   { type: Number, select: false },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

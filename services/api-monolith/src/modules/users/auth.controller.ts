@@ -12,12 +12,14 @@
  */
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { User } from './models/user.model';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from './utils/jwt';
 import { handleUserRegistered } from '../referrals/referral.controller';
 import { internalBus, EVENTS } from '../../shared/events/emitter';
 import { publishEvent } from '../../kafka/producer';
 import { handleError } from '../../shared/middleware/error';
+import { sendEmail } from '../../shared/services/email';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await User.findByIdAndUpdate(user.id, { $push: { refreshTokens: refreshToken } });
 
     res.status(201).json({ success: true, data: { accessToken, refreshToken, user: publicUser(user) } });
+
+    // Send verification email (fire-and-forget — FEAT-02)
+    {
+      const rawToken  = crypto.randomBytes(32).toString('hex');
+      const hashToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      User.findByIdAndUpdate(user.id, {
+        emailVerificationToken:  hashToken,
+        emailVerificationExpiry: Date.now() + 24 * 60 * 60 * 1000,
+      }).catch(() => {});
+      const verifyUrl = `${process.env.API_BASE_URL || 'http://localhost:8100'}/api/v1/auth/verify-email?token=${rawToken}`;
+      sendEmail(
+        user.email,
+        'Bazzar Mart — Verify your email',
+        `Hello ${user.firstName},\n\nVerify your email:\n\n${verifyUrl}`
+      ).catch((err: unknown) => console.error('[auth] register verification email error:', err));
+    }
 
     // Apply referral — direct function call (no HTTP) since referrals module is internal
     if (body.referralCode) {
@@ -169,5 +187,121 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     res.json({ success: true, data: null });
   } catch {
     res.json({ success: true, data: null });
+  }
+};
+
+// ── Password reset ────────────────────────────────────────────────────────────
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body as { email?: string };
+    // Always respond the same — no user enumeration
+    res.json({ success: true, data: { message: 'If that email is registered, a reset link has been sent.' } });
+
+    if (!email) return;
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+passwordResetToken +passwordResetExpiry');
+    if (!user) return;
+
+    const rawToken  = crypto.randomBytes(32).toString('hex');
+    const hashToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.passwordResetToken  = hashToken;
+    user.passwordResetExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${process.env.WEB_URL || 'http://localhost:3000'}/auth/reset-password?token=${rawToken}`;
+    sendEmail(
+      user.email,
+      'Bazzar Mart — Reset your password',
+      `Hello ${user.firstName},\n\nClick the link below to reset your password (expires in 15 minutes):\n\n${resetUrl}\n\nIf you did not request this, ignore this email.`
+    ).catch((err: unknown) => console.error('[auth] forgot-password email error:', err));
+  } catch (err: unknown) {
+    // Already responded — just log
+    console.error('[auth] forgotPassword error:', err);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, newPassword } = req.body as { token?: string; newPassword?: string };
+    if (!token || !newPassword) {
+      res.status(400).json({ success: false, error: 'token and newPassword are required' }); return;
+    }
+    if (newPassword.length < 6) {
+      res.status(400).json({ success: false, error: 'newPassword must be at least 6 characters' }); return;
+    }
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      passwordResetToken:  hash,
+      passwordResetExpiry: { $gt: Date.now() },
+    }).select('+password +passwordResetToken +passwordResetExpiry');
+
+    if (!user) {
+      res.status(400).json({ success: false, error: 'Reset token is invalid or has expired' }); return;
+    }
+
+    user.password            = newPassword; // pre-save hook bcrypt-hashes this
+    user.passwordResetToken  = undefined;
+    user.passwordResetExpiry = undefined;
+    await user.save();
+
+    res.json({ success: true, data: { message: 'Password updated. You can now log in.' } });
+  } catch (err: unknown) {
+    handleError(err, res);
+  }
+};
+
+// ── Email verification ────────────────────────────────────────────────────────
+
+export const sendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) { res.status(400).json({ success: false, error: 'email required' }); return; }
+    const user = await User.findOne({ email: email.toLowerCase().trim() })
+      .select('+emailVerificationToken +emailVerificationExpiry');
+    if (!user) { res.json({ success: true, data: { message: 'If that email is registered, a verification link has been sent.' } }); return; }
+    if (user.isEmailVerified) { res.status(400).json({ success: false, error: 'Email already verified' }); return; }
+
+    const rawToken  = crypto.randomBytes(32).toString('hex');
+    const hashToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.emailVerificationToken  = hashToken;
+    user.emailVerificationExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    await user.save({ validateBeforeSave: false });
+
+    const verifyUrl = `${process.env.API_BASE_URL || 'http://localhost:8100'}/api/v1/auth/verify-email?token=${rawToken}`;
+    sendEmail(
+      user.email,
+      'Bazzar Mart — Verify your email',
+      `Hello ${user.firstName},\n\nClick the link to verify your email (expires in 24 hours):\n\n${verifyUrl}\n\nIf you did not create an account, ignore this email.`
+    ).catch((err: unknown) => console.error('[auth] verification email error:', err));
+
+    res.json({ success: true, data: { message: 'Verification email sent.' } });
+  } catch (err: unknown) {
+    handleError(err, res);
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.query as { token?: string };
+    if (!token) { res.status(400).json({ success: false, error: 'token required' }); return; }
+
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      emailVerificationToken:  hash,
+      emailVerificationExpiry: { $gt: Date.now() },
+    }).select('+emailVerificationToken +emailVerificationExpiry');
+
+    if (!user) {
+      res.status(400).json({ success: false, error: 'Verification token is invalid or has expired' }); return;
+    }
+
+    user.isEmailVerified         = true;
+    user.emailVerificationToken  = undefined;
+    user.emailVerificationExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ success: true, data: { message: 'Email verified successfully.' } });
+  } catch (err: unknown) {
+    handleError(err, res);
   }
 };

@@ -19,6 +19,7 @@ import { Order } from './models/order.model';
 import { Coupon } from './models/coupon.model';
 import { Product } from '../products/models/product.model';
 import { Wallet } from '../referrals/models/referral.model';
+import { User } from '../users/models/user.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload, PaymentFailedPayload, DeliveryCompletedPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
@@ -114,6 +115,12 @@ export function registerOrderEventHandlers(): void {
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    // Email verification gate (FEAT-02)
+    const orderingUser = await User.findById(req.user!.userId).select('isEmailVerified');
+    if (orderingUser && orderingUser.isEmailVerified === false) {
+      res.status(400).json({ success: false, error: 'Email verification required before checkout' }); return;
+    }
+
     const body = createOrderSchema.parse(req.body);
 
     // ── Wallet balance pre-check (FEAT-03, D-10) ─────────────────────────────

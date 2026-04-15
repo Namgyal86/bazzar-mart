@@ -19,6 +19,7 @@ import { Seller } from './models/seller.model';
 import { Product } from '../products/models/product.model';
 import { Order } from '../orders/models/order.model';
 import { Review } from '../reviews/models/review.model';
+import { User } from '../users/models/user.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
@@ -57,6 +58,13 @@ export const registerSeller = async (req: AuthRequest, res: Response): Promise<v
   try {
     const existing = await Seller.findOne({ userId: req.user!.userId });
     if (existing) { res.status(409).json({ success: false, error: 'Already registered' }); return; }
+
+    // Email verification gate (FEAT-02)
+    const sellerUser = await User.findById(req.user!.userId).select('isEmailVerified');
+    if (sellerUser && sellerUser.isEmailVerified === false) {
+      res.status(400).json({ success: false, error: 'Email verification required' }); return;
+    }
+
     const body = req.body as Record<string, unknown>;
     const seller = await Seller.create({
       userId:           req.user!.userId,
