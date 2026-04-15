@@ -1,7 +1,7 @@
 version: '3.9'
 
 # ============================================================
-# Bazzar — Monolith Stack
+# Bazzar — Monaolith Stack
 #
 # Services:
 #   Infrastructure  → mongodb, redis, kafka, zookeeper, elasticsearch
@@ -68,8 +68,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: ruok,srvr,stat   # 👈 ADD THIS
     volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
+    - zookeeper_data:/var/lib/zookeeper/data
     networks: [bazzar-net]
     restart: unless-stopped
     healthcheck:
@@ -140,7 +141,7 @@ services:
       - PORT=8100
       - MONGO_URI=mongodb://mongodb:27017/bazzar_db
       - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=api-monolith
       - KAFKA_GROUP_ID=api-monolith-group
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
@@ -182,7 +183,7 @@ services:
       - PORT=8013
       - MONGO_URI_DELIVERY=mongodb://mongodb:27017/delivery_db
       - MONGO_URI_ORDER=mongodb://mongodb:27017/bazzar_db
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=kafka:9092
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
     depends_on:
       mongodb: { condition: service_healthy }
@@ -199,7 +200,7 @@ services:
       - NODE_ENV=development
       - PORT=8008
       - MONGO_URI_NOTIFICATION=mongodb://mongodb:27017/notification_db
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=kafka:9092
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - SPARROW_SMS_TOKEN=${SPARROW_SMS_TOKEN}
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}

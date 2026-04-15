@@ -13,11 +13,11 @@
     "dev:monolith": "npm run dev --workspace=services/api-monolith",
     "dev:delivery": "npm run dev --workspace=services/delivery-service",
     "dev:notify":   "npm run dev --workspace=services/notification-service",
-    "build:shared":  "npm run build --workspace=packages/shared",
-    "build:monolith":"npm run build --workspace=services/api-monolith",
     "docker:up":    "docker-compose up -d",
     "docker:down":  "docker-compose down",
+    "docker:build": "docker-compose build",
     "docker:logs":  "docker-compose logs -f",
+    "docker:restart": "docker-compose down && docker-compose up -d",
     "lint":   "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json}\""
   },
