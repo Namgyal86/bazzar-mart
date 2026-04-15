@@ -8,7 +8,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "seed:coupons": "ts-node scripts/seed-coupons.ts"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

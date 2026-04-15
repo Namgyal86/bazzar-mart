@@ -227,22 +227,18 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     let discount = 0;
 
     if (body.couponCode) {
-      if (body.couponCode.toUpperCase() === 'BAZZAR10') {
-        discount = Math.round(subtotal * 0.1);
-      } else {
-        const coupon = await Coupon.findOne({ code: body.couponCode.toUpperCase(), isActive: true });
-        if (
-          coupon &&
-          coupon.usageCount < coupon.usageLimit &&
-          (!coupon.validUntil || new Date() <= coupon.validUntil) &&
-          subtotal >= coupon.minOrder
-        ) {
-          discount = coupon.type === 'PERCENTAGE'
-            ? Math.round((subtotal * coupon.value) / 100)
-            : coupon.value;
-          if (coupon.maxDiscount > 0) discount = Math.min(discount, coupon.maxDiscount);
-          Coupon.findByIdAndUpdate(coupon._id, { $inc: { usageCount: 1 } }).catch(() => {});
-        }
+      const coupon = await Coupon.findOne({ code: body.couponCode.toUpperCase(), isActive: true });
+      if (
+        coupon &&
+        coupon.usageCount < coupon.usageLimit &&
+        (!coupon.validUntil || new Date() <= coupon.validUntil) &&
+        subtotal >= coupon.minOrder
+      ) {
+        discount = coupon.type === 'PERCENTAGE'
+          ? Math.round((subtotal * coupon.value) / 100)
+          : coupon.value;
+        if (coupon.maxDiscount > 0) discount = Math.min(discount, coupon.maxDiscount);
+        Coupon.findByIdAndUpdate(coupon._id, { $inc: { usageCount: 1 } }).catch(() => {});
       }
     }
 
@@ -491,10 +487,6 @@ export const validateCoupon = async (req: AuthRequest, res: Response): Promise<v
   try {
     const { code, subtotal = 0 } = req.body as { code?: string; subtotal?: number };
     if (!code) { res.status(400).json({ success: false, error: 'Coupon code required' }); return; }
-    if (code.toUpperCase() === 'BAZZAR10') {
-      const discount = Math.round(Number(subtotal) * 0.1);
-      res.json({ success: true, data: { valid: true, discount, type: 'PERCENTAGE', value: 10 } }); return;
-    }
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
     if (!coupon || coupon.usageCount >= coupon.usageLimit || (coupon.validUntil && new Date() > coupon.validUntil) || Number(subtotal) < coupon.minOrder) {
       res.json({ success: true, data: { valid: false, discount: 0 } }); return;
