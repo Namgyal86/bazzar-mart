@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { startDeliveryConsumers } from './kafka/consumers';
 import { publishDeliveryEvent } from './kafka/producer';
+import { createDeliveryModel, IDelivery } from './models/delivery.model';
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,8 +55,9 @@ function authenticateJWT(req: express.Request, res: express.Response, next: expr
 // Delivery agent locations (in-memory for demo)
 const agentLocations: Record<string, { lat: number; lng: number; orderId: string; agentName: string }> = {};
 
-// In-memory delivery store for demo
-const deliveries: any[] = [];
+// Delivery model — initialized after mongoose.connect()
+let Delivery: ReturnType<typeof createDeliveryModel>;
+
 const availableDrivers = [
   { id: 'd1', name: 'Ramesh Sharma', phone: '9841000001', zone: 'Kathmandu', rating: 4.9 },
   { id: 'd2', name: 'Bikash Thapa', phone: '9841000002', zone: 'Lalitpur', rating: 4.7 },
@@ -66,16 +68,23 @@ const availableDrivers = [
 app.get('/health', (_, res) => res.json({ status: 'ok', service: 'delivery-service' }));
 
 // Admin: list all deliveries
-app.get('/api/v1/delivery/admin/list', authenticateJWT, (req, res) => {
-  res.json({ success: true, data: deliveries });
+app.get('/api/v1/delivery/admin/list', authenticateJWT, async (req, res) => {
+  try {
+    const data = await Delivery.find().sort('-createdAt').limit(100).lean();
+    res.json({ success: true, data });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Admin: delivery stats (used by platform-health dashboard)
-app.get('/api/v1/delivery/admin/stats', authenticateJWT, (req, res) => {
-  const total = deliveries.length;
-  const completedCount = deliveries.filter(d => d.status === 'DELIVERED').length;
-  const onTimeRate = total > 0 ? (completedCount / total) * 100 : 0;
-  res.json({ success: true, data: { total, completedCount, onTimeRate: Number(onTimeRate.toFixed(2)) } });
+app.get('/api/v1/delivery/admin/stats', authenticateJWT, async (req, res) => {
+  try {
+    const [total, completedCount] = await Promise.all([
+      Delivery.countDocuments(),
+      Delivery.countDocuments({ status: 'DELIVERED' }),
+    ]);
+    const onTimeRate = total > 0 ? (completedCount / total) * 100 : 0;
+    res.json({ success: true, data: { total, completedCount, onTimeRate: Number(onTimeRate.toFixed(2)) } });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Admin: get available drivers
@@ -84,16 +93,17 @@ app.get('/api/v1/delivery/drivers/available', authenticateJWT, (req, res) => {
 });
 
 // Admin: assign driver to delivery
-app.patch('/api/v1/delivery/:id/assign', authenticateJWT, (req, res) => {
-  const { driverId } = req.body;
-  const driver = availableDrivers.find(d => d.id === driverId);
-  const delivery = deliveries.find(d => d.id === req.params.id);
-  if (delivery) {
-    delivery.driver = driver?.name ?? driverId;
-    delivery.driverId = driverId;
-    delivery.status = 'IN_TRANSIT';
-  }
-  res.json({ success: true, data: { id: req.params.id, driver: driver?.name ?? driverId, status: 'IN_TRANSIT' } });
+app.patch('/api/v1/delivery/:id/assign', authenticateJWT, async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const driver = availableDrivers.find(d => d.id === driverId);
+    await Delivery.findOneAndUpdate(
+      { orderId: req.params.id },
+      { driver: driver?.name ?? driverId, driverId, status: 'IN_TRANSIT' },
+      { new: true },
+    );
+    res.json({ success: true, data: { id: req.params.id, driver: driver?.name ?? driverId, status: 'IN_TRANSIT' } });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Get tracking info for an order
@@ -131,53 +141,65 @@ app.patch('/api/v1/delivery/agent/status', authenticateJWT, (req, res) => {
 });
 
 // Delivery agent: get assigned orders
-app.get('/api/v1/delivery/agent/orders', authenticateJWT, (req, res) => {
-  const agentId = (req as any).user?.userId || '';
-  const { status } = req.query;
-  let result = deliveries.filter(d => !agentId || d.driverId === agentId || d.driverId === null);
-  if (status) result = result.filter(d => d.status === status);
-  res.json({ success: true, data: result });
+app.get('/api/v1/delivery/agent/orders', authenticateJWT, async (req, res) => {
+  try {
+    const agentId = (req as any).user?.userId || '';
+    const { status } = req.query;
+    const filter: Record<string, unknown> = {};
+    if (agentId) filter.driverId = agentId;
+    if (status)  filter.status   = status;
+    const data = await Delivery.find(filter).sort('-createdAt').lean();
+    res.json({ success: true, data });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Delivery agent: get a specific order for delivery
-app.get('/api/v1/delivery/orders/:orderId', authenticateJWT, (req, res) => {
-  const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
-  if (d) return res.json({ success: true, data: d });
-  // Return a placeholder if not found
-  res.json({
-    success: true,
-    data: {
-      id: req.params.orderId,
-      orderId: req.params.orderId,
-      status: 'ASSIGNED',
-      customer: 'Customer',
-      address: 'Kathmandu, Nepal',
-      phone: '',
-      shippingAddress: { street: '', city: 'Kathmandu', lat: 27.7172, lng: 85.3240 },
-    },
-  });
+app.get('/api/v1/delivery/orders/:orderId', authenticateJWT, async (req, res) => {
+  try {
+    const d = await Delivery.findOne({
+      $or: [
+        { orderId: req.params.orderId },
+        { _id: req.params.orderId.match(/^[a-f0-9]{24}$/) ? req.params.orderId : null },
+      ],
+    }).lean();
+    if (d) return res.json({ success: true, data: d });
+    // Return a placeholder if not found
+    res.json({
+      success: true,
+      data: {
+        orderId: req.params.orderId,
+        status: 'ASSIGNED',
+        customer: 'Customer',
+        address: 'Kathmandu, Nepal',
+        phone: '',
+        shippingAddress: { street: '', city: 'Kathmandu', lat: 27.7172, lng: 85.3240 },
+      },
+    });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Delivery agent: mark order as delivered
-app.patch('/api/v1/delivery/orders/:orderId/complete', authenticateJWT, (req, res) => {
-  const d = deliveries.find(d => d.id === req.params.orderId || d.orderId === req.params.orderId);
-  if (d) {
-    d.status = 'DELIVERED';
-    d.completedAt = new Date().toISOString();
-    d.agentEarning = 100; // Rs 100 delivery fee
-  }
-  // Emit socket event to buyer
-  io.to(`order:${req.params.orderId}`).emit('order:status_changed', { status: 'DELIVERED' });
-  // Publish Kafka event so order-service and notification-service can react
-  publishDeliveryEvent('delivery.completed', {
-    taskId: req.params.orderId,
-    orderId: req.params.orderId,
-    buyerId: d?.buyerId || '',
-    agentId: d?.driverId || '',
-    deliveredAt: new Date().toISOString(),
-    agentEarning: 100,
-  }).catch(() => {});
-  res.json({ success: true, data: { orderId: req.params.orderId, status: 'DELIVERED' } });
+app.patch('/api/v1/delivery/orders/:orderId/complete', authenticateJWT, async (req, res) => {
+  try {
+    const agentEarning = 100;
+    const d = await Delivery.findOneAndUpdate(
+      { orderId: req.params.orderId },
+      { status: 'DELIVERED', completedAt: new Date(), agentEarning },
+      { new: true },
+    );
+    // Emit socket event to buyer
+    io.to(`order:${req.params.orderId}`).emit('order:status_changed', { status: 'DELIVERED' });
+    // Publish Kafka event so order-service and notification-service can react
+    publishDeliveryEvent('delivery.completed', {
+      taskId:      req.params.orderId,
+      orderId:     req.params.orderId,
+      buyerId:     d?.buyerId || '',
+      agentId:     d?.driverId || '',
+      deliveredAt: new Date().toISOString(),
+      agentEarning,
+    }).catch(() => {});
+    res.json({ success: true, data: { orderId: req.params.orderId, status: 'DELIVERED' } });
+  } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // Socket.io for real-time GPS
@@ -200,74 +222,23 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {});
 });
 
-// Simulate agent movement every 5s for demo
-setInterval(() => {
-  Object.keys(agentLocations).forEach((orderId) => {
-    const loc = agentLocations[orderId];
-    loc.lat += (Math.random() - 0.5) * 0.001;
-    loc.lng += (Math.random() - 0.5) * 0.001;
-    io.to(`order:${orderId}`).emit('location_update', { lat: loc.lat, lng: loc.lng, timestamp: Date.now() });
-  });
-}, 5000);
-
-// Load seeded orders into in-memory deliveries on startup
-async function loadDeliveriesFromOrders() {
-  let orderConn: mongoose.Connection | null = null;
-  try {
-    const ORDER_URI = process.env.MONGO_URI_ORDER || 'mongodb://localhost:27019/order_db';
-    orderConn = await mongoose.createConnection(ORDER_URI).asPromise();
-
-    // Get db with proper type handling
-    const db = orderConn.db;
-    if (!db) {
-      throw new Error('Failed to get database connection');
-    }
-
-    const orders = await db.collection('orders')
-      .find({ status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'] } })
-      .sort({ createdAt: -1 }).limit(30).toArray();
-
-    const statusMap: Record<string, string> = {
-      PENDING: 'PENDING', CONFIRMED: 'PENDING', PROCESSING: 'PENDING',
-      SHIPPED: 'IN_TRANSIT', DELIVERED: 'DELIVERED',
-    };
-    const driverPool = availableDrivers;
-
-    // Use for...of instead of forEach for proper async handling
-    for (let i = 0; i < orders.length; i++) {
-      const o = orders[i] as any;
-      const status = statusMap[o.status] || 'PENDING';
-      const driver = (status === 'IN_TRANSIT' || status === 'DELIVERED')
-        ? driverPool[i % driverPool.length] : null;
-      deliveries.push({
-        id: o._id.toString(),
-        orderId: o.orderNumber || o._id.toString(),
-        customer: o.shippingAddress?.fullName || 'Customer',
-        address: [o.shippingAddress?.addressLine1, o.shippingAddress?.city].filter(Boolean).join(', '),
-        phone: o.shippingAddress?.phone || '',
-        status,
-        driver: driver?.name || null,
-        driverId: driver?.id || null,
-        total: o.total,
-        createdAt: o.createdAt,
-      });
-    }
-    console.log(`✅ Loaded ${deliveries.length} deliveries from orders`);
-  } catch (err: any) {
-    console.warn('⚠️  Could not load orders for delivery:', err.message);
-  } finally {
-    // Ensure connection is closed in finally block
-    if (orderConn) {
-      await orderConn.close();
-    }
-  }
+// GPS simulation — development/test only (FEAT-08, D-21)
+if (process.env.NODE_ENV !== 'production') {
+  setInterval(() => {
+    Object.keys(agentLocations).forEach((orderId) => {
+      const loc = agentLocations[orderId];
+      loc.lat += (Math.random() - 0.5) * 0.001;
+      loc.lng += (Math.random() - 0.5) * 0.001;
+      io.to(`order:${orderId}`).emit('location_update', { lat: loc.lat, lng: loc.lng, timestamp: Date.now() });
+    });
+  }, 5000);
 }
 
 mongoose.connect(MONGO_URI)
   .then(async () => {
-    console.log('✅ Connected to delivery_db');
-    await loadDeliveriesFromOrders();
-    await startDeliveryConsumers().catch(e => console.warn('⚠️ Kafka:', e.message));
-    httpServer.listen(PORT, () => console.log(`🚀 Delivery Service on port ${PORT}`));
+    console.log('Connected to delivery_db');
+    Delivery = createDeliveryModel(mongoose.connection);
+    await startDeliveryConsumers().catch(e => console.warn('Kafka:', e.message));
+    httpServer.listen(PORT, () => console.log(`Delivery Service on port ${PORT}`));
   })
   .catch((err) => { console.error(err); process.exit(1); });
