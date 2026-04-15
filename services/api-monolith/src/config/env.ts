@@ -29,6 +29,10 @@ const EnvSchema = z.object({
   // Public URLs
   API_BASE_URL:        z.string().url().default('http://localhost:8100'),
   WEB_URL:             z.string().url().default('http://localhost:3000'),
+
+  // Email — SendGrid
+  SENDGRID_API_KEY:    z.string().min(1).optional(),
+  SENDGRID_FROM_EMAIL: z.string().email().optional(),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
