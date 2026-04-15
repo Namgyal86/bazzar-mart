@@ -20,15 +20,18 @@ const REFERRAL_BONUS = 200; // Rs.
 export function registerReferralEventHandlers(): void {
   internalBus.on(EVENTS.ORDER_CREATED, async (p: OrderCreatedPayload) => {
     try {
-      // Only trigger for first-time orders by the referred user
-      const referral = await Referral.findOne({ referredId: p.userId, status: 'PENDING' });
+      // Atomic claim: only one handler execution can transition PENDING → COMPLETED.
+      // If another execution already claimed it, findOneAndUpdate returns null (D-22).
+      const referral = await Referral.findOneAndUpdate(
+        { referredId: p.userId, status: 'PENDING' },
+        { $set: { status: 'COMPLETED', completedAt: new Date() } },
+        { new: false }, // return the ORIGINAL document (pre-update) to confirm we won the claim
+      );
+
+      // If null, either no referral exists or another handler already claimed it.
       if (!referral) return;
 
-      referral.status      = 'COMPLETED';
-      referral.completedAt = new Date();
-      await referral.save();
-
-      // Credit both users
+      // We successfully claimed the referral — now credit both users.
       for (const userId of [referral.referrerId, referral.referredId]) {
         await Wallet.findOneAndUpdate(
           { userId },
@@ -51,8 +54,9 @@ export function registerReferralEventHandlers(): void {
         );
       }
 
-      referral.status = 'PAID';
-      await referral.save();
+      // Mark as fully paid
+      await Referral.findByIdAndUpdate(referral._id, { $set: { status: 'PAID' } });
+
     } catch (err) {
       console.error('[referrals] ORDER_CREATED handler error:', err);
     }

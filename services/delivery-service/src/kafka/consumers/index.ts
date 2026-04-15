@@ -1,5 +1,6 @@
 import { Kafka } from 'kafkajs';
 import mongoose from 'mongoose';
+import { createDeliveryModel } from '../../models/delivery.model';
 
 const kafka = new Kafka({
   clientId: 'delivery-service',
@@ -11,31 +12,38 @@ export async function startDeliveryConsumers(): Promise<void> {
   await consumer.connect();
   await consumer.subscribe({ topics: ['order.confirmed'], fromBeginning: false });
 
+  // Use the Delivery model for persistent storage (FEAT-08)
+  const Delivery = createDeliveryModel(mongoose.connection);
+
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
       try {
         const envelope = JSON.parse(message.value!.toString());
         const payload = envelope.payload ?? envelope;
-        const db = mongoose.connection.db;
-        if (!db) return;
 
         if (topic === 'order.confirmed') {
-          const existing = await db.collection('deliverytasks').findOne({ orderId: payload.orderId });
-          if (!existing) {
-            await db.collection('deliverytasks').insertOne({
-              orderId: payload.orderId,
-              buyerId: payload.userId,
-              sellerId: payload.sellerId,
-              status: 'PENDING',
-              deliveryAddress: payload.deliveryAddress || null,
-              pickupAddress: payload.pickupAddress || null,
-              agentId: null,
-              agentName: null,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-            console.log(`🚚 Delivery task created for order ${payload.orderId}`);
-          }
+          const orderId = payload.orderId;
+          if (!orderId) return;
+
+          // Idempotent upsert — $setOnInsert ensures we never overwrite an already-assigned delivery
+          await Delivery.findOneAndUpdate(
+            { orderId },
+            {
+              $setOnInsert: {
+                orderId,
+                customer: payload.customer ?? 'Customer',
+                address:  payload.deliveryAddress ?? payload.address ?? '',
+                phone:    payload.phone ?? '',
+                status:   'PENDING',
+                driver:   null,
+                driverId: null,
+                total:    payload.total ?? 0,
+                buyerId:  payload.userId ?? payload.buyerId ?? '',
+              },
+            },
+            { upsert: true, new: true },
+          );
+          console.log(`Delivery record upserted for order ${orderId}`);
         }
       } catch (err: any) {
         console.error(`[delivery-consumer] Error on topic ${topic}:`, err.message);
@@ -43,5 +51,5 @@ export async function startDeliveryConsumers(): Promise<void> {
     },
   });
 
-  console.log('✅ Delivery consumers listening on: order.confirmed');
+  console.log('Delivery consumers listening on: order.confirmed');
 }
