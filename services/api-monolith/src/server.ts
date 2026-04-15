@@ -11,7 +11,12 @@
  *  7.  Seed default data (categories, banners)
  *  8.  Start HTTP server
  */
-import 'dotenv/config';
+import dotenv from 'dotenv';
+
+dotenv.config({
+  path: '../../.env',
+});
+
 import { env }                                    from './config/env';
 import { connectDB }                              from './config/db';
 import { connectRedis }                           from './config/redis';
