@@ -28,8 +28,6 @@
  *  notification-service /api/v1/notifications → NOTIFICATION_SERVICE_URL (port 8008)
  */
 import express, { Application, Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs';
 import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -221,11 +219,6 @@ export function createApp(): Application {
   app.use('/api/v1', recommendationRoutes);
   app.use('/api/v1', analyticsRoutes);
   app.use('/api/v1', uploadRoutes);
-
-  // Serve uploaded images (dev only — in prod use S3/CloudFront)
-  const uploadDir = process.env.UPLOAD_DIR || '/tmp/bazzar-uploads';
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-  app.use('/uploads', express.static(uploadDir));
 
   // ── Error handling ─────────────────────────────────────────────────────────
   app.use(notFound);
