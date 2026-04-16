@@ -57,19 +57,64 @@ async function main() {
   console.log('\n📂 Categories...');
   await db.collection('categories').deleteMany({});
   const cats = await db.collection('categories').insertMany([
-    { name:'Fruits & Vegetables', slug:'fruits-vegetables', image:'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=700&q=80', description:'Fresh fruits and vegetables',       isActive:true, order:1, createdAt:new Date() },
-    { name:'Dairy & Eggs',        slug:'dairy-eggs',        image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80', description:'Milk, cheese, butter and eggs',    isActive:true, order:2, createdAt:new Date() },
-    { name:'Grains & Pulses',     slug:'grains-pulses',     image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=700&q=80', description:'Rice, lentils, flour and more',   isActive:true, order:3, createdAt:new Date() },
-    { name:'Meat & Seafood',      slug:'meat-seafood',      image:'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=700&q=80', description:'Fresh meat, poultry and seafood', isActive:true, order:4, createdAt:new Date() },
-    { name:'Snacks & Beverages',  slug:'snacks-beverages',  image:'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=700&q=80', description:'Chips, drinks and packaged foods',isActive:true, order:5, createdAt:new Date() },
-    { name:'Spices & Condiments', slug:'spices-condiments', image:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=700&q=80', description:'Spices, sauces and seasonings',  isActive:true, order:6, createdAt:new Date() },
-    { name:'Bakery & Bread',      slug:'bakery-bread',      image:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&q=80', description:'Fresh bread, cakes and pastries', isActive:true, order:7, createdAt:new Date() },
-    { name:'Oils & Ghee',         slug:'oils-ghee',         image:'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=700&q=80', description:'Cooking oils, ghee and butter',  isActive:true, order:8, createdAt:new Date() },
-    { name:'Personal Care',       slug:'personal-care',     image:'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=700&q=80', description:'Soap, shampoo and hygiene',       isActive:true, order:9, createdAt:new Date() },
-    { name:'Household Items',     slug:'household-items',   image:'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=700&q=80', description:'Cleaning and kitchen supplies',   isActive:true, order:10, createdAt:new Date() },
+    { name:'Fruits & Vegetables', slug:'fruits-vegetables', image:'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=700&q=80', description:'Fresh fruits and vegetables',       isActive:true, showInNav:true, sortOrder:1,  createdAt:new Date() },
+    { name:'Dairy & Eggs',        slug:'dairy-eggs',        image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80', description:'Milk, cheese, butter and eggs',    isActive:true, showInNav:true, sortOrder:2,  createdAt:new Date() },
+    { name:'Grains & Pulses',     slug:'grains-pulses',     image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=700&q=80', description:'Rice, lentils, flour and more',   isActive:true, showInNav:true, sortOrder:3,  createdAt:new Date() },
+    { name:'Meat & Seafood',      slug:'meat-seafood',      image:'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=700&q=80', description:'Fresh meat, poultry and seafood', isActive:true, showInNav:true, sortOrder:4,  createdAt:new Date() },
+    { name:'Snacks & Beverages',  slug:'snacks-beverages',  image:'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=700&q=80', description:'Chips, drinks and packaged foods', isActive:true, showInNav:true, sortOrder:5,  createdAt:new Date() },
+    { name:'Spices & Condiments', slug:'spices-condiments', image:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=700&q=80', description:'Spices, sauces and seasonings',   isActive:true, showInNav:true, sortOrder:6,  createdAt:new Date() },
+    { name:'Bakery & Bread',      slug:'bakery-bread',      image:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&q=80', description:'Fresh bread, cakes and pastries',  isActive:true, showInNav:true, sortOrder:7,  createdAt:new Date() },
+    { name:'Oils & Ghee',         slug:'oils-ghee',         image:'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=700&q=80', description:'Cooking oils, ghee and butter',   isActive:true, showInNav:true, sortOrder:8,  createdAt:new Date() },
+    { name:'Personal Care',       slug:'personal-care',     image:'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=700&q=80', description:'Soap, shampoo and hygiene',        isActive:true, showInNav:true, sortOrder:9,  createdAt:new Date() },
+    { name:'Household Items',     slug:'household-items',   image:'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=700&q=80', description:'Cleaning and kitchen supplies',    isActive:true, showInNav:true, sortOrder:10, createdAt:new Date() },
   ]);
   const catIds = Object.values(cats.insertedIds);
   console.log(`  ✅ ${cats.insertedCount} categories`);
+
+  // ── SUBCATEGORIES ─────────────────────────────────────────────────────────
+  console.log('\n📁 Subcategories...');
+  const subCats = await db.collection('categories').insertMany([
+    // Fruits & Vegetables
+    { name:'Fresh Fruits',         slug:'fresh-fruits',         parentCategory:'fruits-vegetables', image:'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=700&q=80', description:'Seasonal and imported fresh fruits',     isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Fresh Vegetables',     slug:'fresh-vegetables',     parentCategory:'fruits-vegetables', image:'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=700&q=80', description:'Farm-fresh vegetables harvested daily',  isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Organic Produce',      slug:'organic-produce',      parentCategory:'fruits-vegetables', image:'https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&q=80', description:'Certified organic fruits and vegetables', isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    // Dairy & Eggs
+    { name:'Milk & Cream',         slug:'milk-cream',           parentCategory:'dairy-eggs',        image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80', description:'Fresh milk, cream and curd',              isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Cheese & Paneer',      slug:'cheese-paneer',        parentCategory:'dairy-eggs',        image:'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=700&q=80', description:'Paneer, cheese, butter and dairy solids', isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Eggs',                 slug:'eggs',                 parentCategory:'dairy-eggs',        image:'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=700&q=80', description:'Fresh eggs from local farms',             isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    // Grains & Pulses
+    { name:'Rice & Cereals',       slug:'rice-cereals',         parentCategory:'grains-pulses',     image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=700&q=80', description:'Basmati, beaten rice and cereals',         isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Dal & Lentils',        slug:'dal-lentils',          parentCategory:'grains-pulses',     image:'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=700&q=80', description:'Masoor, moong, chana and other lentils',   isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Flour & Atta',         slug:'flour-atta',           parentCategory:'grains-pulses',     image:'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=700&q=80', description:'Wheat atta, maida and other flours',       isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    // Meat & Seafood
+    { name:'Chicken',              slug:'chicken',              parentCategory:'meat-seafood',      image:'https://images.unsplash.com/photo-1604503468506-a8da13d11e18?w=700&q=80', description:'Fresh whole and cut chicken',              isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Mutton & Goat',        slug:'mutton-goat',          parentCategory:'meat-seafood',      image:'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=700&q=80', description:'Fresh goat and mutton cuts',               isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Fish & Seafood',       slug:'fish-seafood',         parentCategory:'meat-seafood',      image:'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=700&q=80', description:'Fresh water and sea fish',                 isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    { name:'Eggs & Poultry',       slug:'eggs-poultry',         parentCategory:'meat-seafood',      image:'https://images.unsplash.com/photo-1569288052389-dac9b0ac9eac?w=700&q=80', description:'Duck eggs and other poultry products',     isActive:true, showInNav:false, sortOrder:4, createdAt:new Date() },
+    // Snacks & Beverages
+    { name:'Snacks & Chips',       slug:'snacks-chips',         parentCategory:'snacks-beverages',  image:'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=700&q=80', description:'Chips, noodles and packaged snacks',       isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Beverages & Drinks',   slug:'beverages-drinks',     parentCategory:'snacks-beverages',  image:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=700&q=80', description:'Juices, soft drinks and flavoured water',  isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Tea & Coffee',         slug:'tea-coffee',           parentCategory:'snacks-beverages',  image:'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=700&q=80', description:'Premium teas, instant coffee and blends',  isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    // Spices & Condiments
+    { name:'Spices',               slug:'spices',               parentCategory:'spices-condiments', image:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=700&q=80', description:'Whole and ground spices for every dish',  isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Sauces & Condiments',  slug:'sauces-condiments',    parentCategory:'spices-condiments', image:'https://images.unsplash.com/photo-1605789538467-f715d58e03f9?w=700&q=80', description:'Ketchup, sauces and pickles',              isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    // Bakery & Bread
+    { name:'Breads',               slug:'breads',               parentCategory:'bakery-bread',      image:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&q=80', description:'Sliced breads, buns, rolls and biscuits',  isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Cakes & Pastries',     slug:'cakes-pastries',       parentCategory:'bakery-bread',      image:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=700&q=80', description:'Birthday cakes, pastries and sweets',      isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Traditional Bakery',   slug:'traditional-bakery',   parentCategory:'bakery-bread',      image:'https://images.unsplash.com/photo-1574653853027-5382a3d23a15?w=700&q=80', description:'Sel roti and other Nepali baked goods',    isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    // Oils & Ghee
+    { name:'Cooking Oils',         slug:'cooking-oils',         parentCategory:'oils-ghee',         image:'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=700&q=80', description:'Mustard, sunflower, coconut and olive oil', isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Ghee & Butter',        slug:'ghee-butter',          parentCategory:'oils-ghee',         image:'https://images.unsplash.com/photo-1593759608142-e976bfe89e4e?w=700&q=80', description:'Pure cow ghee and cooking butter',         isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    // Personal Care
+    { name:'Soap & Body Wash',     slug:'soap-body-wash',       parentCategory:'personal-care',     image:'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=700&q=80', description:'Bath soaps, body wash and shower gel',    isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Hair Care',            slug:'hair-care',            parentCategory:'personal-care',     image:'https://images.unsplash.com/photo-1614268188666-a8de2e9e1f74?w=700&q=80', description:'Shampoo, conditioner and hair oils',       isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+    { name:'Oral Care',            slug:'oral-care',            parentCategory:'personal-care',     image:'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=700&q=80', description:'Toothpaste, toothbrush and mouthwash',     isActive:true, showInNav:false, sortOrder:3, createdAt:new Date() },
+    { name:'Hand Wash & Sanitizer',slug:'hand-wash-sanitizer',  parentCategory:'personal-care',     image:'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=700&q=80', description:'Hand wash, sanitizers and hand creams',    isActive:true, showInNav:false, sortOrder:4, createdAt:new Date() },
+    // Household Items
+    { name:'Laundry & Cleaning',   slug:'laundry-cleaning',     parentCategory:'household-items',   image:'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=700&q=80', description:'Detergent, fabric softener and floor cleaners', isActive:true, showInNav:false, sortOrder:1, createdAt:new Date() },
+    { name:'Kitchen Cleaning',     slug:'kitchen-cleaning',     parentCategory:'household-items',   image:'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=700&q=80', description:'Dishwash, scrubs and kitchen cleaners',    isActive:true, showInNav:false, sortOrder:2, createdAt:new Date() },
+  ]);
+  console.log(`  ✅ ${subCats.insertedCount} subcategories`);
 
   // ── BANNERS ───────────────────────────────────────────────────────────────
   console.log('\n🖼️  Banners...');

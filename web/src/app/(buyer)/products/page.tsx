@@ -9,7 +9,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/store/cart.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
-import { productApi, type Category } from '@/lib/api/product.api';
+import { productApi, categoryApi, type CategoryWithSubs } from '@/lib/api/product.api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SORT_OPTIONS = [
@@ -198,18 +198,19 @@ function ProductsPageInner() {
   const [sort, setSort] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('category'));
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(searchParams.get('subCategory'));
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedPriceRange, setSelectedPriceRange] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesWithSubs, setCategoriesWithSubs] = useState<CategoryWithSubs[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [searchQ, setSearchQ] = useState(searchParams.get('q') || '');
 
-  // Load categories
+  // Load categories with subcategories
   useEffect(() => {
-    productApi.listCategories().then(r => setCategories(r.data.data)).catch(() => {});
+    categoryApi.withSubs().then(r => setCategoriesWithSubs(r.data.data)).catch(() => {});
   }, []);
 
   // Load products
@@ -218,6 +219,7 @@ function ProductsPageInner() {
     const params: Record<string, string | number> = { limit: 40 };
     if (sort !== 'relevance') params.sort = sort;
     if (selectedCategory) params.category = selectedCategory;
+    if (selectedSubCategory) params.subCategory = selectedSubCategory;
     if (selectedRating) params.minRating = selectedRating;
     if (selectedPriceRange !== null) {
       params.minPrice = PRICE_RANGES[selectedPriceRange].min;
@@ -233,14 +235,14 @@ function ProductsPageInner() {
       })
       .catch(() => { setProducts([]); setTotal(0); })
       .finally(() => setLoading(false));
-  }, [sort, selectedCategory, selectedRating, selectedPriceRange, inStockOnly, searchQ]);
+  }, [sort, selectedCategory, selectedSubCategory, selectedRating, selectedPriceRange, inStockOnly, searchQ]);
 
   const clearFilters = () => {
-    setSelectedCategory(null); setSelectedRating(null);
+    setSelectedCategory(null); setSelectedSubCategory(null); setSelectedRating(null);
     setSelectedPriceRange(null); setInStockOnly(false); setSearchQ('');
   };
 
-  const activeFilterCount = [selectedCategory, selectedRating, selectedPriceRange, inStockOnly].filter(Boolean).length;
+  const activeFilterCount = [selectedCategory, selectedSubCategory, selectedRating, selectedPriceRange, inStockOnly].filter(Boolean).length;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -248,7 +250,11 @@ function ProductsPageInner() {
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {selectedCategory ? categories.find(c => c.slug === selectedCategory)?.name || 'Products' : 'All Products'}
+            {selectedSubCategory
+              ? categoriesWithSubs.flatMap(c => c.subcategories).find(s => s.slug === selectedSubCategory)?.name || 'Products'
+              : selectedCategory
+                ? categoriesWithSubs.find(c => c.slug === selectedCategory)?.name || 'Products'
+                : 'All Products'}
           </h1>
           <p className="text-muted-foreground text-sm">
             {loading ? 'Loading…' : `${total.toLocaleString()} product${total !== 1 ? 's' : ''} found`}
@@ -302,19 +308,50 @@ function ProductsPageInner() {
                 </div>
 
                 {/* Categories */}
-                {categories.length > 0 && (
+                {categoriesWithSubs.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3">Categories</h3>
                     <div className="space-y-1.5">
-                      {categories.map((cat) => (
-                        <label key={cat._id} className="flex items-center gap-2 text-sm cursor-pointer group">
-                          <input type="radio" name="category" onChange={() => setSelectedCategory(cat.slug)} checked={selectedCategory === cat.slug} className="text-orange-500" />
-                          <span className="group-hover:text-orange-500 dark:hover:text-orange-400 transition-colors">{cat.name}</span>
-                          {cat.productCount !== undefined && <span className="ml-auto text-xs text-muted-foreground">{cat.productCount}</span>}
-                        </label>
+                      {categoriesWithSubs.map((cat) => (
+                        <div key={cat._id}>
+                          <label className="flex items-center gap-2 text-sm cursor-pointer group">
+                            <input
+                              type="radio"
+                              name="category"
+                              onChange={() => { setSelectedCategory(cat.slug); setSelectedSubCategory(null); }}
+                              checked={selectedCategory === cat.slug}
+                              className="text-orange-500"
+                            />
+                            <span className="group-hover:text-orange-500 dark:hover:text-orange-400 transition-colors font-medium">{cat.name}</span>
+                          </label>
+                          {selectedCategory === cat.slug && cat.subcategories.length > 0 && (
+                            <div className="ml-5 mt-1.5 space-y-1 border-l-2 border-orange-100 dark:border-orange-900/30 pl-3">
+                              {cat.subcategories.map((sub) => (
+                                <label key={sub._id} className="flex items-center gap-2 text-xs cursor-pointer group">
+                                  <input
+                                    type="radio"
+                                    name="subcategory"
+                                    onChange={() => setSelectedSubCategory(sub.slug)}
+                                    checked={selectedSubCategory === sub.slug}
+                                    className="text-orange-500"
+                                  />
+                                  <span className="group-hover:text-orange-500 dark:hover:text-orange-400 transition-colors">{sub.name}</span>
+                                </label>
+                              ))}
+                              {selectedSubCategory && (
+                                <button
+                                  className="text-[10px] text-orange-600 dark:text-orange-400 hover:underline mt-0.5"
+                                  onClick={() => setSelectedSubCategory(null)}
+                                >
+                                  Clear subcategory
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ))}
                       {selectedCategory && (
-                        <button className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-1" onClick={() => setSelectedCategory(null)}>Clear</button>
+                        <button className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-1" onClick={() => { setSelectedCategory(null); setSelectedSubCategory(null); }}>Clear category</button>
                       )}
                     </div>
                   </div>
