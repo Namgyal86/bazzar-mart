@@ -1,187 +1,188 @@
 /**
- * Grocery Store Seed Script
- * --------------------------
- * 1. Clears all existing data from product_db, order_db, review_db, seller_db
- * 2. Seeds grocery categories into product_db
- * 3. Seeds grocery products with a demo seller
+ * Bazzar Grocery Mart — Seed Script
+ * Clears & repopulates bazzar_db with grocery store data.
  *
- * Run: node seed-grocery.js
- * Requires: npm install mongoose
+ * Run:    node seed-grocery.js
+ * Needs:  npm install mongodb bcryptjs
  */
 
-const mongoose = require('mongoose');
-
-// ─── Connection URIs ──────────────────────────────────────────────────────────
-const PRODUCT_DB  = 'mongodb://localhost:27018/product_db';
-const ORDER_DB    = 'mongodb://localhost:27019/order_db';
-const REVIEW_DB   = 'mongodb://localhost:27021/review_db';
-const SELLER_DB   = 'mongodb://localhost:27022/seller_db';
-
-// ─── Schemas (minimal, matching the service models) ──────────────────────────
-const CategorySchema = new mongoose.Schema({
-  name: String, slug: String, description: String,
-  image: String, parentCategory: String,
-  isActive: { type: Boolean, default: true },
-  sortOrder: { type: Number, default: 0 },
-}, { timestamps: true });
-
-const ProductSchema = new mongoose.Schema({
-  name: String, slug: String, description: String, shortDescription: String,
-  price: Number, salePrice: Number,
-  images: [String],
-  category: String, subCategory: String,
-  sellerId: String, sellerName: String,
-  brand: String, sku: String,
-  stock: { type: Number, default: 0 },
-  variants: { type: mongoose.Schema.Types.Mixed, default: [] },
-  rating: { type: Number, default: 0 },
-  reviewCount: { type: Number, default: 0 },
-  soldCount: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-  isFeatured: { type: Boolean, default: false },
-  tags: [String],
-  specifications: { type: Map, of: String, default: {} },
-  weight: Number,
-}, { timestamps: true });
-
-// ─── Category Data ────────────────────────────────────────────────────────────
-const CATEGORIES = [
-  { name: 'Fruits & Vegetables', slug: 'fruits-vegetables', description: 'Fresh fruits and vegetables sourced daily from local farms', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&q=80', sortOrder: 1 },
-  { name: 'Dairy & Eggs',        slug: 'dairy-eggs',        description: 'Fresh milk, curd, cheese, butter, ghee and eggs', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80', sortOrder: 2 },
-  { name: 'Grains & Pulses',     slug: 'grains-pulses',     description: 'Rice, wheat, flour, lentils, chickpeas and more', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&q=80', sortOrder: 3 },
-  { name: 'Meat & Seafood',      slug: 'meat-seafood',      description: 'Fresh chicken, mutton, fish, pork and processed meat', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&q=80', sortOrder: 4 },
-  { name: 'Snacks & Beverages',  slug: 'snacks-beverages',  description: 'Chips, biscuits, juices, soft drinks, tea and coffee', image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500&q=80', sortOrder: 5 },
-  { name: 'Spices & Condiments', slug: 'spices-condiments', description: 'Whole spices, ground masala, oils, ghee, sauces and pickles', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&q=80', sortOrder: 6 },
-  { name: 'Personal Care',       slug: 'personal-care',     description: 'Soap, shampoo, toothpaste, skincare and hygiene products', image: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=500&q=80', sortOrder: 7 },
-  { name: 'Household Items',     slug: 'household-items',   description: 'Cleaning products, detergent, kitchen supplies and more', image: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&q=80', sortOrder: 8 },
-  { name: 'Frozen Foods',        slug: 'frozen-foods',      description: 'Frozen vegetables, ready meals, ice cream and more', image: 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=500&q=80', sortOrder: 9 },
-  { name: 'Bakery & Bread',      slug: 'bakery-bread',      description: 'Fresh bread, biscuits, cakes, pav and bakery products', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&q=80', sortOrder: 10 },
-];
-
-// ─── Product Data ─────────────────────────────────────────────────────────────
-const DEMO_SELLER_ID   = 'demo-seller-001';
-const DEMO_SELLER_NAME = 'FreshMart Nepal';
-
-function sku() { return 'SKU-' + Date.now() + '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
-function slug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + Math.random().toString(36).slice(2,5); }
-
-const PRODUCTS = [
-  // ── Fruits & Vegetables ──
-  { name: 'Fresh Tomatoes (1 kg)', category: 'Fruits & Vegetables', subCategory: 'Fresh Vegetables', price: 80, salePrice: 70, stock: 200, brand: 'Local Farm', weight: 1000, tags: ['tomato','vegetables','fresh'], images: ['https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=500&q=80'], shortDescription: 'Farm-fresh red tomatoes, hand-picked daily', description: 'Juicy and ripe tomatoes sourced directly from local farms in Chitwan. Rich in vitamins, perfect for salads, curries and cooking. Delivered fresh every morning.', specifications: { 'Weight': '1 kg', 'Type': 'Fresh', 'Origin': 'Chitwan, Nepal' }, isFeatured: true },
-  { name: 'Banana - Harichhal (12 pcs)', category: 'Fruits & Vegetables', subCategory: 'Fresh Fruits', price: 120, stock: 150, brand: 'Local Farm', weight: 1200, tags: ['banana','fruits','fresh'], images: ['https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=500&q=80'], shortDescription: 'Sweet Harichhal bananas from Tarai', description: 'Naturally ripened Harichhal bananas from the Tarai region of Nepal. Rich in potassium and natural sugars. A dozen bananas in one bunch, perfect for daily use.', specifications: { 'Count': '12 pieces', 'Type': 'Harichhal', 'Origin': 'Tarai, Nepal' } },
-  { name: 'Potato (5 kg)', category: 'Fruits & Vegetables', subCategory: 'Fresh Vegetables', price: 250, salePrice: 220, stock: 500, brand: 'Local Farm', weight: 5000, tags: ['potato','vegetables','staple'], images: ['https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80'], shortDescription: 'Fresh Jhapa potatoes in 5 kg pack', description: 'Premium quality potatoes from Jhapa farms. Washed and cleaned. Ideal for every Nepali kitchen — curries, fries, or dal-bhat. 5 kg pack for family use.', specifications: { 'Weight': '5 kg', 'Variety': 'Red Potato', 'Origin': 'Jhapa, Nepal' }, isFeatured: true },
-  { name: 'Green Spinach (500g)', category: 'Fruits & Vegetables', subCategory: 'Herbs & Greens', price: 60, stock: 100, brand: 'Local Farm', weight: 500, tags: ['spinach','greens','leafy'], images: ['https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=500&q=80'], shortDescription: 'Fresh tender spinach leaves', description: 'Crisp and tender spinach leaves harvested fresh every morning. Packed with iron, calcium and vitamins. Perfect for saag, palak paneer and salads.', specifications: { 'Weight': '500 g', 'Type': 'Tender Leaf' } },
-  { name: 'Apple - Jumla (1 kg)', category: 'Fruits & Vegetables', subCategory: 'Fresh Fruits', price: 350, salePrice: 300, stock: 80, brand: 'Jumla Apple', weight: 1000, tags: ['apple','fruits','jumla'], images: ['https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=500&q=80'], shortDescription: 'Premium Jumla apples, naturally sweet', description: 'The famous Jumla apples from Karnali province, grown at high altitude without pesticides. Naturally sweet and crispy. A true Nepali superfood.', specifications: { 'Weight': '1 kg', 'Origin': 'Jumla, Nepal', 'Type': 'Red Delicious' }, isFeatured: true },
-  { name: 'Onion (3 kg)', category: 'Fruits & Vegetables', subCategory: 'Fresh Vegetables', price: 180, stock: 400, brand: 'Local Farm', weight: 3000, tags: ['onion','vegetables','staple'], images: ['https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=500&q=80'], shortDescription: 'Fresh Nepali onions in 3 kg pack', description: 'Fresh red onions from the fertile plains of Nepal. Essential for every Nepali curry and dal. 3 kg pack at a great price.', specifications: { 'Weight': '3 kg', 'Type': 'Red Onion' } },
-
-  // ── Dairy & Eggs ──
-  { name: 'Full Cream Milk (1L)', category: 'Dairy & Eggs', subCategory: 'Milk', price: 90, stock: 300, brand: 'Dairy Development', weight: 1000, tags: ['milk','dairy','full-cream'], images: ['https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80'], shortDescription: 'Fresh pasteurized full cream milk', description: 'Fresh pasteurized full cream milk from Dairy Development Corporation. Rich, creamy and nutritious. Ideal for drinking, tea, coffee and cooking.', specifications: { 'Volume': '1 Litre', 'Fat': '6%', 'Type': 'Full Cream', 'Pasteurized': 'Yes' }, isFeatured: true },
-  { name: 'Farm Fresh Eggs (12 pcs)', category: 'Dairy & Eggs', subCategory: 'Eggs', price: 240, salePrice: 220, stock: 500, brand: 'Farm Fresh', weight: 720, tags: ['eggs','protein','farm-fresh'], images: ['https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=500&q=80'], shortDescription: 'Farm-fresh country eggs, 12 pieces', description: 'Fresh eggs from free-range country hens. Rich in protein and omega-3. These eggs are collected daily and delivered straight from our partner farms.', specifications: { 'Count': '12 pieces', 'Type': 'Country / Desi', 'Weight': 'Medium (60g each)' } },
-  { name: 'Butter (500g)', category: 'Dairy & Eggs', subCategory: 'Butter & Ghee', price: 420, stock: 150, brand: 'Amul', weight: 500, tags: ['butter','dairy','amul'], images: ['https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=500&q=80'], shortDescription: 'Creamy salted butter, 500g pack', description: 'Smooth and creamy salted butter made from fresh cream. Perfect for spreading on bread, making rotis, baking and cooking. International quality at affordable price.', specifications: { 'Weight': '500 g', 'Type': 'Salted', 'Brand': 'Amul' } },
-  { name: 'Fresh Curd / Dahi (500g)', category: 'Dairy & Eggs', subCategory: 'Curd & Yogurt', price: 110, stock: 200, brand: 'Local Dairy', weight: 500, tags: ['curd','dahi','yogurt','dairy'], images: ['https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&q=80'], shortDescription: 'Thick and creamy fresh dahi', description: 'Freshly set thick dahi (curd) made from pure buffalo milk. Great for eating with beaten rice, making lassi, or as a side dish with dal-bhat.', specifications: { 'Weight': '500 g', 'Fat': 'Full Fat', 'Type': 'Buffalo Milk' } },
-  { name: 'Pure Cow Ghee (500ml)', category: 'Dairy & Eggs', subCategory: 'Butter & Ghee', price: 850, salePrice: 780, stock: 120, brand: 'Himalayan Ghee', weight: 500, tags: ['ghee','pure-cow','desi'], images: ['https://images.unsplash.com/photo-1626200924041-68a46bd04c09?w=500&q=80'], shortDescription: 'Pure A2 cow ghee, traditionally churned', description: 'Pure A2 cow ghee made by traditional bilona method from Gir cow milk. Loaded with healthy fats, vitamins A, D, E and K. The gold standard for Nepali cooking.', specifications: { 'Volume': '500 ml', 'Type': 'A2 Cow Ghee', 'Method': 'Traditional Bilona' }, isFeatured: true },
-
-  // ── Grains & Pulses ──
-  { name: 'Basmati Rice (5 kg)', category: 'Grains & Pulses', subCategory: 'Rice', price: 750, salePrice: 680, stock: 300, brand: 'India Gate', weight: 5000, tags: ['rice','basmati','grain'], images: ['https://images.unsplash.com/photo-1536304993881-ff86e0c9cd08?w=500&q=80'], shortDescription: 'Premium aged Basmati rice, 5 kg pack', description: 'Premium extra long grain basmati rice with a delicate fragrance. Aged for 2 years for enhanced flavour. Perfect for biryani, pulao and everyday cooking.', specifications: { 'Weight': '5 kg', 'Type': 'Extra Long Grain', 'Aged': '2 Years' }, isFeatured: true },
-  { name: 'Aashirvaad Atta (10 kg)', category: 'Grains & Pulses', subCategory: 'Wheat & Flour', price: 680, stock: 200, brand: 'Aashirvaad', weight: 10000, tags: ['atta','wheat-flour','chapati'], images: ['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&q=80'], shortDescription: 'Whole wheat atta for soft rotis, 10 kg', description: 'Aashirvaad Select Whole Wheat Atta made from 100% whole wheat. Superior sharbati wheat from Madhya Pradesh gives soft, tasty and nutritious rotis and chapatis.', specifications: { 'Weight': '10 kg', 'Type': 'Whole Wheat', 'Source': 'Sharbati Wheat' } },
-  { name: 'Masoor Dal (2 kg)', category: 'Grains & Pulses', subCategory: 'Lentils (Dal)', price: 320, stock: 250, brand: 'Local Farm', weight: 2000, tags: ['masoor','dal','lentil'], images: ['https://images.unsplash.com/photo-1621475007307-e5e2a07f0c18?w=500&q=80'], shortDescription: 'Red masoor dal, 2 kg pack', description: 'Premium quality red masoor dal sourced from Nepali and Indian farms. Cooks quickly, rich in protein and fibre. The most versatile and popular dal for everyday cooking.', specifications: { 'Weight': '2 kg', 'Type': 'Red Masoor', 'Protein': '25g per 100g' } },
-  { name: 'Tuar Dal (2 kg)', category: 'Grains & Pulses', subCategory: 'Lentils (Dal)', price: 380, salePrice: 340, stock: 200, brand: 'Local Farm', weight: 2000, tags: ['tuar','dal','arhar'], images: ['https://images.unsplash.com/photo-1621475007307-e5e2a07f0c18?w=500&q=80'], shortDescription: 'Arhar/Tuar dal, 2 kg pack', description: 'Premium tuar (arhar) dal, a staple in every Nepali and Indian home. High in protein and fibre, easy to cook and digest. Ideal for daily dal-bhat-tarkari.', specifications: { 'Weight': '2 kg', 'Type': 'Tuar / Arhar', 'Protein': '22g per 100g' } },
-
-  // ── Snacks & Beverages ──
-  { name: 'Tata Tea Gold (500g)', category: 'Snacks & Beverages', subCategory: 'Tea & Coffee', price: 350, salePrice: 320, stock: 400, brand: 'Tata Tea', weight: 500, tags: ['tea','tata-tea','chai'], images: ['https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=500&q=80'], shortDescription: 'Tata Tea Gold 500g — strong, aromatic', description: 'Tata Tea Gold is made with the finest whole leaf from the best gardens of Assam and Darjeeling. Brew a perfect cup of strong, aromatic chai every time.', specifications: { 'Weight': '500 g', 'Type': 'CTC Leaf Tea', 'Origin': 'Assam & Darjeeling' }, isFeatured: true },
-  { name: 'Nescafe Classic Coffee (200g)', category: 'Snacks & Beverages', subCategory: 'Tea & Coffee', price: 490, stock: 200, brand: 'Nescafe', weight: 200, tags: ['coffee','nescafe','instant'], images: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&q=80'], shortDescription: 'Nescafe instant coffee, rich and smooth', description: 'NESCAFÉ Classic is made with the finest blend of coffee beans for a rich, smooth taste. Simply add hot water or milk for a perfect cup of instant coffee anytime.', specifications: { 'Weight': '200 g', 'Type': 'Instant Coffee', 'Caffeine': 'Regular' } },
-  { name: 'Lay\'s Potato Chips - Classic Salted (52g)', category: 'Snacks & Beverages', subCategory: 'Chips & Namkeen', price: 40, stock: 1000, brand: "Lay's", weight: 52, tags: ['chips','lays','snacks'], images: ['https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&q=80'], shortDescription: "Lay's classic salted potato chips", description: "Lay's Classic Salted chips made from the finest potatoes. Thin, crispy and lightly salted for that perfect snacking experience. Great for parties, picnics and movie nights.", specifications: { 'Weight': '52 g', 'Flavour': 'Classic Salted' } },
-  { name: 'Real Juice - Mixed Fruit (1L)', category: 'Snacks & Beverages', subCategory: 'Juices', price: 130, salePrice: 115, stock: 300, brand: 'Real', weight: 1000, tags: ['juice','real','mixed-fruit','beverage'], images: ['https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&q=80'], shortDescription: 'Real Mixed Fruit juice, 1 litre', description: 'Real Mixed Fruit juice made from the finest fruits with no added preservatives. Refreshing blend of orange, pineapple, mango and guava. 100% real fruit juice.', specifications: { 'Volume': '1 Litre', 'Flavour': 'Mixed Fruit', 'Preservatives': 'None' } },
-  { name: 'Good Day Biscuits (600g)', category: 'Snacks & Beverages', subCategory: 'Biscuits & Cookies', price: 120, stock: 500, brand: 'Britannia', weight: 600, tags: ['biscuits','britannia','good-day'], images: ['https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&q=80'], shortDescription: 'Britannia Good Day butter biscuits', description: 'Britannia Good Day butter cookies — rich, buttery and absolutely delicious. With real cashews and almonds. A perfect tea-time companion for the whole family.', specifications: { 'Weight': '600 g', 'Type': 'Butter Cookies' } },
-
-  // ── Spices & Condiments ──
-  { name: 'Mustard Oil (1L)', category: 'Spices & Condiments', subCategory: 'Oils & Ghee', price: 280, stock: 400, brand: 'Patanjali', weight: 1000, tags: ['mustard-oil','cooking-oil','sarso'], images: ['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], shortDescription: 'Pure kachi ghani mustard oil, 1 litre', description: 'Patanjali Kachi Ghani Mustard Oil extracted from the finest quality mustard seeds using cold press method. Rich in omega-3 and omega-6 fatty acids. Authentic pungent aroma for authentic Nepali cooking.', specifications: { 'Volume': '1 Litre', 'Type': 'Kachi Ghani', 'Extraction': 'Cold Press' }, isFeatured: true },
-  { name: 'MDH Garam Masala (100g)', category: 'Spices & Condiments', subCategory: 'Masala Blends', price: 120, stock: 300, brand: 'MDH', weight: 100, tags: ['masala','garam-masala','mdh','spice'], images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&q=80'], shortDescription: 'MDH Garam Masala — premium blend', description: 'MDH Garam Masala is a premium blend of 18 rare spices carefully selected and ground to perfection. Adds authentic flavour and aroma to curries, dals and vegetable dishes.', specifications: { 'Weight': '100 g', 'Spices': '18 premium spices', 'Form': 'Powder' } },
-  { name: 'Rock Salt / Sendha Namak (1 kg)', category: 'Spices & Condiments', subCategory: 'Salt & Sugar', price: 95, stock: 500, brand: 'Himalayan Pink', weight: 1000, tags: ['salt','rock-salt','himalayan'], images: ['https://images.unsplash.com/photo-1519047100-45dc34434706?w=500&q=80'], shortDescription: 'Himalayan pink rock salt, 1 kg', description: 'Pure Himalayan pink rock salt — the most natural form of salt on earth. Contains 84+ trace minerals. Lower in sodium than table salt, better for health and cooking.', specifications: { 'Weight': '1 kg', 'Type': 'Pink Rock Salt', 'Origin': 'Himalayan' } },
-
-  // ── Personal Care ──
-  { name: 'Lifebuoy Soap (5 pack)', category: 'Personal Care', subCategory: 'Soap & Body Wash', price: 180, salePrice: 160, stock: 600, brand: 'Lifebuoy', weight: 500, tags: ['soap','lifebuoy','antibacterial'], images: ['https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=500&q=80'], shortDescription: 'Lifebuoy antibacterial soap, pack of 5', description: 'Lifebuoy Total 10 Germ Protection Soap fights 10 types of germs. 100g bar × 5 pack. Dermatologically tested, pH balanced formula. Keeps skin fresh and healthy.', specifications: { 'Count': '5 bars × 100g', 'Type': 'Antibacterial', 'Total Weight': '500 g' } },
-  { name: 'Head & Shoulders Shampoo (400ml)', category: 'Personal Care', subCategory: 'Shampoo', price: 390, salePrice: 350, stock: 300, brand: 'Head & Shoulders', weight: 400, tags: ['shampoo','dandruff','head-shoulders'], images: ['https://images.unsplash.com/photo-1614268188666-a8de2e9e1f74?w=500&q=80'], shortDescription: 'Anti-dandruff shampoo, 400ml', description: 'Head & Shoulders Cool Menthol Anti-Dandruff Shampoo. Clinically proven to fight dandruff from the first wash. Leaves hair clean, refreshed and 100% dandruff-free visibly.', specifications: { 'Volume': '400 ml', 'Type': 'Anti-Dandruff', 'Scent': 'Cool Menthol' } },
-  { name: 'Colgate Max Fresh Toothpaste (150g × 2)', category: 'Personal Care', subCategory: 'Toothpaste', price: 220, stock: 400, brand: 'Colgate', weight: 300, tags: ['toothpaste','colgate','dental'], images: ['https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=500&q=80'], shortDescription: 'Colgate Max Fresh toothpaste, 2 pack', description: 'Colgate Max Fresh toothpaste with mini breath strips. Gives up to 12 hours of fresh breath, prevents cavities and whitens teeth. Pack of 2 × 150g tubes.', specifications: { 'Weight': '150 g × 2 = 300 g', 'Type': 'Fluoride', 'Flavour': 'Peppermint' } },
-
-  // ── Household Items ──
-  { name: 'Ariel Detergent Powder (3 kg)', category: 'Household Items', subCategory: 'Detergent', price: 680, salePrice: 620, stock: 250, brand: 'Ariel', weight: 3000, tags: ['detergent','ariel','laundry'], images: ['https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&q=80'], shortDescription: 'Ariel washing powder with stain removal', description: 'Ariel Complete Detergent Powder removes 100 types of stains even in cold water. With OxiClean stain fighting power. 3 kg value pack for big families.', specifications: { 'Weight': '3 kg', 'Type': 'Washing Powder', 'Technology': 'OxiClean' } },
-  { name: 'Vim Dishwash Bar (5 pack)', category: 'Household Items', subCategory: 'Cleaning Products', price: 110, stock: 500, brand: 'Vim', weight: 750, tags: ['vim','dishwash','cleaning'], images: ['https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&q=80'], shortDescription: 'Vim lemon dishwash bar, pack of 5', description: 'Vim Lemon Dishwash Bar with active lemon salt. Cuts through grease instantly, leaves vessels sparkling clean. 5 × 150g bars — great value for family use.', specifications: { 'Count': '5 × 150g bars', 'Scent': 'Lemon', 'Total Weight': '750 g' }, isFeatured: true },
-
-  // ── Bakery & Bread ──
-  { name: 'Whole Wheat Bread (400g)', category: 'Bakery & Bread', subCategory: 'Bread', price: 80, stock: 200, brand: 'Sunrise Bakery', weight: 400, tags: ['bread','wheat','bakery'], images: ['https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&q=80'], shortDescription: 'Soft whole wheat bread, freshly baked', description: 'Freshly baked whole wheat sandwich bread made with 100% whole grain wheat flour. No maida (refined flour), no artificial preservatives. Soft texture, great for sandwiches and toast.', specifications: { 'Weight': '400 g', 'Type': 'Whole Wheat', 'Slices': '18-20 slices' } },
-  { name: 'Marie Gold Biscuits (600g)', category: 'Bakery & Bread', subCategory: 'Biscuits & Cookies', price: 115, stock: 400, brand: 'Britannia', weight: 600, tags: ['biscuits','marie','britannia'], images: ['https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&q=80'], shortDescription: 'Britannia Marie Gold light biscuits', description: 'Britannia Marie Gold — the classic light, crispy tea biscuit. Made with enriched wheat flour, milk and real butter. A healthy and delicious tea-time snack for all ages.', specifications: { 'Weight': '600 g', 'Type': 'Tea Biscuit', 'Calories': '420 kcal/100g' } },
-];
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
-async function clearDatabase(uri, dbName, collections) {
-  console.log(`\n🗑️  Clearing ${dbName}...`);
-  const conn = await mongoose.createConnection(uri).asPromise();
-  for (const col of collections) {
-    try {
-      await conn.db.collection(col).deleteMany({});
-      console.log(`   ✓ Cleared collection: ${col}`);
-    } catch (e) {
-      console.log(`   ⚠ Collection ${col} skipped (may not exist)`);
-    }
-  }
-  await conn.close();
-}
-
-async function seedProductDB() {
-  console.log('\n🌱 Seeding product database...');
-  const conn = await mongoose.createConnection(PRODUCT_DB).asPromise();
-  const CategoryModel = conn.model('Category', CategorySchema);
-  const ProductModel  = conn.model('Product',  ProductSchema);
-
-  // Insert categories
-  const savedCats = await CategoryModel.insertMany(CATEGORIES);
-  console.log(`   ✓ Inserted ${savedCats.length} categories`);
-
-  // Insert products
-  const products = PRODUCTS.map(p => ({
-    ...p,
-    slug: slug(p.name),
-    sku: sku(),
-    sellerId:   DEMO_SELLER_ID,
-    sellerName: DEMO_SELLER_NAME,
-    rating: 4 + Math.random(),
-    reviewCount: Math.floor(Math.random() * 120) + 10,
-    soldCount: Math.floor(Math.random() * 500) + 20,
-    isActive: true,
-  }));
-  const savedProds = await ProductModel.insertMany(products);
-  console.log(`   ✓ Inserted ${savedProds.length} products`);
-
-  await conn.close();
-}
-
 async function main() {
-  console.log('🚀 Starting Grocery Store Database Seeding...\n');
-  console.log('⚠️  This will DELETE all existing data from product_db, order_db, review_db, seller_db\n');
-
-  try {
-    // Clear databases
-    await clearDatabase(PRODUCT_DB,  'product_db',  ['products','categories','banners']);
-    await clearDatabase(ORDER_DB,    'order_db',    ['orders']);
-    await clearDatabase(REVIEW_DB,   'review_db',   ['reviews']);
-    await clearDatabase(SELLER_DB,   'seller_db',   ['sellers']);
-
-    // Seed grocery data
-    await seedProductDB();
-
-    console.log('\n✅ Seeding complete!');
-    console.log('   📦 10 grocery categories created');
-    console.log('   🛒 ' + PRODUCTS.length + ' grocery products created');
-    console.log('   👤 Demo seller: ' + DEMO_SELLER_NAME + ' (ID: ' + DEMO_SELLER_ID + ')');
-    console.log('\n💡 To add your own products, log in as admin and use the seller panel.\n');
-  } catch (err) {
-    console.error('\n❌ Error:', err.message);
-    console.error('   Make sure MongoDB is running on the correct ports (27017-27025)');
-    process.exit(1);
+  let MongoClient, bcrypt;
+  try { MongoClient = require('mongodb').MongoClient; } catch(e) {
+    require('child_process').execSync('npm install mongodb', { cwd: __dirname, stdio: 'inherit' });
+    MongoClient = require('mongodb').MongoClient;
+  }
+  try { bcrypt = require('bcryptjs'); } catch(e) {
+    require('child_process').execSync('npm install bcryptjs', { cwd: __dirname, stdio: 'inherit' });
+    bcrypt = require('bcryptjs');
   }
 
-  process.exit(0);
+  console.log('\n🛒 Bazzar Grocery Mart Seed — Clearing & Repopulating bazzar_db\n' + '='.repeat(60));
+
+  const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bazzar_db';
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
+  const db = client.db();
+  console.log(`\n✅ Connected to: ${MONGO_URI}`);
+
+  const adminHash  = await bcrypt.hash('Admin@1234', 12);
+  const buyerHash  = await bcrypt.hash('Buyer@1234', 12);
+  const sellerHash = await bcrypt.hash('Seller@1234', 12);
+
+  // ── USERS ─────────────────────────────────────────────────────────────────
+  console.log('\n👤 Users...');
+  await db.collection('users').deleteMany({});
+  const res = await db.collection('users').insertMany([
+    { firstName:'Admin',      lastName:'User',    email:'admin@bazzar.com',   password:adminHash,  role:'ADMIN',  phone:'9800000001', isActive:true, isEmailVerified:true, referralCode:'ADMIN001',  refreshTokens:[], wishlist:[], createdAt:new Date(), updatedAt:new Date() },
+    { firstName:'Ram',        lastName:'Sharma',  email:'ram@example.com',    password:buyerHash,  role:'BUYER',  phone:'9800000002', isActive:true, isEmailVerified:true, referralCode:'RAM001',    refreshTokens:[], wishlist:[], createdAt:new Date(), updatedAt:new Date() },
+    { firstName:'HariBazar',  lastName:'Store',   email:'seller1@bazzar.com', password:sellerHash, role:'SELLER', phone:'9800000003', isActive:true, isEmailVerified:true, referralCode:'HARI001',   refreshTokens:[], wishlist:[], createdAt:new Date(), updatedAt:new Date() },
+    { firstName:'FreshNepal', lastName:'Farms',   email:'seller2@bazzar.com', password:sellerHash, role:'SELLER', phone:'9800000004', isActive:true, isEmailVerified:true, referralCode:'FRESH001',  refreshTokens:[], wishlist:[], createdAt:new Date(), updatedAt:new Date() },
+    { firstName:'OrganicKo',  lastName:'Pasal',   email:'seller3@bazzar.com', password:sellerHash, role:'SELLER', phone:'9800000005', isActive:true, isEmailVerified:true, referralCode:'ORG001',    refreshTokens:[], wishlist:[], createdAt:new Date(), updatedAt:new Date() },
+  ]);
+  const ids = Object.values(res.insertedIds);
+  console.log(`  ✅ ${res.insertedCount} users`);
+
+  // ── SELLERS ───────────────────────────────────────────────────────────────
+  console.log('\n🏪 Sellers...');
+  await db.collection('sellers').deleteMany({});
+  const sres = await db.collection('sellers').insertMany([
+    { userId:ids[2].toString(), storeName:'HariBazar',        description:'Your neighbourhood grocery store. Fresh produce delivered daily across Kathmandu.', email:'seller1@bazzar.com', phone:'9800000003', logo:'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80', banner:'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=900&q=85', category:'Grocery', address:{city:'Kathmandu',district:'Kathmandu',province:'Bagmati'}, status:'APPROVED', isVerified:true, rating:4.8, totalSales:1200000, productCount:120, commissionRate:8, panNumber:'123456789', bankAccount:{bankName:'NIC Asia Bank',accountNumber:'1234567890',accountName:'HariBazar Pvt Ltd'}, createdAt:new Date(), updatedAt:new Date() },
+    { userId:ids[3].toString(), storeName:'FreshNepal Farms', description:'Farm-fresh vegetables and fruits sourced directly from Nepali farmers. No middlemen.', email:'seller2@bazzar.com', phone:'9800000004', logo:'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=200&q=80', banner:'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=900&q=85', category:'Fresh Produce', address:{city:'Lalitpur',district:'Lalitpur',province:'Bagmati'}, status:'APPROVED', isVerified:true, rating:4.7, totalSales:870000, productCount:85, commissionRate:8, panNumber:'987654321', bankAccount:{bankName:'Nabil Bank',accountNumber:'9876543210',accountName:'FreshNepal Farms Pvt Ltd'}, createdAt:new Date(), updatedAt:new Date() },
+    { userId:ids[4].toString(), storeName:'OrganicKo Pasal',  description:"Nepal's trusted organic grocery store. Chemical-free, naturally grown produce.", email:'seller3@bazzar.com', phone:'9800000005', logo:'https://images.unsplash.com/photo-1506484381205-f7945653044d?w=200&q=80', banner:'https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&q=85', category:'Organic', address:{city:'Bhaktapur',district:'Bhaktapur',province:'Bagmati'}, status:'APPROVED', isVerified:true, rating:4.6, totalSales:560000, productCount:60, commissionRate:8, panNumber:'456789123', bankAccount:{bankName:'Himalayan Bank',accountNumber:'4567891230',accountName:'OrganicKo Pasal Pvt Ltd'}, createdAt:new Date(), updatedAt:new Date() },
+  ]);
+  console.log(`  ✅ ${sres.insertedCount} sellers`);
+  const sellerIds = Object.values(sres.insertedIds).map(i => i.toString());
+
+  // ── CATEGORIES ────────────────────────────────────────────────────────────
+  console.log('\n📂 Categories...');
+  await db.collection('categories').deleteMany({});
+  const cats = await db.collection('categories').insertMany([
+    { name:'Fruits & Vegetables', slug:'fruits-vegetables', image:'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=700&q=80', description:'Fresh fruits and vegetables',       isActive:true, order:1, createdAt:new Date() },
+    { name:'Dairy & Eggs',        slug:'dairy-eggs',        image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=700&q=80', description:'Milk, cheese, butter and eggs',    isActive:true, order:2, createdAt:new Date() },
+    { name:'Grains & Pulses',     slug:'grains-pulses',     image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=700&q=80', description:'Rice, lentils, flour and more',   isActive:true, order:3, createdAt:new Date() },
+    { name:'Meat & Seafood',      slug:'meat-seafood',      image:'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=700&q=80', description:'Fresh meat, poultry and seafood', isActive:true, order:4, createdAt:new Date() },
+    { name:'Snacks & Beverages',  slug:'snacks-beverages',  image:'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=700&q=80', description:'Chips, drinks and packaged foods',isActive:true, order:5, createdAt:new Date() },
+    { name:'Spices & Condiments', slug:'spices-condiments', image:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=700&q=80', description:'Spices, sauces and seasonings',  isActive:true, order:6, createdAt:new Date() },
+    { name:'Bakery & Bread',      slug:'bakery-bread',      image:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&q=80', description:'Fresh bread, cakes and pastries', isActive:true, order:7, createdAt:new Date() },
+    { name:'Oils & Ghee',         slug:'oils-ghee',         image:'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=700&q=80', description:'Cooking oils, ghee and butter',  isActive:true, order:8, createdAt:new Date() },
+    { name:'Personal Care',       slug:'personal-care',     image:'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=700&q=80', description:'Soap, shampoo and hygiene',       isActive:true, order:9, createdAt:new Date() },
+    { name:'Household Items',     slug:'household-items',   image:'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=700&q=80', description:'Cleaning and kitchen supplies',   isActive:true, order:10, createdAt:new Date() },
+  ]);
+  const catIds = Object.values(cats.insertedIds);
+  console.log(`  ✅ ${cats.insertedCount} categories`);
+
+  // ── BANNERS ───────────────────────────────────────────────────────────────
+  console.log('\n🖼️  Banners...');
+  await db.collection('banners').deleteMany({});
+  await db.collection('banners').insertMany([
+    { title:'Fresh From The', subtitle:'Farm To You',    description:'Handpicked fruits and vegetables delivered fresh to your doorstep across Nepal every morning.', cta:'Shop Fresh Produce', ctaLink:'/products?category=fruits-vegetables', image:'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=900&q=85', accentColor:'#22c55e', eyebrow:"Nepal's #1 Grocery Mart", badge:'🥦 Farm Fresh Daily',         order:0, isActive:true, createdAt:new Date() },
+    { title:'Pure Dairy',     subtitle:'Every Morning', description:'Fresh milk, creamy paneer, dahi and eggs from trusted local farms delivered at sunrise.', cta:'Shop Dairy',         ctaLink:'/products?category=dairy-eggs',        image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=900&q=85', accentColor:'#f59e0b', eyebrow:'Morning Essentials',          badge:'🥛 100% Pure & Fresh',      order:1, isActive:true, createdAt:new Date() },
+    { title:'Stock Your',     subtitle:'Pantry Smart',  description:'Premium rice, dal, atta, spices and cooking oils — everything you need at the best prices.', cta:'Shop Pantry',        ctaLink:'/products?category=grains-pulses',     image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=900&q=85', accentColor:'#f97316', eyebrow:'Pantry Essentials',          badge:'🌾 Best Price Guaranteed',  order:2, isActive:true, createdAt:new Date() },
+  ]);
+  console.log('  ✅ 3 banners');
+
+  // ── PRODUCTS ──────────────────────────────────────────────────────────────
+  console.log('\n🛍️  Products...');
+  await db.collection('products').deleteMany({});
+  const [s1, s2, s3] = sellerIds;
+  const [fvId, deId, gpId, msId, sbId, scId, bbId, ogId, pcId, hiId] = catIds;
+
+  const prods = [
+    // ── Fruits & Vegetables (12) ──────────────────────────────────────────
+    { name:'Fresh Tomatoes (1 kg)',          slug:'fresh-tomatoes-1kg',          description:'Juicy farm-fresh red tomatoes sourced daily from Chitwan farms. Rich in vitamins, perfect for curries and salads.',          price:80,   salePrice:70,  images:['https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:200, sku:'FV-TOM-001', rating:4.7, reviewCount:312, isFeatured:true,  isActive:true, tags:['tomato','vegetables','fresh'] },
+    { name:'Himalayan Potatoes (5 kg)',      slug:'himalayan-potatoes-5kg',      description:'Premium hill-grown potatoes from Jhapa. Fluffy texture, ideal for aloo tarkari, fries and every Nepali kitchen.',           price:250,  salePrice:220, images:['https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:400, sku:'FV-POT-001', rating:4.6, reviewCount:245, isFeatured:true,  isActive:true, tags:['potato','vegetables','staple'] },
+    { name:'Fresh Banana - Harichhal (1 dozen)', slug:'banana-harichhal-dozen', description:'Naturally ripened Harichhal bananas from the Terai region. Sweet, rich in potassium and natural sugars.',               price:120,  salePrice:null, images:['https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:180, sku:'FV-BAN-001', rating:4.8, reviewCount:421, isFeatured:true,  isActive:true, tags:['banana','fruit','terai'] },
+    { name:'Jumla Apple (1 kg)',             slug:'jumla-apple-1kg',             description:'Famous Jumla apples from Karnali province, grown at high altitude without pesticides. Naturally sweet and crispy.',         price:350,  salePrice:300, images:['https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=500&q=80'], category:fvId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:80,  sku:'FV-APL-001', rating:4.9, reviewCount:198, isFeatured:true,  isActive:true, tags:['apple','fruit','jumla','organic'] },
+    { name:'Green Spinach (500 g)',          slug:'green-spinach-500g',          description:'Crisp and tender spinach leaves harvested fresh every morning. Packed with iron, calcium and vitamins.',                   price:60,   salePrice:49,  images:['https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:150, sku:'FV-SPN-001', rating:4.6, reviewCount:189, isFeatured:false, isActive:true, tags:['spinach','greens','leafy'] },
+    { name:'Red Onion (3 kg)',               slug:'red-onion-3kg',               description:'Fresh red onions from the fertile plains of Nepal. Essential for every Nepali curry, dal and tarkari.',                    price:180,  salePrice:160, images:['https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:350, sku:'FV-ONI-001', rating:4.5, reviewCount:267, isFeatured:false, isActive:true, tags:['onion','vegetables','staple'] },
+    { name:'Cauliflower (1 piece)',          slug:'cauliflower-1pc',             description:'Large fresh cauliflower head, sourced daily. Great for sabji, soups and stir-fry.',                                        price:75,   salePrice:65,  images:['https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:90,  sku:'FV-CAU-001', rating:4.4, reviewCount:87,  isFeatured:false, isActive:true, tags:['cauliflower','vegetables'] },
+    { name:'Fresh Carrot (1 kg)',            slug:'fresh-carrot-1kg',            description:'Orange carrots rich in beta-carotene. Great for curries, halwa and fresh juices.',                                         price:90,   salePrice:75,  images:['https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:140, sku:'FV-CAR-001', rating:4.5, reviewCount:102, isFeatured:false, isActive:true, tags:['carrot','vegetables'] },
+    { name:'Terai Mango (1 kg)',             slug:'terai-mango-1kg',             description:'Sweet juicy Terai mangoes, naturally ripened on the tree. Seasonal delight — rich flavour and aroma.',                   price:220,  salePrice:190, images:['https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80'], category:fvId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:100, sku:'FV-MNG-001', rating:4.8, reviewCount:276, isFeatured:true,  isActive:true, tags:['mango','fruit','seasonal'] },
+    { name:'Cucumber (500 g)',               slug:'cucumber-500g',               description:'Cool and crunchy cucumbers, perfect for salads, raita and fresh snacking.',                                                 price:50,   salePrice:40,  images:['https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:160, sku:'FV-CUC-001', rating:4.3, reviewCount:134, isFeatured:false, isActive:true, tags:['cucumber','vegetables'] },
+    { name:'Green Capsicum (500 g)',         slug:'green-capsicum-500g',         description:'Crisp green bell peppers, perfect for stir-fry, sabji and stuffed dishes.',                                                 price:85,   salePrice:70,  images:['https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=500&q=80'], category:fvId, sellerId:s2, sellerName:'FreshNepal Farms', stock:110, sku:'FV-CAP-001', rating:4.4, reviewCount:78,  isFeatured:false, isActive:true, tags:['capsicum','vegetables'] },
+    { name:'Fresh Ginger (250 g)',           slug:'fresh-ginger-250g',           description:'Aromatic fresh ginger root, essential for Nepali cooking, tea and medicinal use.',                                          price:60,   salePrice:50,  images:['https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&q=80'], category:fvId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:200, sku:'FV-GNG-001', rating:4.6, reviewCount:156, isFeatured:false, isActive:true, tags:['ginger','spice','fresh'] },
+
+    // ── Dairy & Eggs (7) ──────────────────────────────────────────────────
+    { name:'Full Cream Milk (1 litre)',      slug:'full-cream-milk-1l',          description:'Fresh pasteurised full cream milk from Dairy Development Corporation. Rich, creamy and nutritious.',                       price:95,   salePrice:null, images:['https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:500, sku:'DE-MLK-001', rating:4.8, reviewCount:534, isFeatured:true,  isActive:true, tags:['milk','dairy','full-cream'] },
+    { name:'Farm Fresh Eggs (12 pcs)',       slug:'farm-fresh-eggs-12pcs',       description:'Free-range country hen eggs collected daily from partner farms. Rich in protein and omega-3.',                            price:240,  salePrice:220, images:['https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:400, sku:'DE-EGG-001', rating:4.7, reviewCount:389, isFeatured:true,  isActive:true, tags:['eggs','protein','farm-fresh'] },
+    { name:'Fresh Paneer (200 g)',           slug:'fresh-paneer-200g',           description:'Soft homemade-style paneer made from full-cream buffalo milk. Great for palak paneer, matar paneer and snacks.',          price:160,  salePrice:145, images:['https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:120, sku:'DE-PNR-001', rating:4.6, reviewCount:211, isFeatured:true,  isActive:true, tags:['paneer','dairy','cheese'] },
+    { name:'Dahi / Curd (500 g)',            slug:'dahi-curd-500g',              description:'Thick set curd made from whole buffalo milk. Creamy and mildly sour. Great with beaten rice or as a side.',               price:85,   salePrice:75,  images:['https://images.unsplash.com/photo-1571689936114-b89a7a8d2af6?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:200, sku:'DE-DAH-001', rating:4.5, reviewCount:178, isFeatured:false, isActive:true, tags:['dahi','curd','dairy'] },
+    { name:'Pure Cow Ghee (500 ml)',         slug:'pure-cow-ghee-500ml',         description:'Traditionally churned A2 cow ghee. Golden colour, rich aroma. Ideal for dal, kheer and festive cooking.',               price:850,  salePrice:790, images:['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], category:deId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:100, sku:'DE-GHE-001', rating:4.9, reviewCount:423, isFeatured:true,  isActive:true, tags:['ghee','cow','organic','dairy'] },
+    { name:'Amul Butter (500 g)',            slug:'amul-butter-500g',            description:'Creamy salted Amul butter made from fresh pasteurised cream. Perfect for bread, cooking and baking.',                    price:420,  salePrice:390, images:['https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:150, sku:'DE-BUT-001', rating:4.7, reviewCount:143, isFeatured:false, isActive:true, tags:['butter','dairy','amul'] },
+    { name:'Cheese Slices (200 g)',          slug:'cheese-slices-200g',          description:'Processed cheddar cheese slices, ready to use in sandwiches, burgers and wraps.',                                         price:250,  salePrice:225, images:['https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=500&q=80'], category:deId, sellerId:s1, sellerName:'HariBazar', stock:80,  sku:'DE-CHS-001', rating:4.3, reviewCount:97,  isFeatured:false, isActive:true, tags:['cheese','dairy','slices'] },
+
+    // ── Grains & Pulses (7) ───────────────────────────────────────────────
+    { name:'Basmati Rice (5 kg)',            slug:'basmati-rice-5kg',            description:'Premium extra long grain basmati rice, aged 2 years for enhanced flavour. Perfect for biryani and daily cooking.',        price:750,  salePrice:680, images:['https://images.unsplash.com/photo-1536304993881-ff86e0c9ef4c?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:250, sku:'GP-RIC-001', rating:4.8, reviewCount:456, isFeatured:true,  isActive:true, tags:['rice','basmati','grains'] },
+    { name:'Whole Wheat Atta (10 kg)',       slug:'whole-wheat-atta-10kg',       description:'Stone-ground whole wheat flour from sharbati wheat. Makes soft, nutritious rotis and chapatis.',                         price:680,  salePrice:null, images:['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:180, sku:'GP-ATT-001', rating:4.7, reviewCount:312, isFeatured:false, isActive:true, tags:['atta','wheat','flour'] },
+    { name:'Red Masoor Dal (2 kg)',          slug:'red-masoor-dal-2kg',          description:'Premium split red lentils. Quick-cooking, high in protein and fibre. The most versatile dal for everyday use.',           price:320,  salePrice:290, images:['https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:280, sku:'GP-MSD-001', rating:4.6, reviewCount:289, isFeatured:true,  isActive:true, tags:['masoor','dal','lentils'] },
+    { name:'Tuar / Arhar Dal (2 kg)',        slug:'tuar-arhar-dal-2kg',          description:'Premium arhar dal, a staple in every Nepali home. High in protein, easy to cook — ideal for dal-bhat-tarkari.',          price:380,  salePrice:340, images:['https://images.unsplash.com/photo-1621475007307-e5e2a07f0c18?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:200, sku:'GP-TUR-001', rating:4.5, reviewCount:198, isFeatured:false, isActive:true, tags:['tuar','arhar','dal','lentils'] },
+    { name:'Flattened Rice / Chiura (1 kg)',slug:'chiura-flattened-rice-1kg',   description:'Traditional Nepali beaten rice. Ready to eat with dahi or cook. A cultural staple for festivals and daily snacking.',    price:150,  salePrice:135, images:['https://images.unsplash.com/photo-1536304993881-ff86e0c9ef4c?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:250, sku:'GP-CHI-001', rating:4.7, reviewCount:267, isFeatured:true,  isActive:true, tags:['chiura','beaten rice','nepali'] },
+    { name:'Yellow Moong Dal (1 kg)',        slug:'yellow-moong-dal-1kg',        description:'Split yellow moong beans. Light, digestible and protein-rich. Great for khichdi, soup and baby food.',                   price:220,  salePrice:200, images:['https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=500&q=80'], category:gpId, sellerId:s1, sellerName:'HariBazar', stock:220, sku:'GP-MOO-001', rating:4.6, reviewCount:156, isFeatured:false, isActive:true, tags:['moong','dal','pulses'] },
+    { name:'Black Chana (1 kg)',             slug:'black-chana-1kg',             description:'Wholesome black chickpeas, organically grown. Great for chana masala, chaat and salads.',                                  price:200,  salePrice:180, images:['https://images.unsplash.com/photo-1602253057119-44d745d9b860?w=500&q=80'], category:gpId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:160, sku:'GP-CHA-001', rating:4.5, reviewCount:134, isFeatured:false, isActive:true, tags:['chana','chickpeas','organic'] },
+
+    // ── Meat & Seafood (5) ────────────────────────────────────────────────
+    { name:'Chicken Breast Boneless (500 g)',slug:'chicken-breast-boneless-500g',description:'Fresh boneless chicken breast, vacuum-sealed for freshness. Lean protein, perfect for grilling and curries.',            price:380,  salePrice:349, images:['https://images.unsplash.com/photo-1604503468506-a8da13d11e18?w=500&q=80'], category:msId, sellerId:s1, sellerName:'HariBazar', stock:80,  sku:'MS-CHK-001', rating:4.6, reviewCount:178, isFeatured:true,  isActive:true, tags:['chicken','boneless','protein'] },
+    { name:'Whole Chicken (1 kg)',           slug:'whole-chicken-1kg',           description:'Farm-fresh whole chicken, cleaned and dressed. Great for traditional Nepali masu recipes.',                                price:680,  salePrice:620, images:['https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=500&q=80'], category:msId, sellerId:s1, sellerName:'HariBazar', stock:60,  sku:'MS-WCH-001', rating:4.5, reviewCount:145, isFeatured:false, isActive:true, tags:['chicken','whole','meat'] },
+    { name:'Mutton / Khasi (500 g)',         slug:'mutton-khasi-500g',           description:'Fresh goat meat with bone from certified farms. Tender cuts perfect for khasi ko masu and festive cooking.',             price:850,  salePrice:820, images:['https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=500&q=80'], category:msId, sellerId:s1, sellerName:'HariBazar', stock:50,  sku:'MS-MTN-001', rating:4.7, reviewCount:212, isFeatured:true,  isActive:true, tags:['mutton','khasi','meat'] },
+    { name:'Fresh Rohu Fish (500 g)',        slug:'fresh-rohu-fish-500g',        description:'Fresh water rohu fish, cleaned and cut. A Nepali favourite for fish curry. Sourced from clean water ponds daily.',       price:420,  salePrice:390, images:['https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=500&q=80'], category:msId, sellerId:s2, sellerName:'FreshNepal Farms', stock:70,  sku:'MS-FSH-001', rating:4.4, reviewCount:98,  isFeatured:false, isActive:true, tags:['fish','rohu','seafood'] },
+    { name:'Duck Eggs (6 pcs)',              slug:'duck-eggs-6pcs',              description:'Rich and flavourful duck eggs with larger yolk. Great for baking, scrambled eggs and omelettes.',                        price:180,  salePrice:165, images:['https://images.unsplash.com/photo-1569288052389-dac9b0ac9eac?w=500&q=80'], category:msId, sellerId:s2, sellerName:'FreshNepal Farms', stock:90,  sku:'MS-DEG-001', rating:4.3, reviewCount:67,  isFeatured:false, isActive:true, tags:['duck eggs','eggs','protein'] },
+
+    // ── Snacks & Beverages (8) ────────────────────────────────────────────
+    { name:'Wai Wai Noodles (Pack of 5)',   slug:'wai-wai-noodles-5pack',       description:"Nepal's most loved instant noodles. Crispy or cooked — always delicious. The ultimate Nepali snack.",                  price:125,  salePrice:110, images:['https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:600, sku:'SB-WAI-001', rating:4.9, reviewCount:678, isFeatured:true,  isActive:true, tags:['noodles','wai wai','snacks','nepali'] },
+    { name:'Tata Tea Gold (500 g)',          slug:'tata-tea-gold-500g',          description:'Made from finest whole leaf from Assam and Darjeeling gardens. Brew a perfect cup of strong, aromatic chai.',            price:350,  salePrice:320, images:['https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:300, sku:'SB-TEA-001', rating:4.8, reviewCount:312, isFeatured:true,  isActive:true, tags:['tea','tata tea','chai','beverage'] },
+    { name:'Nescafe Classic Coffee (200 g)', slug:'nescafe-classic-coffee-200g', description:'NESCAFÉ Classic — rich, smooth instant coffee. Simply add hot water or milk for a perfect cup anytime.',              price:490,  salePrice:450, images:['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:200, sku:'SB-COF-001', rating:4.7, reviewCount:189, isFeatured:false, isActive:true, tags:['coffee','nescafe','instant','beverage'] },
+    { name:'Ilam Black Tea (100 g)',         slug:'ilam-black-tea-100g',         description:'Premium Ilam tea leaves from the hills of Nepal. Naturally grown at high altitude with a rich, bold taste.',            price:320,  salePrice:280, images:['https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&q=80'], category:sbId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:150, sku:'SB-ILT-001', rating:4.8, reviewCount:198, isFeatured:true,  isActive:true, tags:['tea','ilam','nepal','organic'] },
+    { name:'Real Mixed Fruit Juice (1L)',    slug:'real-mixed-fruit-juice-1l',   description:'Real Mixed Fruit juice — refreshing blend of orange, pineapple, mango and guava. No added preservatives.',             price:130,  salePrice:115, images:['https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:300, sku:'SB-JUC-001', rating:4.5, reviewCount:213, isFeatured:false, isActive:true, tags:['juice','real','beverage','fruit'] },
+    { name:'Lay\'s Chips Classic Salted (52 g)', slug:'lays-chips-classic-salted-52g', description:"Lay's Classic Salted chips made from finest potatoes. Thin, crispy, lightly salted. Great for parties and snacking.", price:40, salePrice:null, images:['https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:800, sku:'SB-LAY-001', rating:4.6, reviewCount:389, isFeatured:false, isActive:true, tags:['chips','lays','snacks'] },
+    { name:'Good Day Butter Biscuits (600 g)', slug:'good-day-butter-biscuits-600g', description:'Britannia Good Day butter cookies with real cashews and almonds. Rich, buttery and absolutely delicious.',        price:120,  salePrice:110, images:['https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:450, sku:'SB-GDB-001', rating:4.5, reviewCount:267, isFeatured:false, isActive:true, tags:['biscuits','britannia','snacks'] },
+    { name:'Coca-Cola (1.5 litre)',          slug:'coca-cola-1-5l',              description:'The classic cola drink. Perfect for gatherings, celebrations and everyday refreshment.',                                  price:130,  salePrice:120, images:['https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80'], category:sbId, sellerId:s1, sellerName:'HariBazar', stock:400, sku:'SB-COK-001', rating:4.4, reviewCount:334, isFeatured:false, isActive:true, tags:['cola','beverage','soft drink'] },
+
+    // ── Spices & Condiments (7) ───────────────────────────────────────────
+    { name:'Turmeric Powder (200 g)',        slug:'turmeric-powder-200g',        description:'Pure ground turmeric with high curcumin content. Vibrant colour, earthy flavour. Essential in Nepali cooking.',         price:110,  salePrice:95,  images:['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&q=80'], category:scId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:250, sku:'SC-TUR-001', rating:4.7, reviewCount:298, isFeatured:false, isActive:true, tags:['turmeric','haldi','spice','organic'] },
+    { name:'Red Chilli Powder (200 g)',      slug:'red-chilli-powder-200g',      description:'Fiery red chilli powder with intense heat and colour. Sun-dried and freshly ground from quality chillis.',              price:130,  salePrice:115, images:['https://images.unsplash.com/photo-1588514912908-c2a3b7680795?w=500&q=80'], category:scId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:200, sku:'SC-RCP-001', rating:4.6, reviewCount:176, isFeatured:false, isActive:true, tags:['chilli','spice','red chilli'] },
+    { name:'MDH Garam Masala (100 g)',       slug:'mdh-garam-masala-100g',       description:'Premium blend of 18 rare spices. Adds authentic flavour and aroma to curries, dals and vegetable dishes.',             price:160,  salePrice:140, images:['https://images.unsplash.com/photo-1532336414038-cf19250c5757?w=500&q=80'], category:scId, sellerId:s1, sellerName:'HariBazar', stock:180, sku:'SC-GAM-001', rating:4.8, reviewCount:234, isFeatured:true,  isActive:true, tags:['garam masala','mdh','spice','blend'] },
+    { name:'Himalayan Pink Rock Salt (1 kg)',slug:'himalayan-pink-rock-salt-1kg',description:'Pure Himalayan pink rock salt containing 84+ trace minerals. Natural, unprocessed — better for health than table salt.', price:95,   salePrice:null, images:['https://images.unsplash.com/photo-1519047100-45dc34434706?w=500&q=80'], category:scId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:400, sku:'SC-SAL-001', rating:4.7, reviewCount:189, isFeatured:false, isActive:true, tags:['salt','himalayan','pink rock salt'] },
+    { name:'Tomato Ketchup (500 g)',         slug:'tomato-ketchup-500g',         description:'Tangy and sweet tomato ketchup. A must-have condiment for momos, snacks and sandwiches.',                               price:180,  salePrice:160, images:['https://images.unsplash.com/photo-1605789538467-f715d58e03f9?w=500&q=80'], category:scId, sellerId:s1, sellerName:'HariBazar', stock:220, sku:'SC-KET-001', rating:4.5, reviewCount:312, isFeatured:false, isActive:true, tags:['ketchup','sauce','condiment'] },
+    { name:'Cumin Seeds / Jeera (200 g)',    slug:'cumin-seeds-jeera-200g',      description:'Whole jeera with earthy fragrance. Used for tempering dals, soups and vegetable dishes.',                               price:120,  salePrice:100, images:['https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?w=500&q=80'], category:scId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:180, sku:'SC-CUM-001', rating:4.6, reviewCount:145, isFeatured:false, isActive:true, tags:['cumin','jeera','spice'] },
+    { name:'Mustard Seeds (200 g)',          slug:'mustard-seeds-200g',          description:'Yellow mustard seeds for tempering. Pungent aroma, essential in Nepali and South Asian cooking.',                        price:85,   salePrice:75,  images:['https://images.unsplash.com/photo-1599909533819-5cfc99278e08?w=500&q=80'], category:scId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:160, sku:'SC-MUS-001', rating:4.4, reviewCount:98,  isFeatured:false, isActive:true, tags:['mustard','seeds','spice'] },
+
+    // ── Bakery & Bread (5) ────────────────────────────────────────────────
+    { name:'Whole Wheat Bread (400 g)',      slug:'whole-wheat-bread-400g',      description:'Freshly baked whole wheat sandwich bread. No maida, no preservatives. Soft texture, great for toast and sandwiches.',   price:90,   salePrice:80,  images:['https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&q=80'], category:bbId, sellerId:s1, sellerName:'HariBazar', stock:120, sku:'BB-WHB-001', rating:4.5, reviewCount:234, isFeatured:false, isActive:true, tags:['bread','wheat','bakery'] },
+    { name:'Butter Croissant (Pack of 4)',   slug:'butter-croissant-4pack',      description:'Flaky, buttery croissants baked fresh every morning. Melt-in-mouth goodness for a perfect breakfast.',                 price:260,  salePrice:240, images:['https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500&q=80'], category:bbId, sellerId:s1, sellerName:'HariBazar', stock:60,  sku:'BB-CRO-001', rating:4.7, reviewCount:178, isFeatured:true,  isActive:true, tags:['croissant','bakery','breakfast'] },
+    { name:'Sel Roti (6 pcs)',               slug:'sel-roti-6pcs',               description:'Traditional Nepali rice doughnut. Crispy outside, soft inside. A festive favourite, now available daily.',             price:180,  salePrice:160, images:['https://images.unsplash.com/photo-1574653853027-5382a3d23a15?w=500&q=80'], category:bbId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:80,  sku:'BB-SEL-001', rating:4.9, reviewCount:312, isFeatured:true,  isActive:true, tags:['sel roti','nepali','traditional'] },
+    { name:'Britannia Marie Gold (600 g)',   slug:'britannia-marie-gold-600g',   description:'Classic light, crispy tea biscuit. Made with enriched wheat flour and real butter. Healthy snack for all ages.',        price:115,  salePrice:null, images:['https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&q=80'], category:bbId, sellerId:s1, sellerName:'HariBazar', stock:400, sku:'BB-MRG-001', rating:4.5, reviewCount:198, isFeatured:false, isActive:true, tags:['biscuits','marie','bakery'] },
+    { name:'Chocolate Cake (500 g)',         slug:'chocolate-cake-500g',         description:'Rich moist chocolate sponge cake with chocolate ganache. Freshly baked — perfect for celebrations and gifting.',        price:650,  salePrice:590, images:['https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&q=80'], category:bbId, sellerId:s1, sellerName:'HariBazar', stock:30,  sku:'BB-CCK-001', rating:4.8, reviewCount:145, isFeatured:true,  isActive:true, tags:['cake','chocolate','bakery','celebration'] },
+
+    // ── Oils & Ghee (4) ───────────────────────────────────────────────────
+    { name:'Mustard Oil (1 litre)',          slug:'mustard-oil-1l',              description:'Cold-pressed kachi ghani mustard oil. Rich in omega-3 and omega-6. Authentic pungent aroma for Nepali cooking.',       price:280,  salePrice:260, images:['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], category:ogId, sellerId:s1, sellerName:'HariBazar', stock:350, sku:'OG-MSO-001', rating:4.7, reviewCount:267, isFeatured:true,  isActive:true, tags:['mustard oil','cooking oil','kachi ghani'] },
+    { name:'Sunflower Oil (1 litre)',        slug:'sunflower-oil-1l',            description:'Light refined sunflower oil. Low in saturated fat, ideal for daily frying and cooking.',                                price:280,  salePrice:255, images:['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], category:ogId, sellerId:s1, sellerName:'HariBazar', stock:300, sku:'OG-SFO-001', rating:4.5, reviewCount:198, isFeatured:false, isActive:true, tags:['sunflower oil','cooking oil','oil'] },
+    { name:'Coconut Oil (500 ml)',           slug:'coconut-oil-500ml',           description:'Virgin cold-pressed coconut oil. Multi-purpose — for cooking, hair and skin care. Natural and chemical-free.',          price:450,  salePrice:410, images:['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], category:ogId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:120, sku:'OG-CCO-001', rating:4.7, reviewCount:156, isFeatured:false, isActive:true, tags:['coconut oil','oil','organic'] },
+    { name:'Olive Oil Extra Virgin (250 ml)',slug:'olive-oil-extra-virgin-250ml',description:'Premium extra virgin olive oil. Cold-pressed for maximum nutrients. Best for salads and low-heat cooking.',            price:680,  salePrice:620, images:['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&q=80'], category:ogId, sellerId:s3, sellerName:'OrganicKo Pasal', stock:80,  sku:'OG-OLO-001', rating:4.8, reviewCount:112, isFeatured:false, isActive:true, tags:['olive oil','oil','healthy','imported'] },
+
+    // ── Personal Care (4) ─────────────────────────────────────────────────
+    { name:'Lifebuoy Soap (Pack of 5)',      slug:'lifebuoy-soap-5pack',         description:'Lifebuoy Total 10 Germ Protection Soap. Dermatologically tested, pH balanced. Keeps skin fresh and healthy.',         price:180,  salePrice:160, images:['https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=500&q=80'], category:pcId, sellerId:s1, sellerName:'HariBazar', stock:500, sku:'PC-LFB-001', rating:4.6, reviewCount:267, isFeatured:false, isActive:true, tags:['soap','lifebuoy','antibacterial'] },
+    { name:'Head & Shoulders Shampoo (400 ml)', slug:'head-shoulders-shampoo-400ml', description:'Clinically proven anti-dandruff shampoo. Fights dandruff from the first wash. Leaves hair clean and refreshed.', price:390,  salePrice:350, images:['https://images.unsplash.com/photo-1614268188666-a8de2e9e1f74?w=500&q=80'], category:pcId, sellerId:s1, sellerName:'HariBazar', stock:200, sku:'PC-HNS-001', rating:4.5, reviewCount:189, isFeatured:false, isActive:true, tags:['shampoo','dandruff','hair care'] },
+    { name:'Colgate Max Fresh Toothpaste (2 × 150 g)', slug:'colgate-max-fresh-toothpaste-2pack', description:'Colgate Max Fresh with mini breath strips. Up to 12 hours fresh breath, prevents cavities, whitens teeth. Pack of 2.', price:220, salePrice:null, images:['https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=500&q=80'], category:pcId, sellerId:s1, sellerName:'HariBazar', stock:350, sku:'PC-COL-001', rating:4.7, reviewCount:234, isFeatured:false, isActive:true, tags:['toothpaste','colgate','dental','oral care'] },
+    { name:'Dettol Hand Wash (250 ml)',      slug:'dettol-hand-wash-250ml',      description:'Dettol Original antibacterial liquid hand wash. Kills 99.9% of germs. Gentle on skin, tough on bacteria.',            price:180,  salePrice:160, images:['https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500&q=80'], category:pcId, sellerId:s1, sellerName:'HariBazar', stock:400, sku:'PC-DTL-001', rating:4.6, reviewCount:312, isFeatured:true,  isActive:true, tags:['hand wash','dettol','antibacterial','hygiene'] },
+
+    // ── Household Items (3) ───────────────────────────────────────────────
+    { name:'Ariel Detergent Powder (3 kg)', slug:'ariel-detergent-powder-3kg',  description:'Ariel Complete removes 100 types of stains even in cold water. OxiClean technology. 3 kg value pack for big families.', price:680, salePrice:620, images:['https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&q=80'], category:hiId, sellerId:s1, sellerName:'HariBazar', stock:250, sku:'HI-ARL-001', rating:4.5, reviewCount:178, isFeatured:false, isActive:true, tags:['detergent','ariel','laundry','cleaning'] },
+    { name:'Vim Dishwash Bar (Pack of 5)',   slug:'vim-dishwash-bar-5pack',      description:'Vim Lemon Dishwash Bar with active lemon salt. Cuts grease instantly, leaves vessels sparkling clean.',                price:110,  salePrice:null, images:['https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&q=80'], category:hiId, sellerId:s1, sellerName:'HariBazar', stock:500, sku:'HI-VIM-001', rating:4.7, reviewCount:223, isFeatured:true,  isActive:true, tags:['vim','dishwash','cleaning','kitchen'] },
+    { name:'Colin Glass Cleaner (500 ml)',   slug:'colin-glass-cleaner-500ml',   description:'Colin Multi-Surface Glass Cleaner. Streak-free shine on glass, mirrors and tiles. Fast-drying formula.',              price:165,  salePrice:149, images:['https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&q=80'], category:hiId, sellerId:s1, sellerName:'HariBazar', stock:180, sku:'HI-COL-001', rating:4.3, reviewCount:98,  isFeatured:false, isActive:true, tags:['cleaner','colin','glass','household'] },
+  ].map(p => ({ ...p, createdAt:new Date(), updatedAt:new Date() }));
+
+  const pr = await db.collection('products').insertMany(prods);
+  console.log(`  ✅ ${pr.insertedCount} products`);
+
+  await client.close();
+
+  console.log('\n' + '='.repeat(60));
+  console.log('✅ All done! Login credentials:\n');
+  console.log('   👑 Admin:   admin@bazzar.com    / Admin@1234');
+  console.log('   🛒 Buyer:   ram@example.com     / Buyer@1234');
+  console.log('   🏪 Seller1: seller1@bazzar.com  / Seller@1234  (HariBazar)');
+  console.log('   🏪 Seller2: seller2@bazzar.com  / Seller@1234  (FreshNepal Farms)');
+  console.log('   🏪 Seller3: seller3@bazzar.com  / Seller@1234  (OrganicKo Pasal)\n');
 }
 
-main();
+main().catch(e => { console.error('❌', e.message); process.exit(1); });

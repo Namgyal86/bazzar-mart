@@ -231,7 +231,10 @@
       "Bash(grep -E '\\(sk-[a-zA-Z0-9]{20,}|sk_live_[a-zA-Z0-9]+|sk_test_[a-zA-Z0-9]+|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9_-]+|AKIA[A-Z0-9]{16}|xox[baprs]-[a-zA-Z0-9-]+|-----BEGIN.*PRIVATE KEY|eyJ[a-zA-Z0-9_-]+\\\\.eyJ[a-zA-Z0-9_-]+\\\\.\\)' \"D:/E-commerce/bazzar-mart/.planning/codebase/\"*.md)",
       "Bash(node \".claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs\\(01\\): add phase 1 plans\" --files \".planning/phases/01-security-hardening/01-01-PLAN.md .planning/phases/01-security-hardening/01-02-PLAN.md .planning/phases/01-security-hardening/01-03-PLAN.md\")",
       "Bash(echo \"exit: $?\")",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(mkdir -p D:/AI_projects/ecommerce/Ecommerce/bazzar-mart/web/src/app/terms)",
+      "Bash(mkdir -p D:/AI_projects/ecommerce/Ecommerce/bazzar-mart/web/src/app/privacy)",
+      "Bash(mongosh *)"
     ]
   }
 }
