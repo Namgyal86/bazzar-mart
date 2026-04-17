@@ -33,6 +33,7 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
 
   const {
     register,
@@ -64,6 +65,9 @@ export default function LoginPage() {
     } catch (err) {
       const msg = getErrorMessage(err);
       setLoginError(msg);
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
+      toast({ title: 'Login failed', description: msg, variant: 'destructive' });
     }
   };
 
@@ -174,7 +178,7 @@ export default function LoginPage() {
             <p className="text-gray-500 mt-2">Sign in to continue shopping</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" suppressHydrationWarning>
+          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-5 ${shake ? 'animate-shake' : ''}`} suppressHydrationWarning>
             <div>
               <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Email address</label>
               <div className="relative">
@@ -230,9 +234,12 @@ export default function LoginPage() {
 
             {/* Inline error message */}
             {loginError && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10">
+              <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-red-500/60 bg-red-500/15 animate-fade-in">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-400 font-medium">{loginError}</p>
+                <div>
+                  <p className="text-sm font-semibold text-red-400">Login failed</p>
+                  <p className="text-xs text-red-400/80 mt-0.5">{loginError}</p>
+                </div>
               </div>
             )}
 

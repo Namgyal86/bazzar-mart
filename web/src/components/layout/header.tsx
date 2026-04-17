@@ -6,7 +6,7 @@ import {
   ShoppingCart, Search, User, Menu, Heart, Bell, ChevronDown,
   Package, LogOut, Settings, Store, X, Cpu, Shirt, Home,
   Dumbbell, Sparkles, BookOpen, ShoppingBag, TrendingUp,
-  Zap, LayoutDashboard, MapPin, Tag,
+  Zap, LayoutDashboard, MapPin, Tag, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
@@ -100,6 +100,42 @@ export function Header() {
   const searchRef  = useRef<HTMLDivElement>(null);
   const userRef    = useRef<HTMLDivElement>(null);
   const megaTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navViewportRef = useRef<HTMLDivElement>(null);
+  const navScrollRef   = useRef<HTMLElement>(null);
+  const [navOffset,      setNavOffset]      = useState(0);
+  const [canScrollLeft,  setCanScrollLeft]  = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateNavScrollState = useCallback((offset = navOffset) => {
+    const viewport = navViewportRef.current;
+    const inner    = navScrollRef.current;
+    if (!viewport || !inner) return;
+    const maxScroll = inner.scrollWidth - viewport.clientWidth;
+    setCanScrollLeft(offset < -4);
+    setCanScrollRight(maxScroll > 4 && offset > -maxScroll + 4);
+  }, [navOffset]);
+
+  useEffect(() => {
+    updateNavScrollState();
+    const ro = new ResizeObserver(() => updateNavScrollState());
+    if (navViewportRef.current) ro.observe(navViewportRef.current);
+    if (navScrollRef.current)   ro.observe(navScrollRef.current);
+    return () => ro.disconnect();
+  }, [categories, updateNavScrollState]);
+
+  const scrollNav = useCallback((dir: 'left' | 'right') => {
+    const viewport = navViewportRef.current;
+    const inner    = navScrollRef.current;
+    if (!viewport || !inner) return;
+    const maxScroll = inner.scrollWidth - viewport.clientWidth;
+    setNavOffset(prev => {
+      const next = dir === 'left'
+        ? Math.min(0, prev + 200)
+        : Math.max(-maxScroll, prev - 200);
+      updateNavScrollState(next);
+      return next;
+    });
+  }, [updateNavScrollState]);
 
   /* scroll listener */
   useEffect(() => {
@@ -377,7 +413,33 @@ export function Header() {
           </div>
 
           {/* ── CATEGORY NAV ── */}
-          <nav className="hidden md:flex items-center gap-1 pb-2">
+          <div className="hidden md:flex items-center pb-2 relative">
+            {/* Left scroll button */}
+            <AnimatePresence>
+              {canScrollLeft && (
+                <motion.button
+                  initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.18 }}
+                  onClick={() => scrollNav('left')}
+                  className="absolute left-0 z-10 flex items-center justify-center w-7 h-7 rounded-full bg-white dark:bg-gray-900 border border-border shadow-md text-muted-foreground hover:text-foreground hover:shadow-lg transition-all shrink-0"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* clip left/right overflow but allow -500px below so mega menus are never clipped */}
+            <div
+              ref={navViewportRef}
+              className="flex-1 min-w-0"
+              style={{ clipPath: 'inset(0 0 -500px 0)' }}
+            >
+            <nav
+              ref={navScrollRef}
+              className="flex items-center gap-1"
+              style={{ transform: `translateX(${navOffset}px)`, transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)', willChange: 'transform' }}
+            >
             {categories.map(cat => (
               <div
                 key={cat.slug}
@@ -442,19 +504,36 @@ export function Header() {
 
             <Link
               href="/deals"
-              className="ml-1 flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 text-red-500 hover:from-red-100 hover:to-orange-100 transition-all duration-200 border border-red-100 dark:border-red-900/30"
+              className="ml-1 shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 text-red-500 hover:from-red-100 hover:to-orange-100 transition-all duration-200 border border-red-100 dark:border-red-900/30"
             >
               <Zap className="w-3.5 h-3.5 fill-red-500" />
               Today's Deals
             </Link>
             <Link
               href="/sellers/register"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200"
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200"
             >
               <Tag className="w-3.5 h-3.5" />
               Sell Groceries
             </Link>
-          </nav>
+            </nav>
+            </div>
+
+            {/* Right scroll button */}
+            <AnimatePresence>
+              {canScrollRight && (
+                <motion.button
+                  initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }}
+                  transition={{ duration: 0.18 }}
+                  onClick={() => scrollNav('right')}
+                  className="absolute right-0 z-10 flex items-center justify-center w-7 h-7 rounded-full bg-white dark:bg-gray-900 border border-border shadow-md text-muted-foreground hover:text-foreground hover:shadow-lg transition-all shrink-0"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
