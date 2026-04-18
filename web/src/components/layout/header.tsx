@@ -433,7 +433,7 @@ export function Header() {
             <div
               ref={navViewportRef}
               className="flex-1 min-w-0"
-              style={{ clipPath: 'inset(0 0 -500px 0)' }}
+              style={{ overflowX: 'clip', clipPath: 'inset(0 0 -500px 0)' }}
             >
             <nav
               ref={navScrollRef}
