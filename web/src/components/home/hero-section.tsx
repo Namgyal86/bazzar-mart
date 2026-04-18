@@ -132,7 +132,7 @@ export function HeroSection() {
   const bg = BG_GRADIENTS[current % BG_GRADIENTS.length];
 
   return (
-    <section className={`relative min-h-[90vh] bg-gradient-to-br ${bg} overflow-x-hidden transition-colors duration-700`}>
+    <section className={`relative min-h-[90vh] bg-gradient-to-br ${bg} overflow-hidden transition-colors duration-700`}>
       {/* Background image */}
       {slide.image && (
         <div className="absolute inset-0 opacity-15">
