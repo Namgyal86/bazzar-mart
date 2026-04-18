@@ -5,7 +5,7 @@ export interface IUser extends Document {
   firstName:       string;
   lastName:        string;
   email:           string;
-  password:        string;
+  password?:       string;
   phone?:          string;
   role:            'BUYER' | 'SELLER' | 'ADMIN' | 'DELIVERY';
   avatar?:         string;
@@ -15,6 +15,8 @@ export interface IUser extends Document {
   isActive:        boolean;
   refreshTokens:   string[];
   wishlist:        string[];
+  googleId?:       string;
+  facebookId?:     string;
   passwordResetToken?:        string;
   passwordResetExpiry?:       number;
   emailVerificationToken?:    string;
@@ -26,7 +28,9 @@ const UserSchema = new Schema<IUser>({
   firstName:       { type: String, required: true, trim: true },
   lastName:        { type: String, required: true, trim: true },
   email:           { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password:        { type: String, required: true, minlength: 6, select: false },
+  password:        { type: String, required: false, minlength: 6, select: false },
+  googleId:        { type: String, sparse: true },
+  facebookId:      { type: String, sparse: true },
   phone:           { type: String, trim: true },
   role:            { type: String, enum: ['BUYER', 'SELLER', 'ADMIN', 'DELIVERY'], default: 'BUYER' },
   avatar:          { type: String },

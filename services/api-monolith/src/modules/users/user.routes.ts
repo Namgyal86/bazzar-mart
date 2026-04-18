@@ -8,6 +8,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authenticate, requireRole } from '../../shared/middleware/auth';
 import { register, login, refresh, logout, forgotPassword, resetPassword, sendVerificationEmail, verifyEmail } from './auth.controller';
+import { googleRedirect, googleCallback, facebookRedirect, facebookCallback } from './oauth.controller';
 import {
   getMe, updateMe,
   getWishlist, syncWishlist, addToWishlist, removeFromWishlist,
@@ -30,6 +31,12 @@ router.post('/auth/password/forgot',     authLimiter, forgotPassword);
 router.post('/auth/password/reset',      authLimiter, resetPassword);
 router.get ('/auth/verify-email',        verifyEmail);
 router.post('/auth/resend-verification', authLimiter, sendVerificationEmail);
+
+// OAuth
+router.get('/auth/google',            googleRedirect);
+router.get('/auth/google/callback',   googleCallback);
+router.get('/auth/facebook',          facebookRedirect);
+router.get('/auth/facebook/callback', facebookCallback);
 
 // ── Users (/api/v1/users) ─────────────────────────────────────────────────────
 router.use('/users', authenticate);

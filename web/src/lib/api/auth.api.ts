@@ -11,6 +11,13 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+export const oauthUrls = {
+  google:   `${API_BASE}/api/v1/auth/google`,
+  facebook: `${API_BASE}/api/v1/auth/facebook`,
+};
+
 export const authApi = {
   login: (data: LoginPayload) =>
     apiClient.post<{ success: true; data: AuthResponse }>('/api/v1/auth/login', data),

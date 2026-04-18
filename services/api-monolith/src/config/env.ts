@@ -33,6 +33,12 @@ const EnvSchema = z.object({
   // Email — SendGrid
   SENDGRID_API_KEY:    z.string().min(1).optional(),
   SENDGRID_FROM_EMAIL: z.string().email().optional(),
+
+  // OAuth
+  GOOGLE_CLIENT_ID:     z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  FACEBOOK_APP_ID:      z.string().optional(),
+  FACEBOOK_APP_SECRET:  z.string().optional(),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
