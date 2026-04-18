@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Package, Eye, Trash2, Star, Loader2 } from 'lucide-react';
+import { Search, Package, Eye, Trash2, Star, Loader2, Plus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
@@ -57,6 +57,14 @@ export default function AdminProductsPage() {
           <h1 className="text-2xl font-black text-white">Products</h1>
           <p className="text-sm text-gray-500 mt-0.5">{products.length} products on platform</p>
         </div>
+        <Link href="/admin/products/new">
+          <button
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}
+          >
+            <Plus className="w-4 h-4" /> Add Product
+          </button>
+        </Link>
       </div>
 
       {/* Search */}

@@ -13,11 +13,11 @@ const FEATURES = [
   { icon: CheckCircle, title: 'Farm Fresh',        desc: 'Directly from local farms',      grad: 'from-teal-500 to-cyan-500' },
 ];
 
-const STATS = [
-  { icon: Package,     value: 5000,  display: '5,000+',  label: 'Products' },
-  { icon: Users,       value: 100,   display: '100+',    label: 'Verified Sellers' },
-  { icon: TrendingUp,  value: 10000, display: '10,000+', label: 'Happy Customers' },
-  { icon: MapPin,      value: 77,    display: '77',      label: 'Districts Covered' },
+const DEFAULT_STATS = [
+  { icon: Package,    value: 5000,  display: '5,000+',           label: 'Products' },
+  { icon: Users,      value: 100,   display: '100+',             label: 'Verified Sellers' },
+  { icon: TrendingUp, value: 10000, display: '10,000+',          label: 'Happy Customers' },
+  { icon: MapPin,     value: 0,     display: 'Kathmandu Valley', label: 'Delivery Coverage' },
 ];
 
 function AnimatedNumber({ value, display }: { value: number; display: string }) {
@@ -64,6 +64,23 @@ const featureVariants = {
 };
 
 export function WhyBazzar() {
+  const [stats, setStats] = useState(DEFAULT_STATS);
+
+  useEffect(() => {
+    fetch('/api/v1/stats')
+      .then(r => r.json())
+      .then(({ data }) => {
+        if (!data) return;
+        setStats([
+          { icon: Package,    value: data.products, display: data.products >= 1000 ? `${Math.floor(data.products / 1000)}K+` : `${data.products}+`, label: 'Products' },
+          { icon: Users,      value: data.sellers,  display: `${data.sellers}+`,                                                                    label: 'Verified Sellers' },
+          { icon: TrendingUp, value: data.users,    display: data.users >= 1000 ? `${Math.floor(data.users / 1000)}K+` : `${data.users}+`,          label: 'Happy Customers' },
+          { icon: MapPin,     value: 0,             display: 'Kathmandu Valley',                                                                    label: 'Delivery Coverage' },
+        ]);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section className="py-20 bg-white dark:bg-background">
       <div className="container mx-auto px-4">
@@ -122,7 +139,7 @@ export function WhyBazzar() {
           style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}

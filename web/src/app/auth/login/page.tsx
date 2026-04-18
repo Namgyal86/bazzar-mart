@@ -61,7 +61,9 @@ export default function LoginPage() {
         refreshToken,
       );
       toast({ title: 'Welcome back!', description: 'You have been logged in successfully.' });
-      router.push('/');
+      if (user.role === 'ADMIN') router.push('/admin/dashboard');
+      else if (user.role === 'SELLER') router.push('/seller/dashboard');
+      else router.push('/');
     } catch (err) {
       const msg = getErrorMessage(err);
       setLoginError(msg);

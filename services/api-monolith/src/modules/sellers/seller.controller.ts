@@ -88,7 +88,8 @@ export const registerSeller = async (req: AuthRequest, res: Response): Promise<v
       ...(body.logo        ? { logo:        body.logo as string }        : {}),
       ...(body.banner      ? { banner:      body.banner as string }      : {}),
       ...(body.panNumber   ? { panNumber:   body.panNumber as string }   : {}),
-      ...(body.bankDetails ? { bankDetails: body.bankDetails as object } : {}),
+      ...(body.bankDetails      ? { bankDetails:      body.bankDetails as object }      : {}),
+      ...(body.physicalLocation ? { physicalLocation: body.physicalLocation as object } : {}),
     });
     res.status(201).json({ success: true, data: seller });
   } catch (err: unknown) { handleError(err, res); }

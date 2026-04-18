@@ -134,6 +134,20 @@ function startOfDay(d = new Date()): Date {
 
 // ── Route handlers ────────────────────────────────────────────────────────────
 
+export const publicStats = async (_req: Request, res: Response): Promise<void> => {
+  const db = mongoose.connection.db!;
+  let products = 0, sellers = 0, users = 0, orders = 0;
+  try {
+    [products, sellers, users, orders] = await Promise.all([
+      Product.countDocuments({ isActive: true }),
+      db.collection('sellers').countDocuments({ status: 'ACTIVE' }),
+      db.collection('users').countDocuments({}),
+      db.collection('orders').countDocuments({}),
+    ]);
+  } catch { /* non-fatal */ }
+  res.json({ success: true, data: { products, sellers, users, orders, coverage: 'Kathmandu Valley' } });
+};
+
 export const trackEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     const { type, userId, sessionId, productId, categorySlug, searchQuery, metadata } = req.body as {

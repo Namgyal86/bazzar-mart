@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { toast } from '@/hooks/use-toast';
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -31,7 +31,6 @@ export default function OAuthCallbackPage() {
       return;
     }
 
-    // Decode the JWT payload (no verification needed — backend already verified)
     try {
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
       setAuth(
@@ -49,7 +48,9 @@ export default function OAuthCallbackPage() {
         refreshToken,
       );
       toast({ title: 'Welcome!', description: 'You have been signed in successfully.' });
-      router.replace('/');
+      if (payload.role === 'ADMIN') router.replace('/admin/dashboard');
+      else if (payload.role === 'SELLER') router.replace('/seller/dashboard');
+      else router.replace('/');
     } catch {
       toast({ title: 'Login failed', description: 'Could not parse auth response', variant: 'destructive' });
       router.replace('/auth/login');
@@ -63,5 +64,22 @@ export default function OAuthCallbackPage() {
         <p className="text-gray-400 text-sm">Completing sign-in…</p>
       </div>
     </div>
+  );
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#060810' }}>
+          <div className="text-center space-y-4">
+            <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+            <p className="text-gray-400 text-sm">Completing sign-in…</p>
+          </div>
+        </div>
+      }
+    >
+      <OAuthCallbackInner />
+    </Suspense>
   );
 }

@@ -10,6 +10,7 @@ import {
   platformHealth,
   adminRevenue,
   adminSearches,
+  publicStats,
 } from './analytics.controller';
 
 const router = Router();
@@ -17,6 +18,7 @@ const router = Router();
 // Public
 router.post('/analytics/event',            trackEvent);
 router.get ('/analytics/platform-health',  platformHealth);
+router.get ('/stats',                       publicStats);
 
 // Admin
 router.get ('/analytics/admin/settings',  authenticate, requireRole('ADMIN'), getSettings);

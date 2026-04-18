@@ -49,11 +49,11 @@ const DEFAULT_SLIDES = [
   },
 ];
 
-const STATS = [
-  { icon: ShoppingBag, value: '5,000+',  label: 'Products' },
-  { icon: Users,       value: '100+',    label: 'Sellers' },
-  { icon: MapPin,      value: '77',      label: 'Districts' },
-  { icon: Truck,       value: '10K+',    label: 'Orders Delivered' },
+const DEFAULT_STATS = [
+  { icon: ShoppingBag, value: '5,000+', label: 'Products' },
+  { icon: Users,       value: '100+',   label: 'Sellers' },
+  { icon: MapPin,      value: 'KTM',    label: 'Kathmandu Valley' },
+  { icon: Truck,       value: '10K+',   label: 'Orders Delivered' },
 ];
 
 const BG_GRADIENTS = [
@@ -90,6 +90,22 @@ export function HeroSection() {
   const [slides, setSlides] = useState<SlideData[]>(DEFAULT_SLIDES as any);
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [stats, setStats] = useState(DEFAULT_STATS);
+
+  useEffect(() => {
+    fetch('/api/v1/stats')
+      .then(r => r.json())
+      .then(({ data }) => {
+        if (!data) return;
+        setStats([
+          { icon: ShoppingBag, value: data.products >= 1000 ? `${(data.products / 1000).toFixed(1).replace(/\.0$/, '')}K+` : `${data.products}+`, label: 'Products' },
+          { icon: Users,       value: data.sellers >= 100   ? `${data.sellers}+`  : `${data.sellers}`,  label: 'Sellers' },
+          { icon: MapPin,      value: 'KTM',                                                             label: 'Kathmandu Valley' },
+          { icon: Truck,       value: data.orders  >= 1000  ? `${Math.floor(data.orders / 1000)}K+`  : `${data.orders}+`, label: 'Orders Delivered' },
+        ]);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     bannerApi.list()
@@ -241,7 +257,7 @@ export function HeroSection() {
 
           {/* Stats — persistent */}
           <div className="grid grid-cols-4 gap-4">
-            {STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <motion.div
                 key={s.label}
                 custom={i}

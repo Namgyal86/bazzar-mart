@@ -33,6 +33,9 @@ interface Step1 {
   phone: string;
   city: string;
   description: string;
+  physicalAddress: string;
+  physicalDistrict: string;
+  physicalLandmark: string;
 }
 
 interface Step2 {
@@ -252,6 +255,9 @@ export default function SellerRegisterPage() {
     phone: '',
     city: '',
     description: '',
+    physicalAddress: '',
+    physicalDistrict: 'Kathmandu',
+    physicalLandmark: '',
   });
 
   const [step2, setStep2] = useState<Step2>({
@@ -319,6 +325,11 @@ export default function SellerRegisterPage() {
             city: step1.city,
             businessType: step1.businessType,
             email: step2.email,
+            physicalLocation: {
+              address:  step1.physicalAddress,
+              district: step1.physicalDistrict,
+              landmark: step1.physicalLandmark,
+            },
           },
           {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -833,6 +844,53 @@ export default function SellerRegisterPage() {
                     />
                   </div>
                 </Field>
+
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '16px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <MapPin style={{ width: '14px', height: '14px', color: 'var(--ap)' }} />
+                    Physical Store Location
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <Field label="Store Address">
+                      <div style={{ position: 'relative' }}>
+                        <MapPin style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+                        <input
+                          placeholder="e.g. New Road, Kathmandu"
+                          value={step1.physicalAddress}
+                          onChange={e => handleStep1Change('physicalAddress', e.target.value)}
+                          style={{ ...inputStyle(), paddingLeft: '38px' }}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'var(--ap)'; e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                        />
+                      </div>
+                    </Field>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <Field label="District">
+                        <select
+                          value={step1.physicalDistrict}
+                          onChange={e => handleStep1Change('physicalDistrict', e.target.value)}
+                          style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 12px', color: '#fff', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const, cursor: 'pointer' }}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'var(--ap)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                        >
+                          {['Kathmandu', 'Lalitpur', 'Bhaktapur'].map(d => (
+                            <option key={d} value={d} style={{ background: '#1a1f2e' }}>{d}</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Landmark (optional)">
+                        <input
+                          placeholder="e.g. Near Ratna Park"
+                          value={step1.physicalLandmark}
+                          onChange={e => handleStep1Change('physicalLandmark', e.target.value)}
+                          style={inputStyle()}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'var(--ap)'; e.currentTarget.style.boxShadow = '0 0 0 3px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
 
                 <Field label="Store Description (optional)">
                   <div style={{ position: 'relative' }}>

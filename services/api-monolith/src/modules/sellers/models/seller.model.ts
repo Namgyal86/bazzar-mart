@@ -19,6 +19,7 @@ export interface ISeller extends Document {
   panNumber?:              string;
   bankDetails?:            { bankName: string; accountNumber: string; accountName: string };
   notificationPreferences?: Record<string, boolean>;
+  physicalLocation?:       { address: string; district: string; landmark?: string; lat?: number; lng?: number };
 }
 
 const SellerSchema = new Schema<ISeller>({
@@ -40,6 +41,7 @@ const SellerSchema = new Schema<ISeller>({
   panNumber:               { type: String },
   bankDetails:             { type: Schema.Types.Mixed },
   notificationPreferences: { type: Schema.Types.Mixed },
+  physicalLocation:        { type: Schema.Types.Mixed },
 }, { timestamps: true });
 
 export const Seller = mongoose.models.Seller as mongoose.Model<ISeller>
