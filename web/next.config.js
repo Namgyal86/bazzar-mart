@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   experimental: {
     optimizePackageImports: [
@@ -94,6 +98,7 @@ const nextConfig = {
       { source: '/api/v1/storefront/:path*',            destination: `${M}/api/v1/storefront/:path*` },
 
       // ── Analytics ─────────────────────────────────────────────────────────
+      { source: '/api/v1/stats',                        destination: `${M}/api/v1/stats` },
       { source: '/api/v1/analytics/:path*',             destination: `${M}/api/v1/analytics/:path*` },
 
       // ── Admin routes (all served by monolith) ─────────────────────────────

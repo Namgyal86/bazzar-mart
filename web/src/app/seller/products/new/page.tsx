@@ -12,12 +12,17 @@ import { toast } from '@/hooks/use-toast';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
 import Link from 'next/link';
 
+const toNum = (v: unknown) =>
+  v === '' || v === undefined || v === null ? NaN : Number(v);
+const toNumOpt = (v: unknown) =>
+  v === '' || v === undefined || v === null ? undefined : Number(v);
+
 const schema = z.object({
   name:        z.string().min(3, 'At least 3 characters'),
   description: z.string().min(20, 'At least 20 characters'),
-  price:       z.coerce.number().min(1, 'Required'),
-  salePrice:   z.coerce.number().optional(),
-  stock:       z.coerce.number().min(0),
+  price:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid price' }).min(1, 'Price is required')),
+  salePrice:   z.preprocess(toNumOpt, z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional()),
+  stock:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid quantity' }).min(0)),
   category:    z.string().min(1, 'Select a category'),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
@@ -64,9 +69,11 @@ export default function NewProductPage() {
     defaultValues: { stock: 10 },
   });
 
-  const price = watch('price');
-  const salePrice = watch('salePrice');
-  const discount = price && salePrice && salePrice < price
+  const priceRaw = watch('price');
+  const salePriceRaw = watch('salePrice');
+  const price = Number(priceRaw) || 0;
+  const salePrice = Number(salePriceRaw) || 0;
+  const discount = price > 0 && salePrice > 0 && salePrice < price
     ? Math.round(((price - salePrice) / price) * 100)
     : 0;
 
@@ -77,9 +84,15 @@ export default function NewProductPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await apiClient.post('/api/v1/seller/products', {
-        ...data,
-        images: images.filter(Boolean),
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        name:        data.name,
+        description: data.description,
+        price:       data.price,
+        stock:       data.stock,
+        category:    data.category,
+        salePrice:   data.salePrice || undefined,
+        brand:       data.brand || undefined,
+        tags:        data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        images:      images.filter(Boolean),
       });
       toast({ title: 'Product created!', description: `${data.name} is now live.` });
       router.push('/seller/products');
@@ -184,7 +197,7 @@ export default function NewProductPage() {
             <div>
               <label className={labelCls}>Sale Price (Rs.)</label>
               <FieldInput type="number" placeholder="0" {...register('salePrice')} />
-              {discount > 0 && <p className="text-xs text-green-400 mt-1">{discount}% off</p>}
+              {discount > 0 && <p className="text-xs text-green-400 mt-1">–{discount}% off</p>}
             </div>
             <div>
               <label className={labelCls}>Stock Quantity *</label>
@@ -196,10 +209,10 @@ export default function NewProductPage() {
             <div className="rounded-xl p-4 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wider">Price Preview</p>
               <div className="flex items-baseline gap-2.5">
-                <span className="text-2xl font-black text-white">Rs. {(salePrice || price)?.toLocaleString()}</span>
+                <span className="text-2xl font-black text-white">Rs. {(salePrice > 0 ? salePrice : price).toLocaleString()}</span>
                 {discount > 0 && (
                   <>
-                    <span className="text-gray-600 line-through text-sm">Rs. {price?.toLocaleString()}</span>
+                    <span className="text-gray-600 line-through text-sm">Rs. {price.toLocaleString()}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full font-bold text-green-400" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
                       -{discount}%
                     </span>

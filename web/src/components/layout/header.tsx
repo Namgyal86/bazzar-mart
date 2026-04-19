@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { useThemeStore } from '@/store/theme.store';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -62,8 +63,10 @@ export function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { logo, siteName } = useThemeStore();
-  const openCart     = useCartStore(state => state.openCart);
-  const cartCount    = useCartStore(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+  const openCart      = useCartStore(state => state.openCart);
+  const authCartCount  = useCartStore(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+  const guestCartCount = useGuestCartStore(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+  const cartCount = isAuthenticated ? authCartCount : guestCartCount;
   const wishlistCount = useWishlistStore(state => state.items.length);
 
   const [searchQuery,    setSearchQuery]    = useState('');

@@ -28,6 +28,10 @@ const EnvSchema = z.object({
 
   // Public URLs
   API_BASE_URL:        z.string().url().default('http://localhost:8100'),
+  // PUBLIC_API_URL: browser-accessible URL for payment gateway callbacks.
+  // In Docker, API_BASE_URL is the internal hostname (api-monolith:8100).
+  // Set this to http://localhost:3000 so callbacks go through Next.js rewrites.
+  PUBLIC_API_URL:      z.string().url().optional(),
   WEB_URL:             z.string().url().default('http://localhost:3000'),
 
   // Email — SendGrid

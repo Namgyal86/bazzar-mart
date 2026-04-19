@@ -115,10 +115,12 @@ export function registerOrderEventHandlers(): void {
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Email verification gate (FEAT-02)
-    const orderingUser = await User.findById(req.user!.userId).select('isEmailVerified');
-    if (orderingUser && orderingUser.isEmailVerified === false) {
-      res.status(400).json({ success: false, error: 'Email verification required before checkout' }); return;
+    // Email verification gate — skipped in development so devs can test without email setup
+    if (process.env.NODE_ENV === 'production') {
+      const orderingUser = await User.findById(req.user!.userId).select('isEmailVerified');
+      if (orderingUser && orderingUser.isEmailVerified === false) {
+        res.status(400).json({ success: false, error: 'Email verification required before checkout' }); return;
+      }
     }
 
     const body = createOrderSchema.parse(req.body);
@@ -375,21 +377,48 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
     if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
       res.status(400).json({ success: false, error: 'Cannot cancel order at this stage' }); return;
     }
+    const reason = (req.body as { reason?: string }).reason;
     order.status = 'CANCELLED';
-    order.statusHistory.push({ status: 'CANCELLED', timestamp: new Date(), note: (req.body as { reason?: string }).reason });
+    order.statusHistory.push({ status: 'CANCELLED', timestamp: new Date(), note: reason });
 
-    // Restore stock for all order items (FEAT-04, D-14)
+    // Restore stock for all order items
     await Promise.all(
       order.items.map(item =>
-        Product.findByIdAndUpdate(
-          item.productId,
-          { $inc: { stock: item.quantity } },
-        ).catch((err: unknown) => console.error(`[orders] stock restore failed for product ${item.productId}:`, err))
+        Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+          .catch((err: unknown) => console.error(`[orders] stock restore failed for product ${item.productId}:`, err))
       )
     );
 
     await order.save();
     res.json({ success: true, data: order });
+
+    // Trigger refund if the order was already paid
+    if (order.paymentStatus === 'PAID') {
+      const { Payment } = await import('../payments/models/payment.model');
+      const { khaltiRefund } = await import('../payments/services/khalti.service');
+      const { khaltiErrorMessage } = await import('../payments/services/khalti.service');
+      const payment = await Payment.findOne({ orderId: order.id, status: 'SUCCESS' });
+      if (payment) {
+        try {
+          if (payment.gateway === 'KHALTI' && payment.pidx) {
+            await khaltiRefund(payment.pidx);
+          }
+          payment.status       = 'REFUNDED';
+          payment.refundReason = reason ?? 'Order cancelled by customer';
+          await payment.save();
+          publishEvent('payment.refunded', {
+            paymentId: (payment as unknown as { id: string }).id,
+            orderId:   payment.orderId,
+            userId:    payment.userId,
+            amount:    payment.amount,
+            gateway:   payment.gateway,
+            reason:    payment.refundReason,
+          }).catch(() => {});
+        } catch (refundErr) {
+          console.error('[orders] refund failed after cancel:', refundErr);
+        }
+      }
+    }
   } catch (err: unknown) {
     handleError(err, res);
   }

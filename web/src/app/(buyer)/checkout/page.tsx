@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ChevronRight,
@@ -26,21 +26,45 @@ import { useAuthStore } from '@/store/auth.store';
 import { userApi, Address } from '@/lib/api/user.api';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
 import { paymentApi } from '@/lib/api/payment.api';
+import { cartApi } from '@/lib/api/cart.api';
 
 type Step = 'address' | 'payment' | 'confirm';
 
-const PAYMENT_METHODS = [
-  { id: 'khalti',  name: 'Khalti',             desc: 'Digital wallet payment',  icon: '💜', badge: 'Popular' },
-  { id: 'esewa',   name: 'eSewa',              desc: 'Digital wallet payment',  icon: '💚', badge: 'Popular' },
-  { id: 'fonepay', name: 'Fonepay QR',         desc: 'Bank QR payment',         icon: '🏦', badge: null },
-  { id: 'card',    name: 'Credit / Debit Card', desc: 'Visa, Mastercard, Amex', icon: '💳', badge: null },
-  { id: 'cod',     name: 'Cash on Delivery',   desc: 'Pay when delivered',      icon: '💵', badge: null },
+const KhaltiLogo = () => (
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
+    <rect width="48" height="48" rx="10" fill="#5C2D91"/>
+    <path d="M14 12h5v10.5l8-10.5h6.5L24 24l10.5 12H28L19 25.5V36h-5V12z" fill="white"/>
+  </svg>
+);
+
+const EsewaLogo = () => (
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
+    <rect width="48" height="48" rx="10" fill="#60BB46"/>
+    <path d="M24 10c-7.73 0-14 6.27-14 14s6.27 14 14 14 14-6.27 14-14S31.73 10 24 10zm-2 20.5c-4.14 0-7.5-3.36-7.5-7.5 0-3.9 2.98-7.1 6.8-7.46v3.02A4.51 4.51 0 0019.5 23c0 2.49 2.01 4.5 4.5 4.5.77 0 1.5-.2 2.13-.54l2.12 2.13A7.46 7.46 0 0122 30.5zm7.46-4.13l-2.12-2.12c.43-.72.66-1.55.66-2.25 0-1.24-.5-2.36-1.3-3.18V16c3.56.87 6.3 3.9 6.3 7.5 0 1.06-.22 2.07-.6 2.98l-.94-.11z" fill="white"/>
+  </svg>
+);
+
+const FonepayLogo = () => (
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
+    <rect width="48" height="48" rx="10" fill="#E8232A"/>
+    <path d="M16 14h16a2 2 0 012 2v16a2 2 0 01-2 2H16a2 2 0 01-2-2V16a2 2 0 012-2zm0 2v16h16V16H16zm8 2a6 6 0 110 12A6 6 0 0124 18zm0 2a4 4 0 100 8 4 4 0 000-8zm0 2a2 2 0 110 4 2 2 0 010-4z" fill="white"/>
+  </svg>
+);
+
+const PAYMENT_METHODS: Array<{
+  id: string; name: string; desc: string;
+  logo: ReactNode; badge: string | null;
+}> = [
+  { id: 'khalti',  name: 'Khalti',             desc: 'Pay via Khalti wallet',   logo: <KhaltiLogo />,  badge: 'Popular' },
+  { id: 'esewa',   name: 'eSewa',              desc: 'Pay via eSewa wallet',    logo: <EsewaLogo />,   badge: 'Popular' },
+  { id: 'fonepay', name: 'Fonepay QR',       desc: 'Bank QR payment',    logo: <FonepayLogo />, badge: null },
+  { id: 'cod',     name: 'Cash on Delivery', desc: 'Pay when delivered', logo: <span className="text-2xl">💵</span>, badge: null },
 ];
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalAmount, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { items, totalAmount, clearCart, setItems } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [step, setStep]                       = useState<Step>('address');
   const [addresses, setAddresses]             = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState('');
@@ -54,12 +78,24 @@ export default function CheckoutPage() {
     fullName: '', phone: '', addressLine1: '', city: '', district: '', province: 'Bagmati',
   });
   const [addingAddress, setAddingAddress] = useState(false);
+  const submittingRef = useRef(false);
 
   const subtotal              = totalAmount();
   const shipping              = subtotal > 1000 ? 0 : 100;
   const total                 = subtotal + shipping - couponDiscount;
   const freeShippingThreshold = 1000;
   const freeShippingProgress  = Math.min((subtotal / freeShippingThreshold) * 100, 100);
+
+  // Sync cart from server on mount so items are always fresh after page refresh
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    cartApi.get()
+      .then((res) => {
+        const backendItems = res.data?.data?.items ?? [];
+        setItems(backendItems);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, setItems]);
 
   useEffect(() => {
     if (user) {
@@ -119,40 +155,52 @@ export default function CheckoutPage() {
       toast({ title: 'Cart is empty', variant: 'destructive' });
       return;
     }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsPlacing(true);
     try {
       const addr      = addresses.find(a => a.id === selectedAddress);
       const addrParts = addr?.address.split(', ') ?? ['Kathmandu', 'Kathmandu'];
-      const orderRes = await orderApi.create({
-        items: items.map(i => ({
-          productId:    i.productId,
-          productName:  i.productName,
-          productImage: i.productImage || '',
-          sellerId:     i.sellerId ?? '',
-          sellerName:   i.sellerName,
-          unitPrice:    i.unitPrice,
-          quantity:     i.quantity,
-        })),
-        shippingAddress: {
-          fullName:     addr?.name ?? 'Guest',
-          phone:        addr?.phone ?? '',
-          addressLine1: addrParts[0] ?? addr?.address ?? '',
-          city:         addrParts[1] ?? 'Kathmandu',
-          district:     'Kathmandu',
-          province:     'Bagmati',
-        },
-        paymentMethod: selectedPayment.toUpperCase(),
-        couponCode:    couponApplied ? couponCode : undefined,
-      }) as any;
 
-      const orderId = orderRes?.data?.data?._id || orderRes?.data?.data?.id;
-      const returnUrl = `${window.location.origin}/payment/verify`;
+      // Reuse a pending order if the user returned from a payment gateway without completing payment.
+      // This avoids creating a duplicate order and double-decrementing stock.
+      const pendingOrderId = typeof window !== 'undefined'
+        ? sessionStorage.getItem('pendingOrderId')
+        : null;
 
-      // For COD or card — no gateway redirect needed
-      if (selectedPayment === 'cod' || selectedPayment === 'card') {
-        clearCart();
+      let orderId = pendingOrderId;
+
+      if (!orderId) {
+        const orderRes = await orderApi.create({
+          items: items.map(i => ({
+            productId:    i.productId,
+            productName:  i.productName,
+            productImage: i.productImage || '',
+            sellerId:     i.sellerId ?? '',
+            sellerName:   i.sellerName,
+            unitPrice:    i.unitPrice,
+            quantity:     i.quantity,
+          })),
+          shippingAddress: {
+            fullName:     addr?.name ?? 'Guest',
+            phone:        addr?.phone ?? '',
+            addressLine1: addrParts[0] ?? addr?.address ?? '',
+            city:         addrParts[1] ?? 'Kathmandu',
+            district:     'Kathmandu',
+            province:     'Bagmati',
+          },
+          paymentMethod: selectedPayment.toUpperCase(),
+          couponCode:    couponApplied ? couponCode : undefined,
+        }) as any;
+        orderId = orderRes?.data?.data?._id || orderRes?.data?.data?.id;
+      }
+
+      // For COD — no gateway redirect needed
+      if (selectedPayment === 'cod') {
+        sessionStorage.removeItem('pendingOrderId');
+        await clearCart();
         toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
-        router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
+        router.push(orderId ? `/order/success/${orderId}` : '/account/orders');
         return;
       }
 
@@ -162,19 +210,27 @@ export default function CheckoutPage() {
         const payData = payRes?.data?.data;
 
         if (payData?.redirect) {
-          // Khalti: redirect to payment_url
-          clearCart();
+          // Save orderId so we can reuse it if the user abandons payment and returns.
+          // Do NOT clear the cart here — clear it only after successful payment (on the success page).
+          sessionStorage.setItem('pendingOrderId', orderId);
           window.location.href = payData.redirect;
           return;
         }
 
+        if (payData?.method === 'KHALTI_DEV_MOCK') {
+          sessionStorage.removeItem('pendingOrderId');
+          await clearCart();
+          toast({ title: 'Order placed (dev mock)', description: 'Khalti key not configured — payment auto-approved.' });
+          router.push(orderId ? `/order/success/${orderId}` : '/account/orders');
+          return;
+        }
+
         if (payData?.method === 'ESEWA' && payData?.esewaData) {
-          // eSewa: submit a hidden form
-          clearCart();
+          sessionStorage.setItem('pendingOrderId', orderId);
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = payData.formUrl || 'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
-          Object.entries({ ...payData.esewaData, success_url: returnUrl + '?gateway=esewa' }).forEach(([k, v]) => {
+          Object.entries(payData.esewaData as Record<string, unknown>).forEach(([k, v]) => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = k;
@@ -186,19 +242,29 @@ export default function CheckoutPage() {
           return;
         }
 
+        if (payData?.method === 'FONEPAY' && payData?.qrData) {
+          sessionStorage.setItem('pendingOrderId', orderId);
+          const { prn, amount: qrAmount } = payData.qrData as { prn: string; amount: number };
+          router.push(`/payment/fonepay?prn=${encodeURIComponent(prn)}&amount=${qrAmount}&orderId=${orderId}`);
+          return;
+        }
+
         // Dev fallback (no real keys) — treat as success
-        clearCart();
+        sessionStorage.removeItem('pendingOrderId');
+        await clearCart();
         toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
-        router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
+        router.push(orderId ? `/order/success/${orderId}` : '/account/orders');
         return;
       }
 
-      clearCart();
+      sessionStorage.removeItem('pendingOrderId');
+      await clearCart();
       toast({ title: 'Order placed successfully!', description: 'Your order is confirmed.' });
-      router.push(orderId ? `/account/orders/${orderId}` : '/account/orders');
+      router.push(orderId ? `/order/success/${orderId}` : '/account/orders');
     } catch (err) {
       toast({ title: 'Order failed', description: getErrorMessage(err), variant: 'destructive' });
     } finally {
+      submittingRef.current = false;
       setIsPlacing(false);
     }
   };
@@ -510,16 +576,16 @@ export default function CheckoutPage() {
                           onChange={() => setSelectedPayment(method.id)}
                           className="sr-only"
                         />
-                        {/* Icon bubble */}
+                        {/* Logo bubble */}
                         <div
                           className={cn(
-                            'w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-all duration-200',
+                            'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 overflow-hidden',
                             isSelected
                               ? 'bg-white dark:bg-gray-800 shadow-md'
                               : 'bg-gray-50 dark:bg-gray-800',
                           )}
                         >
-                          {method.icon}
+                          {method.logo}
                         </div>
                         {/* Name + description */}
                         <div className="flex-1 min-w-0">
@@ -697,7 +763,7 @@ export default function CheckoutPage() {
                         Payment via
                       </div>
                       <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                        <span>{PAYMENT_METHODS.find(m => m.id === selectedPayment)?.icon}</span>
+                        <span className="w-5 h-5 inline-flex items-center">{PAYMENT_METHODS.find(m => m.id === selectedPayment)?.logo}</span>
                         {PAYMENT_METHODS.find(m => m.id === selectedPayment)?.name}
                       </div>
                     </div>

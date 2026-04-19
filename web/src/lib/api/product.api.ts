@@ -90,11 +90,14 @@ export const productApi = {
   listCategories: () =>
     apiClient.get<{ success: true; data: Category[] }>('/api/v1/categories'),
 
-  // Seller operations
+  // Seller/Admin operations
   create: (data: FormData) =>
     apiClient.post<{ success: true; data: Product }>('/api/v1/products', data, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+
+  createJson: (data: Record<string, unknown>) =>
+    apiClient.post<{ success: true; data: Product }>('/api/v1/products', data),
 
   update: (id: string, data: Partial<Product>) =>
     apiClient.put<{ success: true; data: Product }>(`/api/v1/products/${id}`, data),

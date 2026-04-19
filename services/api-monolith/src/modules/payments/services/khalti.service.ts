@@ -56,6 +56,10 @@ export function isKhaltiSuccess(status: KhaltiStatus): boolean {
   return status === 'Completed';
 }
 
+export async function khaltiRefund(pidx: string): Promise<void> {
+  await axios.post(`${BASE_URL}/epayment/refund/`, { pidx }, { headers: authHeader() });
+}
+
 export function khaltiErrorMessage(err: unknown): string {
   if (err instanceof AxiosError && err.response?.data) {
     const d = err.response.data;

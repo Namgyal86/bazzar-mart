@@ -6,10 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, ShoppingBag, Star, Shield, Zap, ArrowRight, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/auth.store';
+import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
 import { toast } from '@/hooks/use-toast';
 import { authApi, oauthUrls } from '@/lib/api/auth.api';
 import { getErrorMessage } from '@/lib/api/client';
@@ -30,7 +32,13 @@ const PERKS = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
   const { setAuth } = useAuthStore();
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setReturnUrl(p.get('returnUrl'));
+  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
@@ -40,6 +48,14 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  useEffect(() => {
+    const reason = sessionStorage.getItem('auth_redirect_reason');
+    if (reason === 'session_expired') {
+      sessionStorage.removeItem('auth_redirect_reason');
+      toast({ title: 'Session expired', description: 'Please sign in again to continue.', variant: 'destructive' });
+    }
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     setLoginError(null);
@@ -61,6 +77,30 @@ export default function LoginPage() {
         refreshToken,
       );
       toast({ title: 'Welcome back!', description: 'You have been logged in successfully.' });
+
+      // Merge all guest cart items into server cart
+      const guestItems = useGuestCartStore.getState().items;
+      if (guestItems.length > 0) {
+        await Promise.allSettled(
+          guestItems.map((item) =>
+            useCartStore.getState().addItem({
+              productId:    item.productId,
+              variantId:    item.variantId,
+              productName:  item.productName,
+              productImage: item.productImage,
+              sellerId:     item.sellerId,
+              sellerName:   item.sellerName,
+              quantity:     item.quantity,
+              unitPrice:    item.unitPrice,
+              salePrice:    item.salePrice,
+              stock:        item.stock,
+            }),
+          ),
+        );
+        useGuestCartStore.getState().clearCart();
+      }
+
+      if (returnUrl) { router.push(returnUrl); return; }
       if (user.role === 'ADMIN') router.push('/admin/dashboard');
       else if (user.role === 'SELLER') router.push('/seller/dashboard');
       else router.push('/');

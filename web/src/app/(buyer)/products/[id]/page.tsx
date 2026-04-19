@@ -10,7 +10,10 @@ import { Star, ShoppingCart, Heart, Share2, Shield, Truck, RotateCcw, ChevronRig
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
 import { useWishlistStore } from '@/store/wishlist.store';
+import { useAuthStore } from '@/store/auth.store';
+import { useRecentlyViewedStore } from '@/store/recently-viewed.store';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,7 +28,7 @@ interface Product {
   id: string;
   name: string;
   brand: string;
-  seller: { name: string; slug: string; rating: number; totalSales: number };
+  seller: { id: string; name: string; slug: string; rating: number; totalSales: number };
   images: string[];
   basePrice: number;
   salePrice: number;
@@ -54,7 +57,7 @@ const EMPTY_PRODUCT: Product = {
   id: '',
   name: 'Loading...',
   brand: '',
-  seller: { name: '', slug: '', rating: 0, totalSales: 0 },
+  seller: { id: '', name: '', slug: '', rating: 0, totalSales: 0 },
   images: [],
   basePrice: 0,
   salePrice: 0,
@@ -80,9 +83,14 @@ export default function ProductDetailPage() {
   const items     = useCartStore(state => state.items);
   const setItems  = useCartStore(state => state.setItems);
   const { toggleItem: toggleWishlist, isInWishlist } = useWishlistStore();
+  const { isAuthenticated } = useAuthStore();
+
+  const trackViewed    = useRecentlyViewedStore(state => state.track);
+  const recentProducts = useRecentlyViewedStore(state => state.products);
 
   const [product, setProduct]               = useState<Product>(EMPTY_PRODUCT);
   const [reviews, setReviews]               = useState<Review[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loading, setLoading]               = useState(true);
   const [quantity, setQuantity]             = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -115,8 +123,9 @@ export default function ProductDetailPage() {
           name: raw.name ?? 'Product',
           brand: raw.brand ?? raw.tags?.[0] ?? '',
           seller: {
+            id: raw.sellerId ?? raw.seller?._id ?? '',
             name: raw.sellerName ?? raw.seller?.name ?? raw.seller?.storeName ?? 'Unknown Seller',
-            slug: raw.seller?.slug ?? raw.sellerId ?? '',
+            slug: raw.seller?.slug ?? '',
             rating: raw.seller?.rating ?? raw.sellerRating ?? 0,
             totalSales: raw.seller?.totalSales ?? 0,
           },
@@ -135,6 +144,30 @@ export default function ProductDetailPage() {
         });
 
         if (variants.length > 0) setSelectedVariant(variants[0]);
+
+        // Track recently viewed
+        trackViewed({
+          id:       raw._id ?? raw.id ?? id,
+          name:     raw.name ?? 'Product',
+          image:    (Array.isArray(raw.images) ? raw.images[0] : null) ?? '',
+          price:    raw.price ?? raw.basePrice ?? 0,
+          salePrice: raw.salePrice,
+          rating:   raw.rating ?? raw.averageRating ?? 0,
+          category: raw.category?.name ?? raw.categoryName ?? raw.category ?? '',
+        });
+
+        // Fetch related products by category
+        const cat = raw.category?.name ?? raw.category ?? '';
+        if (cat) {
+          productApi.list({ category: cat, limit: 6 })
+            .then((r: any) => {
+              const list: any[] = (r.data?.data ?? [])
+                .filter((p: any) => (p._id ?? p.id) !== (raw._id ?? raw.id))
+                .slice(0, 5);
+              setRelatedProducts(list);
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -178,23 +211,46 @@ export default function ProductDetailPage() {
     }
   };
 
-  const addToCart = () => {
-    const newItem = {
-      id: `${product.id}-${selectedVariant?.id ?? 'default'}`,
-      productId: product.id,
-      variantId: selectedVariant?.id,
-      productName: product.name,
+  const addToCart = async () => {
+    // Read directly from store state to avoid Zustand persist hydration timing issues
+    const cartItem = {
+      productId:    product.id,
+      variantId:    selectedVariant?.id,
+      productName:  product.name,
       productImage: product.images[0] ?? '',
-      sellerId: product.seller.slug || undefined,
-      sellerName: product.seller.name,
+      sellerId:     product.seller.id || undefined,
+      sellerName:   product.seller.name,
       quantity,
-      unitPrice: finalPrice,
-      totalPrice: finalPrice * quantity,
-      stock: product.stock,
+      unitPrice:    finalPrice,
+      stock:        product.stock,
     };
-    setItems([...items.filter(i => i.id !== newItem.id), newItem]);
-    openCart();
-    toast({ title: 'Added to cart!', description: `${product.name} × ${quantity}` });
+
+    const { accessToken, refreshToken } = useAuthStore.getState();
+
+    if (!accessToken && !refreshToken) {
+      // Guest mode — add to local cart, no login redirect
+      useGuestCartStore.getState().addItem(cartItem);
+      openCart();
+      toast({ title: 'Added to cart!', description: `${product.name} × ${quantity}` });
+      return;
+    }
+
+    try {
+      await useCartStore.getState().addItem(cartItem);
+      openCart();
+      toast({ title: 'Added to cart!', description: `${product.name} × ${quantity}` });
+    } catch (err: any) {
+      // 401s are handled by the axios interceptor (token refresh / redirect to login)
+      if (err?.response?.status !== 401) {
+        setItems([...items.filter(i => i.productId !== product.id), {
+          id: `${product.id}-${selectedVariant?.id ?? 'default'}`,
+          ...cartItem,
+          totalPrice: finalPrice * quantity,
+        }]);
+        openCart();
+        toast({ title: 'Added to cart!', description: `${product.name} × ${quantity}` });
+      }
+    }
   };
 
   if (loading) {
@@ -352,7 +408,7 @@ export default function ProductDetailPage() {
           {/* Variants */}
           {product.variants.length > 0 && (
             <div>
-              <h3 className="font-semibold mb-2">Storage & Color</h3>
+              <h3 className="font-semibold mb-2">Options</h3>
               <div className="flex flex-wrap gap-2">
                 {product.variants.map((v) => (
                   <button
@@ -406,7 +462,7 @@ export default function ProductDetailPage() {
               className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-semibold text-sm transition-all hover:brightness-110 disabled:opacity-50"
               style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.15)', border: '1px solid hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
               disabled={product.stock === 0}
-              onClick={() => { addToCart(); router.push('/checkout'); }}
+              onClick={async () => { await addToCart(); router.push('/checkout'); }}
             >
               Buy Now
             </button>
@@ -564,6 +620,73 @@ export default function ProductDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ── Related Products ── */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-14">
+          <h2 className="text-xl font-bold mb-5">You May Also Like</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {relatedProducts.map((p: any) => {
+              const pid   = p._id ?? p.id;
+              const price = p.salePrice ?? p.price ?? 0;
+              const base  = p.price ?? p.basePrice ?? 0;
+              const img   = Array.isArray(p.images) ? p.images[0] : '';
+              return (
+                <Link key={pid} href={`/products/${pid}`} className="group bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="relative h-36 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                    {img && (img.startsWith('http') || img.startsWith('/')) ? (
+                      <Image src={img} alt={p.name} fill className="object-contain p-3 group-hover:scale-105 transition-transform duration-300" sizes="200px" />
+                    ) : (
+                      <Package className="w-10 h-10 text-gray-300" />
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs text-muted-foreground truncate">{p.sellerName}</p>
+                    <h4 className="text-sm font-medium line-clamp-2 mt-0.5">{p.name}</h4>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-sm font-bold text-orange-500">{formatCurrency(price)}</span>
+                      {base > price && <span className="text-xs text-muted-foreground line-through">{formatCurrency(base)}</span>}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Recently Viewed ── */}
+      {recentProducts.filter(p => p.id !== product.id).length > 0 && (
+        <div className="mt-12 pb-8">
+          <h2 className="text-xl font-bold mb-5">Recently Viewed</h2>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {recentProducts
+              .filter(p => p.id !== product.id)
+              .slice(0, 8)
+              .map(p => (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.id}`}
+                  className="group shrink-0 w-40 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div className="relative h-28 bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                    {p.image && (p.image.startsWith('http') || p.image.startsWith('/')) ? (
+                      <Image src={p.image} alt={p.name} fill className="object-contain p-2 group-hover:scale-105 transition-transform duration-300" sizes="160px" />
+                    ) : (
+                      <Package className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <h4 className="text-xs font-medium line-clamp-2">{p.name}</h4>
+                    <span className="text-xs font-bold text-orange-500 mt-1 block">
+                      {formatCurrency(p.salePrice ?? p.price)}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

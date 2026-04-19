@@ -28,10 +28,11 @@ export function ImageUpload({ value, onChange, label = 'Image', className, aspec
     setUploading(true);
     try {
       const form = new FormData();
-      form.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      form.append('image', file);
+      const res = await fetch('/api/v1/upload/image', { method: 'POST', body: form });
       const data = await res.json();
-      if (data.url) onChange(data.url);
+      const url = data.data?.url ?? data.url;
+      if (url) onChange(url);
     } catch {}
     setUploading(false);
   };

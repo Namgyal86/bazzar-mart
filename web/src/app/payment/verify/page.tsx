@@ -17,16 +17,11 @@ function PaymentVerifyContent() {
 
   useEffect(() => {
     const verify = async () => {
-      // Khalti params: pidx, transaction_id, tidx, amount, total_amount, mobile, status, purchase_order_id
-      const pidx = searchParams.get('pidx');
-      const status = searchParams.get('status');
+      const pidx            = searchParams.get('pidx');
+      const status          = searchParams.get('status');
       const purchaseOrderId = searchParams.get('purchase_order_id');
-
-      // eSewa params: data (base64 encoded response)
-      const esewaData = searchParams.get('data');
-
-      // Gateway from query
-      const gateway = searchParams.get('gateway') || (pidx ? 'khalti' : esewaData ? 'esewa' : '');
+      const esewaData       = searchParams.get('data');
+      const gateway         = searchParams.get('gateway') || (pidx ? 'khalti' : esewaData ? 'esewa' : '');
 
       try {
         if (gateway === 'khalti' || pidx) {
@@ -35,11 +30,7 @@ function PaymentVerifyContent() {
             setMessage('Payment was cancelled.');
             return;
           }
-          const res = await paymentApi.verify({
-            pidx,
-            orderId: purchaseOrderId,
-            gateway: 'KHALTI',
-          }) as any;
+          const res = await paymentApi.verify({ pidx, orderId: purchaseOrderId, gateway: 'KHALTI' }) as any;
           const payment = res.data?.data;
           if (payment?.status === 'SUCCESS') {
             setState('success');
@@ -50,10 +41,7 @@ function PaymentVerifyContent() {
           }
         } else if (gateway === 'esewa' || esewaData) {
           const decoded = JSON.parse(atob(esewaData || ''));
-          const res = await paymentApi.verify({
-            esewaData: decoded,
-            gateway: 'ESEWA',
-          }) as any;
+          const res = await paymentApi.verify({ esewaData: decoded, gateway: 'ESEWA' }) as any;
           const payment = res.data?.data;
           if (payment?.status === 'SUCCESS') {
             setState('success');
@@ -67,16 +55,14 @@ function PaymentVerifyContent() {
           setMessage('Unknown payment gateway or missing parameters.');
         }
       } catch (err: any) {
-        const apiMessage = err?.response?.data?.error;
         setState('failed');
-        setMessage(apiMessage || 'Could not verify payment. Please contact support.');
+        setMessage(err?.response?.data?.error || 'Could not verify payment. Please contact support.');
       }
     };
 
     verify();
   }, [searchParams]);
 
-  // Auto-redirect on success
   useEffect(() => {
     if (state === 'success') {
       const timer = setTimeout(() => {
@@ -87,36 +73,26 @@ function PaymentVerifyContent() {
   }, [state, orderId, router]);
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
         {state === 'verifying' && (
-          <div className="text-center">
+          <>
             <div className="w-20 h-20 bg-orange-50 dark:bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Verifying Payment
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Please wait while we confirm your payment…
-            </p>
-          </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Verifying Payment</h1>
+            <p className="text-gray-500 dark:text-gray-400">Please wait while we confirm your payment…</p>
+          </>
         )}
 
         {state === 'success' && (
-          <div className="text-center">
+          <>
             <div className="w-20 h-20 bg-green-50 dark:bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-green-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Payment Successful!
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-1">
-              Your order has been confirmed and is being processed.
-            </p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">
-              Redirecting to your orders in a moment…
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-1">Your order has been confirmed.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">Redirecting to your orders in a moment…</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href={orderId ? `/account/orders/${orderId}` : '/account/orders'}
@@ -132,19 +108,17 @@ function PaymentVerifyContent() {
                 Continue Shopping
               </Link>
             </div>
-          </div>
+          </>
         )}
 
         {state === 'failed' && (
-          <div className="text-center">
+          <>
             <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Payment Failed
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Failed</h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8">
-              {message || 'Something went wrong with your payment. Your cart has been preserved.'}
+              {message || 'Something went wrong with your payment.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -160,7 +134,7 @@ function PaymentVerifyContent() {
                 My Orders
               </Link>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -170,7 +144,7 @@ function PaymentVerifyContent() {
 export default function PaymentVerifyPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-[70vh] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
       </div>
     }>

@@ -27,6 +27,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
+
       user: null,
       accessToken: null,
       refreshToken: null,
@@ -48,6 +49,14 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'bazzar-auth',
+      storage: {
+        getItem: (key) => {
+          const v = sessionStorage.getItem(key);
+          return v ? JSON.parse(v) : null;
+        },
+        setItem: (key, value) => sessionStorage.setItem(key, JSON.stringify(value)),
+        removeItem: (key) => sessionStorage.removeItem(key),
+      },
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

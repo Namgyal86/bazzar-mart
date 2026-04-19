@@ -35,6 +35,9 @@ import { registerAnalyticsEventHandlers }      from './modules/analytics/analyti
 import { seedCategories } from './modules/products/models/category.model';
 import { seedBanners }    from './modules/products/models/banner.model';
 
+// Background jobs
+import { startOrderScheduler } from './modules/orders/order.scheduler';
+
 import { createApp } from './app';
 
 async function bootstrap(): Promise<void> {
@@ -74,7 +77,10 @@ async function bootstrap(): Promise<void> {
   await seedCategories().catch(console.error);
   await seedBanners().catch(console.error);
 
-  // 7. HTTP server
+  // 7. Background jobs
+  startOrderScheduler();
+
+  // 8. HTTP server
   const app    = createApp();
   const port   = env.PORT;
   const server = app.listen(port, () => {

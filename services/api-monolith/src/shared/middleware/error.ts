@@ -18,7 +18,9 @@ export function handleError(err: unknown, res: Response): void {
   console.error('[error]', error.message, error.stack);
 
   if ((err as { name?: string })?.name === 'ZodError') {
-    res.status(400).json({ success: false, error: (err as { errors: unknown }).errors });
+    const zodErr = err as { errors: Array<{ path: (string | number)[]; message: string }> };
+    const message = zodErr.errors.map(e => `${e.path.join('.') || 'field'}: ${e.message}`).join('; ');
+    res.status(400).json({ success: false, error: message });
     return;
   }
 

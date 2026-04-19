@@ -235,7 +235,13 @@
       "Bash(mkdir -p D:/AI_projects/ecommerce/Ecommerce/bazzar-mart/web/src/app/terms)",
       "Bash(mkdir -p D:/AI_projects/ecommerce/Ecommerce/bazzar-mart/web/src/app/privacy)",
       "Bash(mongosh *)",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")",
+      "WebFetch(domain:docs.khalti.com)",
+      "WebFetch(domain:developer.esewa.com.np)",
+      "PowerShell(Get-ChildItem \"D:\\\\E-commerce\\\\bazzar-mart\" -Depth 3 | Where-Object { $_.Name -match \"Dockerfile|docker-compose\" } | Select-Object FullName)",
+      "Bash(cmd *)",
+      "WebSearch",
+      "WebFetch(domain:hub.docker.com)"
     ]
   }
 }

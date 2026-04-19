@@ -37,10 +37,10 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.data.accessToken}`;
         return apiClient(original);
       } catch {
-        // Refresh failed → token is truly dead (user deleted, secret changed, etc.)
-        // Clear auth state and redirect to login so user can re-authenticate.
+        // Refresh failed → session is truly dead (expired, revoked, secret changed)
         useAuthStore.getState().logout();
         if (typeof window !== 'undefined') {
+          sessionStorage.setItem('auth_redirect_reason', 'session_expired');
           window.location.href = '/auth/login';
         }
       }
@@ -51,7 +51,12 @@ apiClient.interceptors.response.use(
 
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.error ?? error.message;
+    const apiError = error.response?.data?.error;
+    if (Array.isArray(apiError)) {
+      return apiError.map((e: any) => e.message ?? String(e)).join('; ');
+    }
+    if (apiError) return String(apiError);
+    return error.message;
   }
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';

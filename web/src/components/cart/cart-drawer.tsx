@@ -1,50 +1,58 @@
-﻿'use client';
+'use client';
 
 import { useEffect } from 'react';
-import { X, ShoppingBag, Trash2, Plus, Minus, Package } from 'lucide-react';
+import { X, ShoppingBag, Trash2, Plus, Minus, Package, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { cartApi } from '@/lib/api/cart.api';
-import { useAuthStore } from '@/store/auth.store';
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, updateItem, removeItem, totalAmount, totalItems } = useCartStore();
   const { isAuthenticated } = useAuthStore();
 
-  // Sync cart from backend when drawer opens and user is logged in
+  // Authenticated cart (server-synced)
+  const authStore = useCartStore();
+  // Guest cart (localStorage)
+  const guestStore = useGuestCartStore();
+
+  const items       = isAuthenticated ? authStore.items       : guestStore.items;
+  const totalItems  = isAuthenticated ? authStore.totalItems  : guestStore.totalItems;
+  const totalAmount = isAuthenticated ? authStore.totalAmount : guestStore.totalAmount;
+  const isOpen      = authStore.isOpen;
+  const closeCart   = authStore.closeCart;
+
+  // Sync from backend when drawer opens for authenticated users
   useEffect(() => {
     if (isOpen && isAuthenticated) {
       cartApi.get()
         .then((res) => {
           const backendItems = res.data.data.items;
-          if (backendItems.length > 0) {
-            useCartStore.getState().setItems(backendItems);
-          }
+          if (backendItems.length > 0) useCartStore.getState().setItems(backendItems);
         })
-        .catch(() => {}); // keep local cart on error
+        .catch(() => {});
     }
   }, [isOpen, isAuthenticated]);
 
-  // Sync item removal to backend
-  const handleRemoveItem = async (id: string, productId: string) => {
-    removeItem(id);
+  const handleRemoveItem = (id: string, productId: string, variantId?: string) => {
     if (isAuthenticated) {
+      authStore.removeItem(id);
       cartApi.removeItem(productId).catch(() => {});
+    } else {
+      guestStore.removeItem(productId, variantId);
     }
   };
 
-  // Sync quantity update to backend
-  const handleUpdateItem = async (id: string, productId: string, quantity: number) => {
-    if (quantity < 1) {
-      handleRemoveItem(id, productId);
-      return;
-    }
-    updateItem(id, quantity);
+  const handleUpdateItem = (id: string, productId: string, quantity: number, variantId?: string) => {
+    if (quantity < 1) { handleRemoveItem(id, productId, variantId); return; }
     if (isAuthenticated) {
+      authStore.updateItem(id, quantity);
       cartApi.updateItem(productId, quantity).catch(() => {});
+    } else {
+      guestStore.updateItem(productId, quantity, variantId);
     }
   };
 
@@ -72,10 +80,31 @@ export function CartDrawer() {
             <ShoppingBag className="w-5 h-5 text-orange-500" />
             <h2 className="font-semibold">My Cart ({totalItems()})</h2>
           </div>
-          <button onClick={closeCart} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <button
+            onClick={closeCart}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Guest banner */}
+        {!isAuthenticated && items.length > 0 && (
+          <div className="mx-4 mt-3 px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 flex items-center gap-3">
+            <LogIn className="w-4 h-4 text-orange-500 shrink-0" />
+            <p className="text-xs text-orange-700 dark:text-orange-300 flex-1">
+              Sign in to save your cart and checkout
+            </p>
+            <Link
+              href="/auth/login?returnUrl=/checkout"
+              onClick={closeCart}
+              className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
+            >
+              Sign In
+            </Link>
+          </div>
+        )}
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -106,31 +135,28 @@ export function CartDrawer() {
                   <p className="text-xs text-muted-foreground">{item.sellerName}</p>
                   <h4 className="text-sm font-medium line-clamp-1">{item.productName}</h4>
                   <p className="text-orange-500 dark:text-orange-400 font-semibold text-sm mt-1">
-                    {formatCurrency(item.unitPrice)}
+                    {formatCurrency(item.salePrice ?? item.unitPrice)}
                   </p>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-1 border rounded-md">
                       <button
-                        className="p-1 hover:bg-gray-100"
-                        onClick={() => {
-                          if (item.quantity > 1) handleUpdateItem(item.id, item.productId, item.quantity - 1);
-                          else handleRemoveItem(item.id, item.productId);
-                        }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => handleUpdateItem(item.id, item.productId, item.quantity - 1, item.variantId)}
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-sm w-6 text-center">{item.quantity}</span>
                       <button
-                        className="p-1 hover:bg-gray-100"
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => {
-                          if (item.quantity < item.stock) handleUpdateItem(item.id, item.productId, item.quantity + 1);
+                          if (item.quantity < item.stock) handleUpdateItem(item.id, item.productId, item.quantity + 1, item.variantId);
                         }}
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
                     <button
-                      onClick={() => handleRemoveItem(item.id, item.productId)}
+                      onClick={() => handleRemoveItem(item.id, item.productId, item.variantId)}
                       className="text-red-400 hover:text-red-500 p-1"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -150,21 +176,34 @@ export function CartDrawer() {
               <span className="text-orange-500 dark:text-orange-400">{formatCurrency(totalAmount())}</span>
             </div>
             <p className="text-xs text-muted-foreground">Shipping and taxes calculated at checkout</p>
-            <Link
-              href="/checkout"
-              onClick={closeCart}
-              className="w-full flex items-center justify-center py-3 text-white font-semibold rounded-xl transition-all hover:brightness-110 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
-            >
-              Proceed to Checkout →
-            </Link>
-            <Link
-              href="/cart"
-              onClick={closeCart}
-              className="w-full flex items-center justify-center py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              View Full Cart
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/checkout"
+                  onClick={closeCart}
+                  className="w-full flex items-center justify-center py-3 text-white font-semibold rounded-xl transition-all hover:brightness-110 shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.3)' }}
+                >
+                  Proceed to Checkout →
+                </Link>
+                <Link
+                  href="/cart"
+                  onClick={closeCart}
+                  className="w-full flex items-center justify-center py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  View Full Cart
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/auth/login?returnUrl=/checkout"
+                onClick={closeCart}
+                className="w-full flex items-center justify-center gap-2 py-3 text-white font-semibold rounded-xl transition-all hover:brightness-110 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
+              >
+                <LogIn className="w-4 h-4" /> Sign In to Checkout
+              </Link>
+            )}
           </div>
         )}
       </div>

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Gift, ArrowLeft, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { useCartStore } from '@/store/cart.store';
 import { toast } from '@/hooks/use-toast';
 import { authApi } from '@/lib/api/auth.api';
 import { getErrorMessage } from '@/lib/api/client';
@@ -48,6 +49,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -75,9 +77,21 @@ export default function RegisterPage() {
         refreshToken,
       );
       toast({ title: 'Account created!', description: 'Welcome to Bazzar!' });
+      const pendingRaw = sessionStorage.getItem('pendingCartItem');
+      if (pendingRaw) {
+        try { await useCartStore.getState().addItem(JSON.parse(pendingRaw)); } catch {}
+        sessionStorage.removeItem('pendingCartItem');
+      }
       router.push('/');
-    } catch (err) {
-      toast({ title: 'Registration failed', description: getErrorMessage(err), variant: 'destructive' });
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message = getErrorMessage(err);
+      if (status === 409) {
+        setError('email', { message: 'This email is already registered' });
+        toast({ title: 'Email already in use', description: 'Please sign in or use a different email.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Registration failed', description: message, variant: 'destructive' });
+      }
     }
   };
 

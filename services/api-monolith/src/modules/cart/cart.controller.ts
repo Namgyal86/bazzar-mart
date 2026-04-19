@@ -8,11 +8,11 @@ const addItemSchema = z.object({
   productId:    z.string().min(1),
   productName:  z.string().min(1),
   productImage: z.string().default(''),
-  sellerId:     z.string().min(1),
-  sellerName:   z.string().min(1),
-  unitPrice:    z.number().positive(),
+  sellerId:     z.string().default(''),
+  sellerName:   z.string().default(''),
+  unitPrice:    z.number().nonnegative(),
   quantity:     z.number().int().positive().default(1),
-  stock:        z.number().int().nonnegative(),
+  stock:        z.number().int().nonnegative().optional().default(0),
 });
 
 const updateItemSchema = z.object({ quantity: z.number().int().positive() });

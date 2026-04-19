@@ -9,7 +9,7 @@ version: '3.9'
 #   Kept separate   → delivery-service:8013, notification-service:8008
 #   Frontend        → web:3000
 #
-# Kafka runs in KRaft mode — no Zookeeper required.
+# Kafka runs in KRaft mode (Bitnami image) — no Zookeeper required.
 # Images are hosted on Cloudinary — no local uploads volume.
 # ============================================================
 
@@ -28,7 +28,7 @@ services:
   # ── Infrastructure ─────────────────────────────────────────────────────────
 
   mongodb:
-    image: mongo:7
+    image: mongo:7.0
     container_name: bazzar-mongodb
     ports:
       - "27017:27017"
@@ -61,35 +61,33 @@ services:
       retries: 5
 
   kafka:
-    image: confluentinc/cp-kafka:7.5.0
+    image: bitnamilegacy/kafka:4.0.0-debian-12-r10
     container_name: bazzar-kafka
     ports:
       - "9092:9092"
     environment:
       # KRaft — no Zookeeper
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - kafka_data:/bitnami/kafka
     networks: [bazzar-net]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
       interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+      timeout: 15s
+      retries: 15
+      start_period: 90s
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
@@ -136,6 +134,7 @@ services:
       - FONEPAY_MERCHANT_CODE=${FONEPAY_MERCHANT_CODE}
       - FONEPAY_SECRET_KEY=${FONEPAY_SECRET_KEY}
       - API_BASE_URL=http://api-monolith:8100
+      - PUBLIC_API_URL=http://localhost:3000
       - WEB_URL=http://localhost:3000
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -209,7 +208,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_WS_URL=ws://localhost:8013
       # Single backend URL — all API traffic proxied through Next.js rewrites
       - MONOLITH_URL=http://api-monolith:8100
