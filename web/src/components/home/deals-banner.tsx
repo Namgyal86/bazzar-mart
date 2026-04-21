@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Zap, Clock, ArrowRight, Flame, ShoppingCart, Heart } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { productApi } from '@/lib/api/product.api';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -47,16 +50,18 @@ function FlipUnit({ value, label }: { value: string; label: string }) {
 
 function DealCard({ pid, deal, salePrice, discount, image, sold, sellerName, index }: { pid: string; deal: any; salePrice: number; discount: number; image: string; sold: number; sellerName: string; index: number }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
-  const { items, setItems, openCart } = useCartStore();
+  const openCart = useCartStore(s => s.openCart);
+  const router = useRouter();
   const wished = isInWishlist(pid);
 
   const handleCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    const existing = items.find(i => i.id === pid);
-    if (existing) {
-      setItems(items.map(i => i.id === pid ? { ...i, quantity: i.quantity + 1, totalPrice: i.unitPrice * (i.quantity + 1) } : i));
+    const cartItem = { productId: pid, productName: deal.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, salePrice, stock: deal.stock ?? 20 };
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
+      useCartStore.getState().addItem(cartItem).catch(() => {});
     } else {
-      setItems([...items, { id: pid, productId: pid, productName: deal.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, totalPrice: salePrice, stock: deal.stock ?? 20 }]);
+      useGuestCartStore.getState().addItem(cartItem);
     }
     openCart();
     toast({ title: 'Added to cart!', description: deal.name });
@@ -64,6 +69,11 @@ function DealCard({ pid, deal, salePrice, discount, image, sold, sellerName, ind
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!useAuthStore.getState().isAuthenticated) {
+      toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+      router.push('/auth/login');
+      return;
+    }
     toggleItem({ id: pid, productId: pid, name: deal.name, image, price: salePrice, basePrice: deal.price, rating: deal.rating ?? 0, seller: sellerName, inStock: true });
     toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' });
   };

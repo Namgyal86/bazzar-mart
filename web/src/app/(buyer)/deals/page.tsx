@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Zap, Star, Heart, ShoppingCart, Timer, Package, Flame } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { productApi } from '@/lib/api/product.api';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 
@@ -64,7 +67,8 @@ function CountdownBadge() {
 
 function DealCard({ deal }: { deal: any }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
-  const { items, setItems, openCart } = useCartStore();
+  const openCart = useCartStore(s => s.openCart);
+  const router = useRouter();
   const wished = isInWishlist(deal.id);
   const discount = deal.basePrice > deal.price
     ? Math.round(((deal.basePrice - deal.price) / deal.basePrice) * 100)
@@ -72,24 +76,24 @@ function DealCard({ deal }: { deal: any }) {
 
   const handleCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    const cartItem = {
-      id: deal.id,
-      productId: deal.id,
-      productName: deal.name,
-      productImage: deal.image,
-      sellerName: deal.seller,
-      quantity: 1,
-      unitPrice: deal.price,
-      totalPrice: deal.price,
-      stock: 99,
-    };
-    setItems([...items.filter((i) => i.id !== deal.id), cartItem]);
+    const cartItem = { productId: deal.id, productName: deal.name, productImage: deal.image, sellerName: deal.seller, quantity: 1, unitPrice: deal.price, salePrice: deal.price, stock: 99 };
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
+      useCartStore.getState().addItem(cartItem).catch(() => {});
+    } else {
+      useGuestCartStore.getState().addItem(cartItem);
+    }
     openCart();
     toast({ title: 'Added to cart!', description: deal.name });
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!useAuthStore.getState().isAuthenticated) {
+      toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+      router.push('/auth/login');
+      return;
+    }
     toggleItem({ id: deal.id, productId: deal.id, name: deal.name, image: deal.image, price: deal.price, basePrice: deal.basePrice, rating: deal.rating, seller: deal.seller, inStock: true });
     toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' });
   };

@@ -61,21 +61,17 @@ export default function LoginPage() {
     setLoginError(null);
     try {
       const res = await authApi.login(data);
-      const { user, accessToken, refreshToken } = res.data.data;
-      setAuth(
-        {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role as any,
-          profilePhotoUrl: user.profilePhotoUrl,
-          referralCode: user.referralCode,
-          sellerId: user.sellerId,
-        },
-        accessToken,
-        refreshToken,
-      );
+      const { user } = res.data.data;
+      setAuth({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role as any,
+        profilePhotoUrl: user.profilePhotoUrl,
+        referralCode: user.referralCode,
+        sellerId: user.sellerId,
+      });
       toast({ title: 'Welcome back!', description: 'You have been logged in successfully.' });
 
       // Merge all guest cart items into server cart
@@ -100,7 +96,7 @@ export default function LoginPage() {
         useGuestCartStore.getState().clearCart();
       }
 
-      if (returnUrl) { router.push(returnUrl); return; }
+      if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) { router.push(returnUrl); return; }
       if (user.role === 'ADMIN') router.push('/admin/dashboard');
       else if (user.role === 'SELLER') router.push('/seller/dashboard');
       else router.push('/');

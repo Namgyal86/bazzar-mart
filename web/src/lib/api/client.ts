@@ -7,37 +7,26 @@ export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
+  withCredentials: true, // send bz_access / bz_refresh cookies on every request
 });
 
-// Attach JWT on every request
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (typeof window !== 'undefined') {
-    const token = useAuthStore.getState().accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+// No Bearer injection — middleware reads bz_access cookie and injects it server-side
 
 // Auto-refresh on 401
 apiClient.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    const isAuthEndpoint = original.url?.includes('/auth/login') || original.url?.includes('/auth/register');
+    const isAuthEndpoint =
+      original.url?.includes('/auth/login') ||
+      original.url?.includes('/auth/register');
     if (error.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       original._retry = true;
       try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const { data } = await axios.post('/api/v1/auth/token/refresh', { refreshToken });
-        useAuthStore.getState().setTokens(data.data.accessToken, data.data.refreshToken);
-        original.headers.Authorization = `Bearer ${data.data.accessToken}`;
+        const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        if (res.status !== 200) throw new Error('Refresh failed');
         return apiClient(original);
       } catch {
-        // Refresh failed → session is truly dead (expired, revoked, secret changed)
         useAuthStore.getState().logout();
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('auth_redirect_reason', 'session_expired');

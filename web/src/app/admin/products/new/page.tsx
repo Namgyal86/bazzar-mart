@@ -12,21 +12,19 @@ import { productApi } from '@/lib/api/product.api';
 import { getErrorMessage } from '@/lib/api/client';
 import Link from 'next/link';
 
-const toNum = (v: unknown) =>
-  v === '' || v === undefined || v === null ? NaN : Number(v);
-const toNumOpt = (v: unknown) =>
-  v === '' || v === undefined || v === null ? undefined : Number(v);
-
 const schema = z.object({
   name:        z.string().min(3, 'At least 3 characters'),
   description: z.string().min(20, 'At least 20 characters'),
-  price:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid price' }).min(1, 'Price is required')),
-  salePrice:   z.preprocess(toNumOpt, z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional()),
-  stock:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid quantity' }).min(0)),
+  price:       z.number({ invalid_type_error: 'Enter a valid price' }).min(1, 'Price must be at least Rs. 1'),
+  salePrice:   z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional(),
+  stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int('Must be a whole number').min(0),
   category:    z.string().min(1, 'Select a category'),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
-});
+}).refine(
+  data => data.salePrice === undefined || data.salePrice < data.price,
+  { message: 'Sale price must be less than original price', path: ['salePrice'] },
+);
 
 type FormData = z.infer<typeof schema>;
 

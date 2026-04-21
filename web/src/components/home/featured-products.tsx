@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Star, Heart, ShoppingCart, Eye, Zap, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 import { productApi } from '@/lib/api/product.api';
@@ -13,6 +16,7 @@ import { motion } from 'framer-motion';
 
 function ProductCard({ product, delay, onAddToCart }: { product: any; delay: number; onAddToCart: (p: any) => void }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
+  const router = useRouter();
   const pid = product.id || product._id;
   const image = product.images?.[0] || '';
   const salePrice = product.salePrice ?? product.price;
@@ -23,6 +27,11 @@ function ProductCard({ product, delay, onAddToCart }: { product: any; delay: num
   const wished = isInWishlist(pid);
 
   const handleWishlist = () => {
+    if (!useAuthStore.getState().isAuthenticated) {
+      toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+      router.push('/auth/login');
+      return;
+    }
     toggleItem({ id: pid, productId: pid, name: product.name, image, price: salePrice, basePrice: product.price, rating: product.rating ?? 0, seller: sellerName, inStock: true });
     toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' });
   };
@@ -135,18 +144,18 @@ export function FeaturedProducts() {
   }, []);
 
   const handleAddToCart = (product: any) => {
-    const { items, setItems, openCart } = useCartStore.getState();
     const pid = product.id || product._id;
     const image = product.images?.[0] || '';
     const salePrice = product.salePrice ?? product.price;
     const sellerName = product.sellerName ?? (typeof product.seller === 'string' ? product.seller : product.seller?.storeName ?? '');
-    const existing = items.find((i) => i.id === pid);
-    if (existing) {
-      setItems(items.map((i) => i.id === pid ? { ...i, quantity: i.quantity + 1, totalPrice: i.unitPrice * (i.quantity + 1) } : i));
+    const cartItem = { productId: pid, productName: product.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, salePrice, stock: product.stock ?? 20 };
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
+      useCartStore.getState().addItem(cartItem).catch(() => {});
     } else {
-      setItems([...items, { id: pid, productId: pid, productName: product.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, totalPrice: salePrice, stock: product.stock ?? 20 }]);
+      useGuestCartStore.getState().addItem(cartItem);
     }
-    openCart();
+    useCartStore.getState().openCart();
     toast({ title: 'Added to cart!', description: product.name });
   };
 

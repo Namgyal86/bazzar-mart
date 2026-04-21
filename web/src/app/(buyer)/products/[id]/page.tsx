@@ -225,9 +225,9 @@ export default function ProductDetailPage() {
       stock:        product.stock,
     };
 
-    const { accessToken, refreshToken } = useAuthStore.getState();
+    const { isAuthenticated } = useAuthStore.getState();
 
-    if (!accessToken && !refreshToken) {
+    if (!isAuthenticated) {
       // Guest mode — add to local cart, no login redirect
       useGuestCartStore.getState().addItem(cartItem);
       openCart();
@@ -469,6 +469,11 @@ export default function ProductDetailPage() {
             <button
               className="w-11 h-11 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
               onClick={() => {
+                if (!isAuthenticated) {
+                  toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+                  router.push('/auth/login');
+                  return;
+                }
                 toggleWishlist({
                   id: product.id,
                   productId: product.id,

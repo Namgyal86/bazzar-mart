@@ -1,12 +1,14 @@
 ﻿'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { Star, ShoppingCart, Heart, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { productApi } from '@/lib/api/product.api';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 
@@ -14,10 +16,11 @@ import { toast } from '@/hooks/use-toast';
 function SearchContent() {
   const params = useSearchParams();
   const query = params.get('q') || '';
+  const router = useRouter();
 
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const { items, setItems, openCart } = useCartStore();
+  const openCart = useCartStore(s => s.openCart);
   const { toggleItem: toggleWishlist, isInWishlist } = useWishlistStore();
 
   useEffect(() => {
@@ -181,6 +184,11 @@ function SearchContent() {
                     <button
                       className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
                       onClick={() => {
+                        if (!useAuthStore.getState().isAuthenticated) {
+                          toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+                          router.push('/auth/login');
+                          return;
+                        }
                         toggleWishlist({ id: p.id, productId: p.id, name: p.name, image: p.image, price: p.salePrice, basePrice: p.price, rating: p.rating ?? 0, seller: p.seller ?? '', inStock: true });
                         toast({ title: isInWishlist(p.id) ? 'Removed from wishlist' : 'Saved to wishlist!' });
                       }}
@@ -223,18 +231,13 @@ function SearchContent() {
                       className="w-full flex items-center justify-center gap-1.5 text-white text-xs font-semibold py-2 rounded-xl transition-all duration-200 hover:opacity-90 hover:shadow-md active:scale-95"
                       style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
                       onClick={() => {
-                        const cartItem = {
-                          id: p.id,
-                          productId: p.id,
-                          productName: p.name,
-                          productImage: p.image,
-                          sellerName: p.seller ?? '',
-                          quantity: 1,
-                          unitPrice: p.salePrice,
-                          totalPrice: p.salePrice,
-                          stock: 99,
-                        };
-                        setItems([...items.filter((i) => i.id !== p.id), cartItem]);
+                        const cartItem = { productId: p.id, productName: p.name, productImage: p.image, sellerName: p.seller ?? '', quantity: 1, unitPrice: p.salePrice, salePrice: p.salePrice, stock: 99 };
+                        const { isAuthenticated } = useAuthStore.getState();
+                        if (isAuthenticated) {
+                          useCartStore.getState().addItem(cartItem).catch(() => {});
+                        } else {
+                          useGuestCartStore.getState().addItem(cartItem);
+                        }
                         openCart();
                         toast({ title: 'Added to cart!', description: p.name });
                       }}

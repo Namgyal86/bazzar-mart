@@ -63,19 +63,15 @@ export default function RegisterPage() {
         password: data.password,
         referralCode: data.referralCode,
       });
-      const { user, accessToken, refreshToken } = res.data.data;
-      setAuth(
-        {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role as any,
-          referralCode: user.referralCode,
-        },
-        accessToken,
-        refreshToken,
-      );
+      const { user } = res.data.data;
+      setAuth({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role as any,
+        referralCode: user.referralCode,
+      });
       toast({ title: 'Account created!', description: 'Welcome to Bazzar!' });
       const pendingRaw = sessionStorage.getItem('pendingCartItem');
       if (pendingRaw) {

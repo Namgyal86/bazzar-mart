@@ -1,12 +1,14 @@
 ﻿'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal, Star, Heart, ShoppingCart, Grid, List, Loader2, X, Search, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 import { productApi, categoryApi, type CategoryWithSubs } from '@/lib/api/product.api';
@@ -29,18 +31,18 @@ const PRICE_RANGES = [
 ];
 
 function addToCart(product: any) {
-  const { items, setItems, openCart } = useCartStore.getState();
   const pid = product._id || product.id;
   const image = product.images?.[0] || '';
   const salePrice = product.salePrice ?? product.price;
   const sellerName = product.sellerName ?? (typeof product.seller === 'string' ? product.seller : (product.seller?.storeName ?? ''));
-  const existing = items.find((i) => i.id === pid);
-  if (existing) {
-    setItems(items.map((i) => i.id === pid ? { ...i, quantity: i.quantity + 1, totalPrice: i.unitPrice * (i.quantity + 1) } : i));
+  const cartItem = { productId: pid, productName: product.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, salePrice, stock: product.stock ?? 10 };
+  const { isAuthenticated } = useAuthStore.getState();
+  if (isAuthenticated) {
+    useCartStore.getState().addItem(cartItem).catch(() => {});
   } else {
-    setItems([...items, { id: pid, productId: pid, productName: product.name, productImage: image, sellerName, quantity: 1, unitPrice: salePrice, totalPrice: salePrice, stock: product.stock ?? 10 }]);
+    useGuestCartStore.getState().addItem(cartItem);
   }
-  openCart();
+  useCartStore.getState().openCart();
   toast({ title: 'Added to cart!', description: product.name });
 }
 
@@ -71,6 +73,7 @@ function SkeletonCard({ list }: { list?: boolean }) {
 
 function ProductGridCard({ product }: { product: any }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
+  const router = useRouter();
   const pid = product._id || product.id;
   const image = product.images?.[0] || '';
   const salePrice = product.salePrice ?? product.price;
@@ -98,7 +101,7 @@ function ProductGridCard({ product }: { product: any }) {
           <span className="absolute top-2.5 left-2.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">-{discount}%</span>
         )}
         <motion.button
-          onClick={() => { toggleItem({ id: pid, productId: pid, name: product.name, image, price: salePrice, basePrice: product.price, rating: product.rating ?? 0, seller: sellerName, inStock: (product.stock ?? 1) > 0 }); toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' }); }}
+          onClick={() => { if (!useAuthStore.getState().isAuthenticated) { toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' }); router.push('/auth/login'); return; } toggleItem({ id: pid, productId: pid, name: product.name, image, price: salePrice, basePrice: product.price, rating: product.rating ?? 0, seller: sellerName, inStock: (product.stock ?? 1) > 0 }); toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' }); }}
           whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
           className="absolute top-2.5 right-2.5 w-8 h-8 bg-white/90 dark:bg-gray-800/90 rounded-full flex items-center justify-center shadow">
           <Heart className={`w-3.5 h-3.5 transition-colors ${wished ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
@@ -133,6 +136,7 @@ function ProductGridCard({ product }: { product: any }) {
 
 function ProductListCard({ product }: { product: any }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
+  const router = useRouter();
   const pid = product._id || product.id;
   const image = product.images?.[0] || '';
   const salePrice = product.salePrice ?? product.price;
@@ -180,7 +184,7 @@ function ProductListCard({ product }: { product: any }) {
               <ShoppingCart className="w-3.5 h-3.5" /> Add
             </button>
             <button
-              onClick={() => { toggleItem({ id: pid, productId: pid, name: product.name, image, price: salePrice, basePrice: product.price, rating: product.rating ?? 0, seller: sellerName, inStock: (product.stock ?? 1) > 0 }); toast({ title: wished ? 'Removed from wishlist' : 'Saved!' }); }}
+              onClick={() => { if (!useAuthStore.getState().isAuthenticated) { toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' }); router.push('/auth/login'); return; } toggleItem({ id: pid, productId: pid, name: product.name, image, price: salePrice, basePrice: product.price, rating: product.rating ?? 0, seller: sellerName, inStock: (product.stock ?? 1) > 0 }); toast({ title: wished ? 'Removed from wishlist' : 'Saved!' }); }}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
             >
               <Heart className={`w-3.5 h-3.5 ${wished ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />

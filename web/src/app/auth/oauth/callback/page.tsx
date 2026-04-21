@@ -2,60 +2,28 @@
 
 import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/store/auth.store';
 import { toast } from '@/hooks/use-toast';
 
 function OAuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setAuth } = useAuthStore();
   const handled = useRef(false);
 
   useEffect(() => {
     if (handled.current) return;
     handled.current = true;
 
-    const accessToken  = searchParams.get('accessToken');
-    const refreshToken = searchParams.get('refreshToken');
-    const oauthError   = searchParams.get('oauth_error');
+    const oauthError = searchParams.get('oauth_error');
 
+    // Middleware intercepts /auth/oauth/callback and sets HttpOnly cookies before
+    // this page renders. If we reach here, something went wrong.
     if (oauthError) {
       toast({ title: 'Login failed', description: oauthError, variant: 'destructive' });
-      router.replace('/auth/login');
-      return;
+    } else {
+      toast({ title: 'Login failed', description: 'OAuth sign-in could not be completed', variant: 'destructive' });
     }
-
-    if (!accessToken || !refreshToken) {
-      toast({ title: 'Login failed', description: 'Missing tokens from OAuth provider', variant: 'destructive' });
-      router.replace('/auth/login');
-      return;
-    }
-
-    try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      setAuth(
-        {
-          id:           payload.userId,
-          email:        payload.email,
-          firstName:    payload.firstName ?? '',
-          lastName:     payload.lastName  ?? '',
-          role:         payload.role,
-          referralCode: payload.referralCode,
-          profilePhotoUrl: undefined,
-          sellerId:     undefined,
-        },
-        accessToken,
-        refreshToken,
-      );
-      toast({ title: 'Welcome!', description: 'You have been signed in successfully.' });
-      if (payload.role === 'ADMIN') router.replace('/admin/dashboard');
-      else if (payload.role === 'SELLER') router.replace('/seller/dashboard');
-      else router.replace('/');
-    } catch {
-      toast({ title: 'Login failed', description: 'Could not parse auth response', variant: 'destructive' });
-      router.replace('/auth/login');
-    }
-  }, [searchParams, setAuth, router]);
+    router.replace('/auth/login');
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#060810' }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
@@ -9,6 +9,8 @@ import { productApi, categoryApi, Category } from '@/lib/api/product.api';
 import { formatCurrency } from '@/lib/utils';
 import { Star, Heart, ShoppingCart, Package, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
+import { useGuestCartStore } from '@/store/guest-cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useWishlistStore } from '@/store/wishlist.store';
 import { toast } from '@/hooks/use-toast';
 
@@ -37,7 +39,8 @@ function isUrl(s: string) { return s?.startsWith('http') || s?.startsWith('/'); 
 
 function ProductCard({ product }: { product: any }) {
   const { toggleItem, isInWishlist } = useWishlistStore();
-  const { items, setItems, openCart } = useCartStore();
+  const openCart = useCartStore(s => s.openCart);
+  const router = useRouter();
   const wished = isInWishlist(product.id);
   const discount = product.basePrice > product.price
     ? Math.round(((product.basePrice - product.price) / product.basePrice) * 100)
@@ -45,24 +48,24 @@ function ProductCard({ product }: { product: any }) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    const cartItem = {
-      id: product.id,
-      productId: product.id,
-      productName: product.name,
-      productImage: product.image,
-      sellerName: product.seller,
-      quantity: 1,
-      unitPrice: product.price,
-      totalPrice: product.price,
-      stock: 99,
-    };
-    setItems([...items.filter((i) => i.id !== product.id), cartItem]);
+    const cartItem = { productId: product.id, productName: product.name, productImage: product.image, sellerName: product.seller, quantity: 1, unitPrice: product.price, salePrice: product.price, stock: 99 };
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
+      useCartStore.getState().addItem(cartItem).catch(() => {});
+    } else {
+      useGuestCartStore.getState().addItem(cartItem);
+    }
     openCart();
     toast({ title: 'Added to cart!', description: product.name });
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!useAuthStore.getState().isAuthenticated) {
+      toast({ title: 'Login required', description: 'Please login to save items to your wishlist.' });
+      router.push('/auth/login');
+      return;
+    }
     toggleItem({ id: product.id, productId: product.id, name: product.name, image: product.image, price: product.price, basePrice: product.basePrice, rating: product.rating, seller: product.seller, inStock: true });
     toast({ title: wished ? 'Removed from wishlist' : 'Saved to wishlist!' });
   };

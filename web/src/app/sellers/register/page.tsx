@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import axios from 'axios';
+import { authApi } from '@/lib/api/auth.api';
+import { apiClient } from '@/lib/api/client';
 import {
   Store,
   User,
@@ -304,7 +305,7 @@ export default function SellerRegisterPage() {
 
     setIsSubmitting(true);
     try {
-      const regRes = await axios.post('/api/v1/auth/register', {
+      await authApi.register({
         firstName: step2.firstName,
         lastName: step2.lastName,
         email: step2.email,
@@ -313,29 +314,20 @@ export default function SellerRegisterPage() {
         role: 'SELLER',
       });
 
-      const accessToken = regRes.data?.data?.accessToken;
-
-      if (accessToken) {
-        await axios.post(
-          '/api/v1/seller/apply',
-          {
-            storeName: step1.storeName,
-            description: step1.description,
-            phone: step1.phone,
-            city: step1.city,
-            businessType: step1.businessType,
-            email: step2.email,
-            physicalLocation: {
-              address:  step1.physicalAddress,
-              district: step1.physicalDistrict,
-              landmark: step1.physicalLandmark,
-            },
-          },
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
-      }
+      // Cookie set by /api/auth/register — apiClient sends it automatically
+      await apiClient.post('/api/v1/seller/apply', {
+        storeName: step1.storeName,
+        description: step1.description,
+        phone: step1.phone,
+        city: step1.city,
+        businessType: step1.businessType,
+        email: step2.email,
+        physicalLocation: {
+          address:  step1.physicalAddress,
+          district: step1.physicalDistrict,
+          landmark: step1.physicalLandmark,
+        },
+      });
 
       toast({
         title: 'Seller account created!',

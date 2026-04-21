@@ -118,7 +118,7 @@ export default function CheckoutPage() {
         })
         .catch(() => {});
     }
-  }, [user]);
+  }, [user?.id]);
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
