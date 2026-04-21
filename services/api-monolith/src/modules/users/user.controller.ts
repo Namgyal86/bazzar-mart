@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { User } from './models/user.model';
 import { Address } from './models/address.model';
@@ -32,6 +33,29 @@ export const updateMe = async (req: AuthRequest, res: Response): Promise<void> =
     allowed.forEach(k => { if (body[k] !== undefined) updates[k] = body[k]; });
     const user = await User.findByIdAndUpdate(req.user!.userId, updates, { new: true });
     res.json({ success: true, data: user });
+  } catch (err: unknown) { handleError(err, res); }
+};
+
+// ── Password change ───────────────────────────────────────────────────────────
+
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, error: 'currentPassword and newPassword required' }); return;
+    }
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, error: 'Password must be at least 8 characters' }); return;
+    }
+    const user = await User.findById(req.user!.userId).select('+password');
+    if (!user) { res.status(404).json({ success: false, error: 'User not found' }); return; }
+    if (user.password) {
+      const valid = await user.comparePassword(currentPassword);
+      if (!valid) { res.status(401).json({ success: false, error: 'Current password is incorrect' }); return; }
+    }
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save({ validateBeforeSave: false });
+    res.json({ success: true, message: 'Password updated' });
   } catch (err: unknown) { handleError(err, res); }
 };
 

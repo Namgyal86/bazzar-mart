@@ -17,6 +17,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { categoryApi } from '@/lib/api/product.api';
+import { notificationApi } from '@/lib/api/notification.api';
 
 /* ─── ICON MAP per slug (icons stay code-side; subcategories come from DB) ── */
 const CAT_ICON: Record<string, { icon: React.ElementType; color: string }> = {
@@ -77,10 +78,19 @@ export function Header() {
   const [scrolled,       setScrolled]       = useState(false);
   const [cartBounce,     setCartBounce]     = useState(false);
   const [prevCart,       setPrevCart]       = useState(0);
+  const [unreadCount,    setUnreadCount]    = useState(0);
   const [categories, setCategories] = useState<Array<{
     name: string; slug: string; icon: React.ElementType; color: string;
     sub: Array<{ name: string; slug: string }>;
   }>>([]);
+
+  /* fetch unread notification count */
+  useEffect(() => {
+    if (!isAuthenticated) { setUnreadCount(0); return; }
+    notificationApi.list()
+      .then(res => { if (res.data?.meta?.unread != null) setUnreadCount(res.data.meta.unread); })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   /* fetch categories + subcategories from DB — only showInNav parents */
   useEffect(() => {
@@ -313,7 +323,11 @@ export function Header() {
               {isAuthenticated && (
                 <Link href="/account/notifications" className="hidden md:flex relative w-10 h-10 items-center justify-center rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 text-muted-foreground hover:text-amber-500 transition-colors duration-200 group">
                   <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
               )}
 

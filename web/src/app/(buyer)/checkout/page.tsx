@@ -26,7 +26,6 @@ import { useAuthStore } from '@/store/auth.store';
 import { userApi, Address } from '@/lib/api/user.api';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
 import { paymentApi } from '@/lib/api/payment.api';
-import { cartApi } from '@/lib/api/cart.api';
 
 type Step = 'address' | 'payment' | 'confirm';
 
@@ -63,7 +62,7 @@ const PAYMENT_METHODS: Array<{
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalAmount, clearCart, setItems } = useCartStore();
+  const { items, totalAmount, clearCart, fetchCart } = useCartStore();
   const { user, isAuthenticated } = useAuthStore();
   const [step, setStep]                       = useState<Step>('address');
   const [addresses, setAddresses]             = useState<any[]>([]);
@@ -86,16 +85,13 @@ export default function CheckoutPage() {
   const freeShippingThreshold = 1000;
   const freeShippingProgress  = Math.min((subtotal / freeShippingThreshold) * 100, 100);
 
-  // Sync cart from server on mount so items are always fresh after page refresh
+  // Sync cart from server on mount. Use fetchCart (not cartApi.get directly) so
+  // backend field names (_id, price, name) are normalized to CartItem shape before
+  // being stored — otherwise unitPrice is undefined and totalAmount() returns NaN.
   useEffect(() => {
     if (!isAuthenticated) return;
-    cartApi.get()
-      .then((res) => {
-        const backendItems = res.data?.data?.items ?? [];
-        setItems(backendItems);
-      })
-      .catch(() => {});
-  }, [isAuthenticated, setItems]);
+    fetchCart();
+  }, [isAuthenticated, fetchCart]);
 
   useEffect(() => {
     if (user) {

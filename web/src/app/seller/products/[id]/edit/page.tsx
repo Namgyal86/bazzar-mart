@@ -11,17 +11,15 @@ import { toast } from '@/hooks/use-toast';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
 import Link from 'next/link';
 
-const toNum = (v: unknown) =>
-  v === '' || v === undefined || v === null ? NaN : Number(v);
-const toNumOpt = (v: unknown) =>
-  v === '' || v === undefined || v === null ? undefined : Number(v);
-
 const schema = z.object({
   name:        z.string().min(3, 'At least 3 characters'),
   description: z.string().min(20, 'At least 20 characters'),
-  price:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid price' }).min(1, 'Price is required')),
-  salePrice:   z.preprocess(toNumOpt, z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional()),
-  stock:       z.preprocess(toNum, z.number({ invalid_type_error: 'Enter a valid quantity' }).min(0)),
+  price:       z.number({ invalid_type_error: 'Enter a valid price' }).min(1, 'Price is required'),
+  salePrice:   z.preprocess(
+    v => (typeof v === 'number' && isNaN(v)) ? undefined : v,
+    z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional()
+  ),
+  stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int().min(0, 'Enter a valid quantity'),
   category:    z.string().min(1, 'Select a category'),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
@@ -62,6 +60,7 @@ export default function EditProductPage() {
 
   const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    mode: 'onChange',
   });
 
   const priceRaw = watch('price');
@@ -203,16 +202,16 @@ export default function EditProductPage() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Original Price (Rs.) *</label>
-              <FieldInput type="number" placeholder="0" error={errors.price?.message} {...register('price')} />
+              <FieldInput type="number" placeholder="0" error={errors.price?.message} {...register('price', { valueAsNumber: true })} />
             </div>
             <div>
               <label className={labelCls}>Sale Price (Rs.)</label>
-              <FieldInput type="number" placeholder="0" {...register('salePrice')} />
+              <FieldInput type="number" placeholder="0" {...register('salePrice', { valueAsNumber: true })} />
               {discount > 0 && <p className="text-xs text-green-400 mt-1">{discount}% off</p>}
             </div>
             <div>
               <label className={labelCls}>Stock *</label>
-              <FieldInput type="number" placeholder="0" error={errors.stock?.message} {...register('stock')} />
+              <FieldInput type="number" placeholder="0" error={errors.stock?.message} {...register('stock', { valueAsNumber: true })} />
             </div>
           </div>
 

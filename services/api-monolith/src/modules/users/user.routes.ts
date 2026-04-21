@@ -10,7 +10,7 @@ import { authenticate, requireRole } from '../../shared/middleware/auth';
 import { register, login, refresh, logout, forgotPassword, resetPassword, sendVerificationEmail, verifyEmail } from './auth.controller';
 import { googleRedirect, googleCallback, facebookRedirect, facebookCallback } from './oauth.controller';
 import {
-  getMe, updateMe,
+  getMe, updateMe, changePassword,
   getWishlist, syncWishlist, addToWishlist, removeFromWishlist,
   getAddresses, addAddress, updateAddress, deleteAddress,
   getUserById, adminListUsers, adminGetStats, adminUpdateUser,
@@ -42,8 +42,9 @@ router.get('/auth/facebook/callback', facebookCallback);
 router.use('/users', authenticate);
 
 // Profile
-router.get ('/users/me',   getMe);
-router.put ('/users/me',   updateMe);
+router.get ('/users/me',              getMe);
+router.put ('/users/me',              updateMe);
+router.put ('/users/change-password', changePassword);
 
 // Wishlist — /me/wishlist and /wishlist (mobile alias)
 router.get   ('/users/me/wishlist',          getWishlist);

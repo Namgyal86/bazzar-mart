@@ -40,6 +40,25 @@ const topicHandlers: Record<string, TopicHandler> = {
     });
   },
 
+  'order.status_updated': async (payload) => {
+    const titleMap: Record<string, string> = {
+      CONFIRMED:        'Order Confirmed',
+      SHIPPED:          'Order Shipped',
+      OUT_FOR_DELIVERY: 'Out for Delivery',
+      DELIVERED:        'Order Delivered',
+      CANCELLED:        'Order Cancelled',
+      RETURN_REQUESTED: 'Return Requested',
+      PENDING:          'Order Placed',
+    };
+    await Notification.create({
+      userId:  payload.userId,
+      title:   titleMap[payload.status] ?? 'Order Update',
+      message: payload.message ?? `Your order status is now ${payload.status}.`,
+      type:    'ORDER',
+      data:    payload,
+    });
+  },
+
   'order.cancelled': async (payload) => {
     await Notification.create({
       userId: payload.userId,

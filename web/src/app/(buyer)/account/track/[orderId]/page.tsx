@@ -88,8 +88,8 @@ export default function TrackOrderPage() {
       .then((res: any) => {
         const d = res.data.data;
         if (d?.currentLocation) { setAgentLat(d.currentLocation.lat); setAgentLng(d.currentLocation.lng); }
-        if (d?.agent) setAgent(d.agent);
-        if (d?.eta) setEta(d.eta);
+        if (d?.agentName) setAgent({ name: d.agentName, phone: d.agentPhone, vehicle: d.vehicle, rating: d.agentRating });
+        if (d?.estimatedMinutes) setEta(d.estimatedMinutes);
       })
       .catch(() => {});
   }, [orderId]);

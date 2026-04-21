@@ -6,7 +6,7 @@ export function signAccessToken(payload: { userId: string; role: string; email: 
 }
 
 export function signRefreshToken(payload: { userId: string }): string {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET ?? env.JWT_ACCESS_SECRET, { expiresIn: '30d' });
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET ?? env.JWT_ACCESS_SECRET, { expiresIn: '7d' });
 }
 
 export function verifyAccessToken(token: string): { userId: string; role: string; email: string } {

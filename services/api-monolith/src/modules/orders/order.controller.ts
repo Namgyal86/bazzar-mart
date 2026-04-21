@@ -72,6 +72,20 @@ export function registerOrderEventHandlers(): void {
         orderId: p.orderId, userId: order.userId, status: 'CONFIRMED',
         message: 'Your order has been confirmed and is being prepared.',
       });
+      // Trigger delivery-service to create delivery record
+      publishEvent('order.confirmed', {
+        orderId:         p.orderId,
+        userId:          order.userId,
+        customer:        order.shippingAddress?.fullName ?? '',
+        deliveryAddress: [
+          order.shippingAddress?.addressLine1,
+          order.shippingAddress?.city,
+          order.shippingAddress?.district,
+        ].filter(Boolean).join(', '),
+        phone:           order.shippingAddress?.phone ?? '',
+        total:           order.total,
+        buyerId:         order.userId,
+      }).catch(() => {});
     } catch (err) {
       console.error('[orders] PAYMENT_SUCCESS handler error:', err);
     }
@@ -545,5 +559,18 @@ export const deleteCoupon = async (req: AuthRequest, res: Response): Promise<voi
   try {
     await Coupon.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (err: unknown) { handleError(err, res); }
+};
+
+export const updateCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const allowed = ['code', 'type', 'value', 'minOrder', 'maxDiscount', 'usageLimit', 'validUntil', 'isActive'];
+    const updates: Record<string, unknown> = {};
+    const body = req.body as Record<string, unknown>;
+    allowed.forEach(k => { if (body[k] !== undefined) updates[k] = body[k]; });
+    if (updates.code) updates.code = (updates.code as string).toUpperCase();
+    const coupon = await Coupon.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+    if (!coupon) { res.status(404).json({ success: false, error: 'Coupon not found' }); return; }
+    res.json({ success: true, data: coupon });
   } catch (err: unknown) { handleError(err, res); }
 };

@@ -1,4 +1,8 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "bash 'D:/E-commerce/bazzar-mart/.claude/statusline-command.sh'"
+  },
   "permissions": {
     "allow": [
       "mcp__Claude_Preview__preview_start",
@@ -249,7 +253,8 @@
       "WebFetch(domain:github.com)",
       "Bash(pip --version)",
       "Bash(py --version)",
-      "Bash(uv --version)"
+      "Bash(uv --version)",
+      "Bash(python3 -c \"import json,sys; [print\\(f[\\\\\"name\\\\\"]\\) for f in json.load\\(sys.stdin\\)]\")"
     ]
   }
 }

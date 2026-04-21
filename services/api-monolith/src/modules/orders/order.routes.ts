@@ -8,7 +8,7 @@ import {
   createOrder, getOrders, getOrderById,
   updateOrderStatus, cancelOrder, returnOrder,
   getAllOrders, getAdminStats, getRevenueByDay, getCategoryBreakdown,
-  validateCoupon, listCoupons, createCoupon, deleteCoupon,
+  validateCoupon, listCoupons, createCoupon, deleteCoupon, updateCoupon,
 } from './order.controller';
 
 const router = Router();
@@ -35,6 +35,7 @@ router.post  ('/orders/:id/return',                   returnOrder);
 router.post  ('/coupons/validate',                    validateCoupon);
 router.get   ('/coupons/admin/list',                  requireRole('ADMIN'), listCoupons);
 router.post  ('/coupons',                             requireRole('ADMIN'), createCoupon);
+router.patch ('/coupons/:id',                         requireRole('ADMIN'), updateCoupon);
 router.delete('/coupons/:id',                         requireRole('ADMIN'), deleteCoupon);
 
 export default router;

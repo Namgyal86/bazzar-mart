@@ -8,7 +8,7 @@ export interface Notification {
 
 export const notificationApi = {
   list: () =>
-    apiClient.get<{ success: true; data: Notification[] }>('/api/v1/notifications'),
+    apiClient.get<{ success: true; data: Notification[]; meta: { unread: number } }>('/api/v1/notifications'),
 
   markRead: (id: string) =>
     apiClient.patch(`/api/v1/notifications/${id}/read`),
