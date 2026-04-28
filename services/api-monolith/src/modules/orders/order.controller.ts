@@ -19,6 +19,7 @@ import { Order } from './models/order.model';
 import { Coupon } from './models/coupon.model';
 import { Product } from '../products/models/product.model';
 import { Wallet } from '../referrals/models/referral.model';
+import { Seller } from '../sellers/models/seller.model';
 import { User } from '../users/models/user.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload, PaymentFailedPayload, DeliveryCompletedPayload } from '../../shared/events/emitter';
@@ -304,6 +305,12 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(201).json({ success: true, data: order });
 
+    // Increment totalOrders on each seller in this order
+    const sellerIds = [...new Set(body.items.map((i: { sellerId: string }) => i.sellerId))];
+    for (const sid of sellerIds) {
+      Seller.findOneAndUpdate({ userId: sid }, { $inc: { totalOrders: 1 } }).catch(() => {});
+    }
+
     // In-process: referrals module checks for first-order reward
     internalBus.emit(EVENTS.ORDER_CREATED, {
       orderId: order.id, userId: req.user!.userId, total: finalTotal, couponCode: body.couponCode,
@@ -365,7 +372,26 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     if (status === 'SHIPPED' && !order.trackingNumber) {
       order.trackingNumber = 'TRK-' + Date.now().toString(36).toUpperCase();
     }
+    if (status === 'DELIVERED' && order.paymentMethod === 'cod') {
+      order.paymentStatus = 'PAID';
+    }
     await order.save();
+
+    // On DELIVERED: credit each seller's earnings (gross minus commission)
+    if (status === 'DELIVERED') {
+      const sellerEarnings = new Map<string, number>();
+      for (const item of order.items) {
+        const sid = item.sellerId as string;
+        sellerEarnings.set(sid, (sellerEarnings.get(sid) ?? 0) + item.totalPrice);
+      }
+      for (const [sid, gross] of sellerEarnings) {
+        const sellerDoc = await Seller.findOne({ userId: sid }).select('commissionRate').lean();
+        const commission = sellerDoc?.commissionRate ?? 10;
+        const net = gross * (1 - commission / 100);
+        Seller.findOneAndUpdate({ userId: sid }, { $inc: { totalEarnings: net, balance: net } }).catch(() => {});
+      }
+    }
+
     res.json({ success: true, data: order });
 
     const statusMessages: Record<string, string> = {
