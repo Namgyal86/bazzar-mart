@@ -1,4 +1,13 @@
 /** @type {import('next').NextConfig} */
+const securityHeaders = [
+  { key: 'X-Frame-Options',           value: 'DENY' },
+  { key: 'X-Content-Type-Options',    value: 'nosniff' },
+  { key: 'X-DNS-Prefetch-Control',    value: 'on' },
+  { key: 'Referrer-Policy',           value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy',        value: 'camera=(), microphone=(), geolocation=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+];
+
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -37,6 +46,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'http',  hostname: 'localhost' },
     ],
+  },
+  async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }];
   },
   async rewrites() {
     // Monolith handles all modules on a single port.
@@ -96,6 +108,7 @@ const nextConfig = {
       // ── Analytics ─────────────────────────────────────────────────────────
       { source: '/api/v1/stats',                        destination: `${M}/api/v1/stats` },
       { source: '/api/v1/analytics/:path*',             destination: `${M}/api/v1/analytics/:path*` },
+      { source: '/api/v1/settings/public',              destination: `${M}/api/v1/settings/public` },
 
       // ── Admin routes (all served by monolith) ─────────────────────────────
       { source: '/api/v1/admin/dashboard',              destination: `${M}/api/v1/analytics/admin/overview` },
@@ -110,9 +123,11 @@ const nextConfig = {
       { source: '/api/v1/admin/referral-config',        destination: `${M}/api/v1/admin/referral-config` },
       { source: '/api/v1/admin/referral-config/:path*', destination: `${M}/api/v1/admin/referral-config/:path*` },
 
-      // ── Separate services (not merged into monolith) ──────────────────────
-      { source: '/api/v1/delivery/:path*',              destination: `${D}/api/v1/delivery/:path*` },
-      { source: '/api/v1/notifications/:path*',         destination: `${N}/api/v1/notifications/:path*` },
+      // ── Delivery now served by monolith ──────────────────────────────────
+      { source: '/api/v1/delivery/:path*',              destination: `${M}/api/v1/delivery/:path*` },
+      // Notifications now served by monolith (same JWT secret, same DB)
+      { source: '/api/v1/notifications',                destination: `${M}/api/v1/notifications` },
+      { source: '/api/v1/notifications/:path*',         destination: `${M}/api/v1/notifications/:path*` },
     ];
   },
 };

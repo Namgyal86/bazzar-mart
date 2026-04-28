@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { ArrowLeft, Plus, X, Package, DollarSign, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
-import { productApi } from '@/lib/api/product.api';
+import { productApi, categoryApi, Category } from '@/lib/api/product.api';
 import { getErrorMessage } from '@/lib/api/client';
 import Link from 'next/link';
 
@@ -19,6 +19,7 @@ const schema = z.object({
   salePrice:   z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional(),
   stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int('Must be a whole number').min(0),
   category:    z.string().min(1, 'Select a category'),
+  subCategory: z.string().min(1, 'Select a subcategory'),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
 }).refine(
@@ -28,11 +29,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const CATEGORIES = [
-  'Fruits & Vegetables', 'Dairy & Eggs', 'Grains & Pulses', 'Meat & Seafood',
-  'Snacks & Beverages', 'Spices & Condiments', 'Personal Care', 'Household Items',
-  'Frozen Foods', 'Bakery & Bread',
-];
+interface CatWithSubs extends Category { subcategories: Category[] }
 
 const sectionCls = 'rounded-2xl p-6 space-y-4';
 const sectionStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' };
@@ -40,10 +37,11 @@ const inputCls = 'w-full rounded-xl px-3 py-2.5 text-sm text-white placeholder-g
 const inputStyle = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' };
 const labelCls = 'text-sm font-medium text-gray-400 mb-1.5 block';
 
-function FieldInput({ placeholder, type = 'text', error, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { error?: string }) {
-  return (
+const FieldInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { error?: string }>(
+  ({ placeholder, type = 'text', error, ...props }, ref) => (
     <div>
       <input
+        ref={ref}
         type={type}
         placeholder={placeholder}
         className={inputCls}
@@ -52,17 +50,36 @@ function FieldInput({ placeholder, type = 'text', error, ...props }: React.Input
       />
       {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
     </div>
-  );
-}
+  )
+);
 
 export default function AdminNewProductPage() {
   const router = useRouter();
   const [images, setImages] = useState<string[]>(['']);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [catTree, setCatTree] = useState<CatWithSubs[]>([]);
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  useEffect(() => {
+    categoryApi.listAll()
+      .then((res: any) => {
+        const all: Category[] = res.data?.data ?? [];
+        const parents = all.filter(c => !c.parentCategory);
+        const tree: CatWithSubs[] = parents.map(p => ({
+          ...p,
+          subcategories: all.filter(c => c.parentCategory === p.slug),
+        }));
+        setCatTree(tree);
+      })
+      .catch(() => {});
+  }, []);
+
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { stock: 10 },
   });
+
+  const selectedCategory = watch('category');
+  const subCats = catTree.find(c => c.name === selectedCategory)?.subcategories ?? [];
 
   const priceRaw     = watch('price');
   const salePriceRaw = watch('salePrice');
@@ -84,15 +101,19 @@ export default function AdminNewProductPage() {
         price:       data.price,
         stock:       data.stock,
         category:    data.category,
+        subCategory: data.subCategory,
         salePrice:   data.salePrice || undefined,
         brand:       data.brand || undefined,
         tags:        data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         images:      images.filter(Boolean),
       });
+      setApiError(null);
       toast({ title: 'Product created!', description: `${data.name} is now live on the platform.` });
       router.push('/admin/products');
     } catch (err) {
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      const msg = getErrorMessage(err);
+      setApiError(msg);
+      toast({ title: msg, variant: 'destructive' });
     }
   };
 
@@ -128,7 +149,7 @@ export default function AdminNewProductPage() {
 
           <div>
             <label className={labelCls}>Product Name *</label>
-            <FieldInput placeholder="e.g. Samsung Galaxy S24 Ultra" error={errors.name?.message} {...register('name')} />
+            <FieldInput placeholder="e.g. Organic Tomatoes 1kg" error={errors.name?.message} {...register('name')} />
           </div>
 
           <div>
@@ -143,26 +164,62 @@ export default function AdminNewProductPage() {
             {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>}
           </div>
 
+          {/* Category → Subcategory */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Category *</label>
-              <select {...register('category')} className={inputCls} style={{ ...inputStyle, color: 'white' }}>
+              <select
+                {...register('category', {
+                  onChange: () => setValue('subCategory', ''),
+                })}
+                className={inputCls}
+                style={{ ...inputStyle, color: selectedCategory ? 'white' : '#6b7280', borderColor: errors.category ? 'rgba(239,68,68,0.5)' : undefined }}
+              >
                 <option value="" style={{ background: '#1a2035' }}>Select category</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c} style={{ background: '#1a2035' }}>{c}</option>
+                {catTree.map(c => (
+                  <option key={c._id} value={c.name} style={{ background: '#1a2035' }}>{c.name}</option>
                 ))}
               </select>
               {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category.message}</p>}
             </div>
+
+            <div>
+              <label className={labelCls}>Subcategory *</label>
+              <select
+                {...register('subCategory')}
+                disabled={!selectedCategory}
+                className={inputCls}
+                style={{
+                  ...inputStyle,
+                  color: watch('subCategory') ? 'white' : '#6b7280',
+                  borderColor: errors.subCategory ? 'rgba(239,68,68,0.5)' : undefined,
+                  opacity: !selectedCategory ? 0.5 : 1,
+                  cursor: !selectedCategory ? 'not-allowed' : 'default',
+                }}
+              >
+                <option value="" style={{ background: '#1a2035' }}>
+                  {!selectedCategory ? 'Select category first' : subCats.length === 0 ? 'No subcategories' : 'Select subcategory'}
+                </option>
+                {subCats.map(s => (
+                  <option key={s._id} value={s.name} style={{ background: '#1a2035' }}>{s.name}</option>
+                ))}
+              </select>
+              {errors.subCategory && <p className="text-xs text-red-400 mt-1">{errors.subCategory.message}</p>}
+              {selectedCategory && subCats.length === 0 && (
+                <p className="text-xs text-yellow-500 mt-1">No subcategories — add them in Admin → Categories</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Brand</label>
               <FieldInput placeholder="e.g. Samsung, Nike…" {...register('brand')} />
             </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Tags <span className="text-gray-600 font-normal">(comma separated)</span></label>
-            <FieldInput placeholder="smartphone, 5g, android…" {...register('tags')} />
+            <div>
+              <label className={labelCls}>Tags <span className="text-gray-600 font-normal">(comma separated)</span></label>
+              <FieldInput placeholder="organic, fresh…" {...register('tags')} />
+            </div>
           </div>
         </div>
 
@@ -257,6 +314,11 @@ export default function AdminNewProductPage() {
         </div>
 
         {/* Actions */}
+        {apiError && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5">
+            <span>⚠</span> {apiError}
+          </p>
+        )}
         <div className="flex gap-3 pb-6">
           <button
             type="button"

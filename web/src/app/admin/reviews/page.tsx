@@ -162,7 +162,7 @@ export default function AdminReviewsPage() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-1.5 shrink-0">
-                  {review.status === 'PENDING' && (
+                  {review.status !== 'APPROVED' && (
                     <button
                       onClick={() => approve(review.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 text-xs font-bold rounded-xl transition-all duration-200 hover:shadow-md hover:shadow-green-500/10"

@@ -48,9 +48,11 @@ export async function addItem(userId: string, item: Omit<CartItem, 'id'>): Promi
 
 export async function updateItem(userId: string, productId: string, quantity: number): Promise<CartItem[]> {
   const items   = await getItems(userId);
-  const updated = items.map(i =>
-    i.productId === productId ? { ...i, quantity: Math.min(Math.max(1, quantity), i.stock) } : i,
-  );
+  const updated = items.map(i => {
+    if (i.productId !== productId) return i;
+    const max = i.stock > 0 ? i.stock : quantity;
+    return { ...i, quantity: Math.min(Math.max(1, quantity), max) };
+  });
   await saveItems(userId, updated);
   return updated;
 }

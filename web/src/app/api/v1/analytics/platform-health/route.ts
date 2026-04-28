@@ -1,4 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+function requireAdmin(req: NextRequest): boolean {
+  try {
+    const auth = req.headers.get('authorization') ?? '';
+    if (!auth.startsWith('Bearer ')) return false;
+    const payload = JSON.parse(Buffer.from(auth.slice(7).split('.')[1], 'base64url').toString());
+    const now = Math.floor(Date.now() / 1000);
+    return payload.role === 'ADMIN' && (!payload.exp || payload.exp > now);
+  } catch { return false; }
+}
 
 const SERVICES = {
   monolith: process.env.MONOLITH_URL         || 'http://localhost:8100',
@@ -15,9 +25,11 @@ async function ping(url: string): Promise<{ ok: boolean; ms: number }> {
   }
 }
 
-async function fetchJson(url: string) {
+async function fetchJson(url: string, token?: string) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const headers: Record<string, string> = {};
+    if (token) headers['authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -25,7 +37,13 @@ async function fetchJson(url: string) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!requireAdmin(req)) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const token = req.headers.get('authorization')?.slice(7);
+
   // 1. Ping monolith + delivery service in parallel
   const [monolithPing, deliveryPing] = await Promise.all([
     ping(SERVICES.monolith),
@@ -41,13 +59,13 @@ export async function GET() {
     : null;
 
   // 2. Fetch order stats from monolith
-  const orderStats = await fetchJson(`${SERVICES.monolith}/api/v1/orders/admin/stats`);
+  const orderStats = await fetchJson(`${SERVICES.monolith}/api/v1/orders/admin/stats`, token);
 
   // 3. Fetch payment stats from monolith
-  const paymentStats = await fetchJson(`${SERVICES.monolith}/api/v1/payments/admin/stats`);
+  const paymentStats = await fetchJson(`${SERVICES.monolith}/api/v1/payments/admin/stats`, token);
 
   // 4. Fetch delivery stats from delivery-service (still separate)
-  const deliveryStats = await fetchJson(`${SERVICES.delivery}/api/v1/delivery/admin/stats`);
+  const deliveryStats = await fetchJson(`${SERVICES.delivery}/api/v1/delivery/admin/stats`, token);
 
   // ── Build metrics ──────────────────────────────────────────────────────────
 

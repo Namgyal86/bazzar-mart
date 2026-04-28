@@ -7,16 +7,10 @@ export function notFound(req: Request, res: Response): void {
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error('[error]', err.message, err.stack);
-  const message = env.NODE_ENV === 'production'
-    ? 'Internal server error'
-    : err.message || 'Internal server error';
-  res.status(500).json({ success: false, error: message });
+  res.status(500).json({ success: false, error: 'Internal server error' });
 }
 
 export function handleError(err: unknown, res: Response): void {
-  const error = err instanceof Error ? err : new Error(String(err));
-  console.error('[error]', error.message, error.stack);
-
   if ((err as { name?: string })?.name === 'ZodError') {
     const zodErr = err as { errors: Array<{ path: (string | number)[]; message: string }> };
     const message = zodErr.errors.map(e => `${e.path.join('.') || 'field'}: ${e.message}`).join('; ');
@@ -24,9 +18,25 @@ export function handleError(err: unknown, res: Response): void {
     return;
   }
 
-  const message = env.NODE_ENV === 'production'
-    ? 'Internal server error'
-    : error.message || 'Internal server error';
+  // Mongoose ValidationError
+  if ((err as any)?.name === 'ValidationError') {
+    const messages = Object.values((err as any).errors ?? {})
+      .map((e: any) => e.message)
+      .join('; ');
+    res.status(400).json({ success: false, error: messages || 'Validation failed' });
+    return;
+  }
 
-  res.status(500).json({ success: false, error: message });
+  // MongoDB duplicate key — expected client error, no server log needed
+  if ((err as any)?.code === 11000) {
+    const field = Object.keys((err as any).keyPattern ?? {})[0] ?? 'field';
+    const value = (err as any).keyValue?.[field] ?? '';
+    res.status(409).json({ success: false, error: `"${value}" already exists. Choose a different ${field}.` });
+    return;
+  }
+
+  // Unexpected server error — log it, never expose internals
+  const error = err instanceof Error ? err : new Error(String(err));
+  console.error('[error]', error.message, error.stack);
+  res.status(500).json({ success: false, error: 'Internal server error' });
 }

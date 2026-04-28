@@ -40,10 +40,15 @@ class _AuthInterceptor extends Interceptor {
         try {
           final dio = Dio(BaseOptions(baseUrl: _baseUrl));
           final res = await dio.post('/api/v1/auth/refresh', data: {'refreshToken': refreshToken});
-          final newToken = res.data['data']['accessToken'];
-          await _storage.write(key: 'access_token', value: newToken);
-          err.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-          final retry = await Dio().fetch(err.requestOptions);
+          final newAccess  = res.data['data']['accessToken']  as String;
+          final newRefresh = res.data['data']['refreshToken'] as String?;
+          // Persist BOTH tokens — backend rotates refresh token on every use
+          await _storage.write(key: 'access_token', value: newAccess);
+          if (newRefresh != null) {
+            await _storage.write(key: 'refresh_token', value: newRefresh);
+          }
+          err.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
+          final retry = await Dio(BaseOptions(baseUrl: _baseUrl)).fetch(err.requestOptions);
           return handler.resolve(retry);
         } catch (_) {
           await _storage.deleteAll();

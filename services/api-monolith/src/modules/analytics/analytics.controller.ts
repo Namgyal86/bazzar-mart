@@ -221,7 +221,7 @@ export const adminOverview = async (req: AuthRequest, res: Response): Promise<vo
   try {
     [totalProducts, totalSellers, pendingSellers] = await Promise.all([
       Product.countDocuments({ isActive: true }),
-      db.collection('sellers').countDocuments({ status: 'APPROVED' }),
+      db.collection('sellers').countDocuments({ status: { $in: ['ACTIVE', 'APPROVED'] } }),
       db.collection('sellers').countDocuments({ status: 'PENDING' }),
     ]);
   } catch { /* non-fatal */ }

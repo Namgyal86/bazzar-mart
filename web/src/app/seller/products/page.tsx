@@ -93,7 +93,7 @@ function CsvImportModal({ onClose, onImported }: { onClose: () => void; onImport
           const price = parseFloat(row.price || row.Price || '0');
           const stock = parseInt(row.stock || row.Stock || '0', 10);
           if (!name) continue;
-          await apiClient.post('/api/v1/products', {
+          await apiClient.post('/api/v1/seller/products', {
             name,
             basePrice: price,
             salePrice: price,

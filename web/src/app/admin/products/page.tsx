@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { productApi } from '@/lib/api/product.api';
 import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/api/client';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -29,8 +30,8 @@ export default function AdminProductsPage() {
       await productApi.delete(id);
       setProducts(prev => prev.filter(p => (p._id || p.id) !== id));
       toast({ title: 'Product deleted' });
-    } catch {
-      toast({ title: 'Error', description: 'Could not delete product', variant: 'destructive' });
+    } catch (err) {
+      toast({ title: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

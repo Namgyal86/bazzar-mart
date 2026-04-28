@@ -20,6 +20,7 @@ import { internalBus, EVENTS } from '../../shared/events/emitter';
 import { publishEvent } from '../../kafka/producer';
 import { handleError } from '../../shared/middleware/error';
 import { sendEmail } from '../../shared/services/email';
+import { notify } from '../../shared/utils/notify';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ const registerSchema = z.object({
   firstName:    z.string().min(2),
   lastName:     z.string().min(2),
   email:        z.string().email(),
-  password:     z.string().min(6),
+  password:     z.string().min(8),
   phone:        z.string().optional(),
   referralCode: z.string().optional(),
   role:         z.enum(['BUYER', 'SELLER']).optional(),
@@ -77,6 +78,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await User.findByIdAndUpdate(user.id, { $push: { refreshTokens: refreshToken } });
 
     res.status(201).json({ success: true, data: { accessToken, refreshToken, user: publicUser(user) } });
+
+    // Welcome notification
+    notify(user.id as string, 'Welcome to Bazzar Mart!', `Hi ${user.firstName}, your account has been created successfully. Start exploring thousands of products!`, 'SYSTEM', { userId: user.id });
 
     // Send verification email (fire-and-forget — FEAT-02)
     {
@@ -226,8 +230,8 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     if (!token || !newPassword) {
       res.status(400).json({ success: false, error: 'token and newPassword are required' }); return;
     }
-    if (newPassword.length < 6) {
-      res.status(400).json({ success: false, error: 'newPassword must be at least 6 characters' }); return;
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, error: 'newPassword must be at least 8 characters' }); return;
     }
     const hash = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({
@@ -245,6 +249,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await user.save();
 
     res.json({ success: true, data: { message: 'Password updated. You can now log in.' } });
+    notify(user.id as string, 'Password Reset Successful', 'Your password has been reset successfully. If you did not do this, please contact support immediately.', 'SYSTEM', { userId: user.id });
   } catch (err: unknown) {
     handleError(err, res);
   }

@@ -15,10 +15,11 @@ import { useGuestCartStore } from '@/store/guest-cart.store';
 import { toast } from '@/hooks/use-toast';
 import { authApi, oauthUrls } from '@/lib/api/auth.api';
 import { getErrorMessage } from '@/lib/api/client';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -34,6 +35,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [returnUrl, setReturnUrl] = useState<string | null>(null);
   const { setAuth } = useAuthStore();
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -135,9 +138,9 @@ export default function LoginPage() {
               className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover:scale-105"
               style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))', boxShadow: '0 0 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)' }}
             >
-              <span className="text-white font-black text-xl">B</span>
+              <span className="text-white font-black text-xl">{siteName[0]}</span>
             </div>
-            <span className="text-white text-2xl font-black tracking-tight">Bazzar</span>
+            <span className="text-white text-2xl font-black tracking-tight">{siteName}</span>
           </Link>
         </div>
 
@@ -200,9 +203,9 @@ export default function LoginPage() {
         {/* Mobile brand bar */}
         <div className="lg:hidden flex items-center gap-3 px-6 pt-6 relative z-10">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}>
-            <span className="text-white font-bold">B</span>
+            <span className="text-white font-bold">{siteName[0]}</span>
           </div>
-          <span className="text-white text-xl font-bold">Bazzar</span>
+          <span className="text-white text-xl font-bold">{siteName}</span>
         </div>
 
         <div className="flex-1 flex flex-col justify-center px-8 sm:px-14 py-10 max-w-lg w-full mx-auto relative z-10">
@@ -216,7 +219,7 @@ export default function LoginPage() {
             <p className="text-gray-500 mt-2">Sign in to continue shopping</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-5 ${shake ? 'animate-shake' : ''}`} suppressHydrationWarning>
+          <form onSubmit={handleSubmit(onSubmit)} method="post" className={`space-y-5 ${shake ? 'animate-shake' : ''}`} suppressHydrationWarning>
             <div>
               <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Email address</label>
               <div className="relative">
@@ -335,7 +338,7 @@ export default function LoginPage() {
           </p>
 
           <p className="text-center text-xs text-gray-700 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            Want to sell on Bazzar?{' '}
+            Want to sell on {siteName}?{' '}
             <Link href="/sellers/register" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--ap)' }}>
               Register as Seller →
             </Link>

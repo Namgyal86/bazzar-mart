@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { toast } from '@/hooks/use-toast';
 import { userApi } from '@/lib/api/user.api';
+import { getErrorMessage } from '@/lib/api/client';
 
 const schema = z.object({
   firstName: z.string().min(2),
@@ -21,6 +22,7 @@ type FormData = z.infer<typeof schema>;
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
   const [copied, setCopied] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const {
     register,
@@ -39,9 +41,12 @@ export default function ProfilePage() {
     try {
       await userApi.updateMe({ firstName: data.firstName, lastName: data.lastName, phone: data.phone });
       updateUser({ firstName: data.firstName, lastName: data.lastName });
+      setApiError(null);
       toast({ title: 'Profile updated!', description: 'Your changes have been saved.' });
-    } catch {
-      toast({ title: 'Failed to update profile', variant: 'destructive' });
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      setApiError(msg);
+      toast({ title: msg, variant: 'destructive' });
     }
   };
 
@@ -225,6 +230,11 @@ export default function ProfilePage() {
 
             {/* Submit */}
             <div className="pt-1">
+              {apiError && (
+                <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5 mb-3">
+                  <span>⚠</span> {apiError}
+                </p>
+              )}
               <button
                 type="submit"
                 disabled={isSubmitting}

@@ -46,7 +46,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email:        data['user']['email'] as String,
         referralCode: data['user']['referralCode'] as String?,
       );
-      if (mounted) context.go('/home');
+      if (mounted) {
+        // Honour redirect param set by the router guard (e.g. ?redirect=/checkout)
+        final redirect = GoRouterState.of(context).uri.queryParameters['redirect'];
+        context.go(redirect != null && redirect.isNotEmpty ? redirect : '/home');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

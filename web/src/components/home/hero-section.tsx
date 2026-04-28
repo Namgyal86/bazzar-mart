@@ -1,53 +1,29 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ShoppingBag, Users, Truck, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ShoppingBag, Users, Truck, MapPin, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { bannerApi, type Banner } from '@/lib/api/product.api';
 
-const DEFAULT_SLIDES = [
-  {
-    _id: 'd1',
-    eyebrow: "Nepal's Fresh Grocery Store",
-    title: 'Fresh Produce',
-    subtitle: 'Delivered Daily',
-    description: 'Farm-fresh fruits and vegetables sourced directly from local farmers. Free delivery above Rs. 1000.',
-    cta: 'Shop Fresh',
-    ctaLink: '/categories/fruits-vegetables',
-    accentColor: '#22c55e',
-    badge: '🥦 Fresh Every Morning',
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&q=85',
-    isActive: true, order: 0,
-  },
-  {
-    _id: 'd2',
-    eyebrow: 'Daily Essentials',
-    title: 'Dairy, Grains',
-    subtitle: '& Pantry Staples',
-    description: 'Stock up on milk, eggs, rice, lentils and everyday kitchen essentials at the best prices.',
-    cta: 'Shop Essentials',
-    ctaLink: '/categories/dairy-eggs',
-    accentColor: '#eab308',
-    badge: '🛒 Best Value Packs',
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=900&q=85',
-    isActive: true, order: 1,
-  },
-  {
-    _id: 'd3',
-    eyebrow: 'Snacks & More',
-    title: 'Beverages &',
-    subtitle: 'Snack Time',
-    description: 'Chips, biscuits, juices, tea, coffee and your favourite beverages — all in one place.',
-    cta: 'Shop Snacks',
-    ctaLink: '/categories/snacks-beverages',
-    accentcolor: 'var(--ap)',
-    badge: '🍿 Top Sellers',
-    image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=900&q=85',
-    isActive: true, order: 2,
-  },
+const FLOAT_CHIPS = [
+  { label: '🥦 Fresh Veggies', color: '#22c55e', delay: 0,   x: '8%',  y: '22%', rotate: -8  },
+  { label: '🥛 Dairy Fresh',   color: '#eab308', delay: 0.6, x: '78%', y: '18%', rotate: 6   },
+  { label: '🌾 Organic Grains',color: '#f59e0b', delay: 1.2, x: '6%',  y: '68%', rotate: -5  },
+  { label: '🍿 Snacks & More', color: '#f97316', delay: 1.8, x: '72%', y: '72%', rotate: 8   },
+  { label: '🚚 Free Delivery', color: '#3b82f6', delay: 0.9, x: '42%', y: '8%',  rotate: -3  },
 ];
+
+const sr = (seed: number) => { const x = Math.sin(seed + 1) * 10000; return x - Math.floor(x); };
+const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  x: sr(i * 5)     * 100,
+  size: 2 + sr(i * 5 + 1) * 3,
+  duration: 4 + sr(i * 5 + 2) * 6,
+  delay: sr(i * 5 + 3)    * 5,
+  opacity: 0.2 + sr(i * 5 + 4) * 0.4,
+}));
 
 const DEFAULT_STATS = [
   { icon: ShoppingBag, value: '5,000+', label: 'Products' },
@@ -84,10 +60,15 @@ const statVariants = {
   }),
 };
 
-type SlideData = typeof DEFAULT_SLIDES[0];
+type SlideData = {
+  _id: string; eyebrow?: string; title: string; subtitle?: string;
+  description?: string; cta?: string; ctaLink?: string;
+  accentColor?: string; badge?: string; image?: string;
+  isActive?: boolean; order?: number;
+};
 
 export function HeroSection() {
-  const [slides, setSlides] = useState<SlideData[]>(DEFAULT_SLIDES as any);
+  const [slides, setSlides] = useState<SlideData[]>([]);
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [stats, setStats] = useState(DEFAULT_STATS);
@@ -144,8 +125,152 @@ export function HeroSection() {
     setCurrent((c) => (c + 1) % slides.length);
   };
 
-  const slide = slides[current] || DEFAULT_SLIDES[0];
+  const slide = slides[current];
   const bg = BG_GRADIENTS[current % BG_GRADIENTS.length];
+
+  if (!slide) {
+    return (
+      <section className="relative min-h-[90vh] overflow-hidden flex items-center"
+        style={{ background: 'linear-gradient(160deg, #050810 0%, #0d1535 45%, #12102a 100%)' }}
+      >
+        {/* Animated gradient orbs */}
+        <motion.div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.15, 0.08] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(circle, #f97316, transparent 70%)', filter: 'blur(80px)' }}
+        />
+        <motion.div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          style={{ background: 'radial-gradient(circle, #a855f7, transparent 70%)', filter: 'blur(70px)' }}
+        />
+        <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full pointer-events-none"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.04, 0.1, 0.04] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+          style={{ background: 'radial-gradient(circle, #22c55e, transparent 70%)', filter: 'blur(60px)' }}
+        />
+
+        {/* Particle field */}
+        {PARTICLES.map(p => (
+          <motion.div key={p.id} className="absolute rounded-full pointer-events-none"
+            style={{ left: `${p.x}%`, bottom: 0, width: p.size, height: p.size, background: 'rgba(249,115,22,0.6)', opacity: p.opacity }}
+            animate={{ y: [0, -300], opacity: [p.opacity, 0] }}
+            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeOut' }}
+            suppressHydrationWarning
+          />
+        ))}
+
+        {/* Grid overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
+
+        {/* Floating chips */}
+        {FLOAT_CHIPS.map((chip, i) => (
+          <motion.div key={i} className="absolute hidden lg:flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold text-white shadow-xl pointer-events-none"
+            style={{
+              left: chip.x, top: chip.y,
+              background: `${chip.color}22`,
+              border: `1px solid ${chip.color}55`,
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              boxShadow: `0 8px 32px ${chip.color}33`,
+              rotate: chip.rotate,
+            }}
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.8 + chip.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }}>
+              {chip.label}
+            </motion.span>
+          </motion.div>
+        ))}
+
+        {/* Center content */}
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full mb-6 text-sm font-semibold text-orange-300"
+            style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)' }}
+          >
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}>
+              <Sparkles className="w-4 h-4" />
+            </motion.div>
+            Nepal's #1 Online Grocery Store
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="font-black text-white mb-6 leading-none"
+            style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}
+          >
+            Fresh Groceries
+            <br />
+            <span className="gradient-text">Delivered Fast</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="text-white/55 text-lg max-w-xl mx-auto mb-10"
+          >
+            Farm-fresh produce, daily essentials & local favourites — delivered to your door across Kathmandu Valley.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="flex flex-wrap items-center justify-center gap-4 mb-16"
+          >
+            <Link href="/products"
+              className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-2xl text-white shadow-2xl text-base transition-all hover:scale-105 hover:brightness-110"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+            >
+              Shop Now <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link href="/categories"
+              className="inline-flex items-center gap-2 font-bold px-8 py-4 rounded-2xl text-white text-base transition-all hover:bg-white/10"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+            >
+              Browse Categories
+            </Link>
+          </motion.div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+            className="flex flex-wrap justify-center gap-8"
+          >
+            {stats.map((s, i) => (
+              <motion.div key={s.label} className="text-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 + i * 0.1 }}
+              >
+                <p className="text-2xl font-black text-white">{s.value}</p>
+                <p className="text-xs text-white/40 mt-0.5">{s.label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Wave */}
+        <div className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none">
+          <svg viewBox="0 0 1440 56" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full">
+            <path d="M0 56L1440 56L1440 18C1200 56 960 0 720 20C480 40 240 0 0 18L0 56Z" className="fill-white dark:fill-background" />
+          </svg>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`relative min-h-[90vh] bg-gradient-to-br ${bg} overflow-hidden transition-colors duration-700`}>

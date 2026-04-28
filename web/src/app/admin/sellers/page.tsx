@@ -7,6 +7,7 @@ import { sellerApi } from '@/lib/api/seller.api';
 import { toast } from '@/hooks/use-toast';
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; icon: any }> = {
+  ACTIVE:    { bg: 'bg-green-500/10',  text: 'text-green-400',  icon: CheckCircle },
   APPROVED:  { bg: 'bg-green-500/10',  text: 'text-green-400',  icon: CheckCircle },
   PENDING:   { bg: 'bg-yellow-500/10', text: 'text-yellow-400', icon: Clock },
   SUSPENDED: { bg: 'bg-red-500/10',    text: 'text-red-400',    icon: XCircle },
@@ -38,7 +39,7 @@ export default function AdminSellersPage() {
     try {
       await sellerApi.approveSeller(id);
     } catch {}
-    setSellers(prev => prev.map(s => s._id === id ? { ...s, status: 'APPROVED' } : s));
+    setSellers(prev => prev.map(s => s._id === id ? { ...s, status: 'ACTIVE' } : s));
     toast({ title: 'Seller approved!' });
     setActing(null);
   };
@@ -59,7 +60,8 @@ export default function AdminSellersPage() {
   };
 
   const filtered = sellers.filter(s => {
-    if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
+    const effectiveFilter = statusFilter === 'APPROVED' ? ['ACTIVE', 'APPROVED'] : [statusFilter];
+    if (statusFilter !== 'ALL' && !effectiveFilter.includes(s.status)) return false;
     if (search) {
       const q = search.toLowerCase();
       return s.storeName?.toLowerCase().includes(q) || s.userId?.email?.toLowerCase().includes(q);
@@ -68,7 +70,7 @@ export default function AdminSellersPage() {
   });
 
   const stats = [
-    { label: 'Approved', value: sellers.filter(s => s.status === 'APPROVED').length, gradient: 'from-green-500 to-emerald-500' },
+    { label: 'Approved', value: sellers.filter(s => s.status === 'ACTIVE' || s.status === 'APPROVED').length, gradient: 'from-green-500 to-emerald-500' },
     { label: 'Pending Review', value: sellers.filter(s => s.status === 'PENDING').length, gradient: 'from-yellow-500 to-orange-500' },
     { label: 'Suspended', value: sellers.filter(s => s.status === 'SUSPENDED').length, gradient: 'from-red-500 to-rose-500' },
   ];
@@ -202,7 +204,7 @@ export default function AdminSellersPage() {
                     {acting === seller._id ? '...' : '✓ Approve'}
                   </button>
                 )}
-                {seller.status === 'APPROVED' && (
+                {(seller.status === 'ACTIVE' || seller.status === 'APPROVED') && (
                   <button
                     onClick={() => setSuspendTarget({ id: seller._id, storeName: seller.storeName })}
                     className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold rounded-xl transition-colors"

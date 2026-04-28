@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { CheckCircle, Package, Truck, ArrowRight, ShoppingBag, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api/client';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 interface OrderItem {
   productName: string;
@@ -29,6 +30,7 @@ export default function OrderSuccessPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
+  const { settings } = useSiteSettingsStore();
 
   useEffect(() => {
     if (!id) return;
@@ -52,7 +54,7 @@ export default function OrderSuccessPage() {
             </div>
             <h1 className="text-2xl font-black text-gray-900">Order Placed!</h1>
             <p className="text-gray-500 mt-1 text-sm">
-              Thank you for shopping with Bazzar. We&apos;ll get this to you soon.
+              Thank you for shopping with {settings.siteName || 'Bazzar'}. We&apos;ll get this to you soon.
             </p>
             {order && (
               <p className="mt-3 text-xs font-mono bg-green-100 text-green-700 px-3 py-1.5 rounded-full inline-block">

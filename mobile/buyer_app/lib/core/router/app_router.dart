@@ -94,9 +94,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // Profile sub-routes
-      GoRoute(path: '/addresses',    builder: (_, __) => const AddressesScreen()),
-      GoRoute(path: '/notifications',builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: '/referral',     builder: (_, __) => const ReferralScreen()),
+      // Profile sub-routes — accessible via /profile/... and bare /... aliases
+      GoRoute(path: '/profile/addresses',    builder: (_, __) => const AddressesScreen()),
+      GoRoute(path: '/profile/notifications',builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/addresses',            builder: (_, __) => const AddressesScreen()),
+      GoRoute(path: '/notifications',        builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/referral',             builder: (_, __) => const ReferralScreen()),
     ],
   );
 });

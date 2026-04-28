@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Package, AlertTriangle, TrendingDown, Search, ArrowUpDown, Edit2, Check, X } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
 
 interface InventoryItem {
   _id: string;
@@ -40,9 +41,8 @@ export default function InventoryPage() {
   async function fetchInventory() {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/seller/inventory');
-      const data = await res.json();
-      setItems(data.data ?? DEMO);
+      const res = await apiClient.get('/api/v1/seller/inventory') as any;
+      setItems(res.data?.data ?? DEMO);
     } catch {
       setItems(DEMO);
     } finally {
@@ -55,13 +55,10 @@ export default function InventoryPage() {
     if (isNaN(qty) || qty < 0) return;
     setSaving(true);
     try {
-      await fetch(`/api/v1/seller/inventory/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock: qty }),
-      });
+      await apiClient.patch(`/api/v1/seller/inventory/${id}`, { stock: qty });
       setItems(prev => prev.map(item => item._id === id ? { ...item, stock: qty } : item));
     } catch {
+      // optimistic update on failure
       setItems(prev => prev.map(item => item._id === id ? { ...item, stock: qty } : item));
     } finally {
       setSaving(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ShoppingBag, Trash2, Plus, Minus, Package, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils';
 import { cartApi } from '@/lib/api/cart.api';
 
 export function CartDrawer() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { isAuthenticated } = useAuthStore();
 
   // Authenticated cart (server-synced)
@@ -78,7 +81,7 @@ export function CartDrawer() {
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-orange-500" />
-            <h2 className="font-semibold">My Cart ({totalItems()})</h2>
+            <h2 className="font-semibold">My Cart ({mounted ? totalItems() : 0})</h2>
           </div>
           <button
             onClick={closeCart}
@@ -149,7 +152,7 @@ export function CartDrawer() {
                       <button
                         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => {
-                          if (item.quantity < item.stock) handleUpdateItem(item.id, item.productId, item.quantity + 1, item.variantId);
+                          if (!item.stock || item.quantity < item.stock) handleUpdateItem(item.id, item.productId, item.quantity + 1, item.variantId);
                         }}
                       >
                         <Plus className="w-3 h-3" />

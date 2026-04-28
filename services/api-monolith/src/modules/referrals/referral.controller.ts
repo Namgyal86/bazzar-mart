@@ -12,6 +12,7 @@ import { AuthRequest } from '../../shared/middleware/auth';
 import { Referral, Wallet } from './models/referral.model';
 import { internalBus, EVENTS, OrderCreatedPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
+import { notify } from '../../shared/utils/notify';
 
 const REFERRAL_BONUS = 200; // Rs.
 
@@ -56,6 +57,10 @@ export function registerReferralEventHandlers(): void {
 
       // Mark as fully paid
       await Referral.findByIdAndUpdate(referral._id, { $set: { status: 'PAID' } });
+
+      // Notify both parties about wallet credit
+      notify(referral.referrerId, 'Referral Bonus Earned!', `Your friend placed their first order. Rs. ${REFERRAL_BONUS} has been credited to your wallet.`, 'SYSTEM', { bonus: REFERRAL_BONUS });
+      notify(referral.referredId, 'Welcome Bonus Credited!', `Rs. ${REFERRAL_BONUS} welcome bonus has been added to your wallet for placing your first order.`, 'SYSTEM', { bonus: REFERRAL_BONUS });
 
     } catch (err) {
       console.error('[referrals] ORDER_CREATED handler error:', err);

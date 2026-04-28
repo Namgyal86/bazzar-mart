@@ -26,6 +26,7 @@ export default function AdminCategoriesPage() {
   const [form, setForm] = useState<Partial<Category>>(EMPTY());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [formError, setFormError] = useState<string | null>(null);
 
   const buildTree = (cats: Category[]): CatWithSubs[] => {
     const parents = cats.filter(c => !c.parentCategory);
@@ -61,9 +62,10 @@ export default function AdminCategoriesPage() {
     setEditId(cat._id);
   };
 
-  const closeForm = () => { setEditId(null); setForm(EMPTY()); };
+  const closeForm = () => { setEditId(null); setForm(EMPTY()); setFormError(null); };
 
   const handleNameChange = (name: string) => {
+    setFormError(null);
     setForm(f => ({
       ...f, name,
       slug: editId === 'new'
@@ -86,7 +88,9 @@ export default function AdminCategoriesPage() {
       closeForm();
       load();
     } catch (e: any) {
-      toast({ title: e?.response?.data?.error || 'Save failed', variant: 'destructive' });
+      const msg = e?.response?.data?.error || 'Save failed';
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -97,7 +101,7 @@ export default function AdminCategoriesPage() {
       await categoryApi.update(cat._id, { [field]: !cat[field] });
       setAll(prev => prev.map(c => c._id === cat._id ? { ...c, [field]: !c[field] } : c));
       setTree(buildTree(all.map(c => c._id === cat._id ? { ...c, [field]: !c[field] } : c)));
-    } catch { toast({ title: 'Update failed', variant: 'destructive' }); }
+    } catch (e: any) { toast({ title: e?.response?.data?.error || 'Update failed', variant: 'destructive' }); }
   };
 
   const confirmDelete = async () => {
@@ -109,7 +113,7 @@ export default function AdminCategoriesPage() {
       toast({ title: `Deleted ${toDelete.length > 1 ? `${toDelete.length} items` : 'category'}` });
       setDeleteId(null);
       load();
-    } catch { toast({ title: 'Delete failed', variant: 'destructive' }); }
+    } catch (e: any) { toast({ title: e?.response?.data?.error || 'Delete failed', variant: 'destructive' }); }
   };
 
   const parentCategories = all.filter(c => !c.parentCategory);
@@ -458,7 +462,15 @@ export default function AdminCategoriesPage() {
                 <input value={form.name || ''} onChange={e => handleNameChange(e.target.value)}
                   placeholder="e.g. Fresh Fruits"
                   className="w-full px-3 py-2 rounded-xl text-sm text-white placeholder-gray-600 outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${formError ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.1)'}`,
+                  }} />
+                {formError && (
+                  <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                    <span>⚠</span> {formError}
+                  </p>
+                )}
               </div>
 
               {/* Slug */}

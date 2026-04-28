@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
   const items     = useCartStore(state => state.items);
   const setItems  = useCartStore(state => state.setItems);
   const { toggleItem: toggleWishlist, isInWishlist } = useWishlistStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const trackViewed    = useRecentlyViewedStore(state => state.track);
   const recentProducts = useRecentlyViewedStore(state => state.products);
@@ -97,6 +97,10 @@ export default function ProductDetailPage() {
   const [activeImage, setActiveImage]       = useState(0);
   const [activeTab, setActiveTab]           = useState<'description' | 'specs' | 'reviews'>('description');
   const [helpfulIds, setHelpfulIds]         = useState<Set<string>>(new Set());
+  const [reviewForm, setReviewForm]         = useState({ rating: 5, title: '', body: '' });
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError]       = useState<string | null>(null);
+  const [hasReviewed, setHasReviewed]       = useState(false);
 
   useEffect(() => {
     const id = params.id as string;
@@ -200,6 +204,41 @@ export default function ProductDetailPage() {
   const discount      = product.basePrice > 0
     ? Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100)
     : 0;
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    setReviewSubmitting(true);
+    setReviewError(null);
+    try {
+      const res = await reviewApi.create(product.id, {
+        rating: reviewForm.rating,
+        title: reviewForm.title,
+        body: reviewForm.body,
+        productName: product.name,
+        userName: user ? `${user.firstName} ${user.lastName}` : undefined,
+      }) as any;
+      const r = res.data?.data ?? res.data;
+      setReviews(prev => [{
+        id: r._id ?? r.id ?? String(Date.now()),
+        user: user ? `${user.firstName} ${user.lastName}` : 'You',
+        rating: reviewForm.rating,
+        date: new Date().toISOString().slice(0, 10),
+        title: reviewForm.title,
+        body: reviewForm.body,
+        verified: false,
+      }, ...prev]);
+      setHasReviewed(true);
+      setReviewForm({ rating: 5, title: '', body: '' });
+      toast({ title: 'Review submitted!' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error ?? 'Failed to submit review';
+      setReviewError(msg);
+      toast({ title: msg, variant: 'destructive' });
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const shareProduct = () => {
     const url = window.location.href;
@@ -570,7 +609,70 @@ export default function ProductDetailPage() {
           )}
 
           {activeTab === 'reviews' && (
-            <div className="max-w-2xl space-y-4">
+            <div className="max-w-2xl space-y-6">
+
+              {/* Write a review */}
+              {!hasReviewed && (
+                <div className="border border-border rounded-xl p-5">
+                  <h3 className="font-semibold text-sm mb-4">Write a Review</h3>
+                  {!isAuthenticated ? (
+                    <p className="text-sm text-muted-foreground">
+                      <Link href="/auth/login" className="text-orange-500 hover:underline font-medium">Sign in</Link> to leave a review.
+                    </p>
+                  ) : (
+                    <form onSubmit={submitReview} className="space-y-4">
+                      {/* Star rating picker */}
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Your Rating</p>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setReviewForm(f => ({ ...f, rating: s }))}
+                              className="p-0.5"
+                            >
+                              <Star className={`w-7 h-7 transition-colors ${s <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">Title</p>
+                        <input
+                          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+                          placeholder="Summary of your experience"
+                          value={reviewForm.title}
+                          onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))}
+                          maxLength={100}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">Review</p>
+                        <textarea
+                          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-orange-500/40 resize-none"
+                          placeholder="What did you like or dislike?"
+                          rows={4}
+                          required
+                          value={reviewForm.body}
+                          onChange={e => setReviewForm(f => ({ ...f, body: e.target.value }))}
+                          maxLength={1000}
+                        />
+                      </div>
+                      {reviewError && <p className="text-xs text-red-500">{reviewError}</p>}
+                      <button
+                        type="submit"
+                        disabled={reviewSubmitting}
+                        className="px-5 py-2 text-sm font-semibold text-white rounded-xl transition-all hover:brightness-110 disabled:opacity-60"
+                        style={{ background: 'linear-gradient(135deg, var(--ap), var(--as))' }}
+                      >
+                        {reviewSubmitting ? 'Submitting…' : 'Submit Review'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+
               {reviews.length > 0 ? (
                 reviews.map((review) => (
                   <div key={review.id} className="border rounded-xl p-4">

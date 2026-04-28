@@ -30,14 +30,18 @@ function BannerForm({
   onSave,
   onCancel,
   saving,
+  formError,
+  onClearError,
 }: {
   initial: Partial<Banner>;
   onSave: (data: Partial<Banner>) => void;
   onCancel: () => void;
   saving: boolean;
+  formError?: string | null;
+  onClearError?: () => void;
 }) {
   const [form, setForm] = useState<Partial<Banner>>(initial);
-  const set = (key: keyof Banner, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const set = (key: keyof Banner, value: any) => { setForm(f => ({ ...f, [key]: value })); if (key === 'title') onClearError?.(); };
 
   return (
     <motion.div
@@ -71,8 +75,9 @@ function BannerForm({
               value={form.title || ''}
               onChange={e => set('title', e.target.value)}
               placeholder="e.g. Premium Electronics"
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+              className={`bg-white/5 text-white placeholder:text-gray-600 ${formError ? 'border-red-500/70' : 'border-white/10'}`}
             />
+            {formError && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1"><span>⚠</span> {formError}</p>}
           </div>
           <div>
             <label className="text-xs font-medium text-gray-400 mb-1.5 block">Subtitle</label>
@@ -314,6 +319,7 @@ export default function AdminBannersPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Banner> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const loadBanners = async () => {
     try {
@@ -341,8 +347,10 @@ export default function AdminBannersPage() {
       }
       setEditing(null);
       await loadBanners();
-    } catch {
-      toast({ title: 'Failed to save banner', variant: 'destructive' });
+    } catch (e: any) {
+      const msg = e?.response?.data?.error || 'Failed to save banner';
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -409,8 +417,10 @@ export default function AdminBannersPage() {
             key={editing._id || 'new'}
             initial={editing}
             onSave={handleSave}
-            onCancel={() => setEditing(null)}
+            onCancel={() => { setEditing(null); setFormError(null); }}
             saving={saving}
+            formError={formError}
+            onClearError={() => setFormError(null)}
           />
         )}
       </AnimatePresence>

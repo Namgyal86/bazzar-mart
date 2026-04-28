@@ -22,10 +22,15 @@ export default function AdminNotificationsPage() {
   const [form, setForm] = useState({ title: '', message: '', type: 'SYSTEM', target: 'ALL' });
   const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    apiClient.get('/api/v1/notifications/admin')
+  const fetchNotifications = () =>
+    (apiClient.get('/api/v1/notifications/admin') as any)
       .then((res: any) => { if (Array.isArray(res.data?.data)) setNotifications(res.data.data); })
       .catch(() => {});
+
+  useEffect(() => {
+    fetchNotifications();
+    const t = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(t);
   }, []);
 
   const handleSend = async (e: React.FormEvent) => {

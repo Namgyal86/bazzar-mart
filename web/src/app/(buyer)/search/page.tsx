@@ -28,17 +28,19 @@ function SearchContent() {
     setLoading(true);
     productApi.search(query)
       .then(res => {
-        const prods: any[] = Array.isArray(res.data.data) ? res.data.data : (res.data.data as any)?.products ?? [];
+        const d = res.data.data as any;
+        // Search endpoint returns { hits: [...] }; product list returns array or { products: [...] }
+        const prods: any[] = Array.isArray(d) ? d : (d?.hits ?? d?.products ?? []);
         setResults(prods.map((p: any) => ({
-          id: p._id || p.id,
+          id: p.productId || p._id || p.id,
           name: p.name,
-          price: p.price,
-          salePrice: p.salePrice || p.price,
-          rating: p.rating,
+          price: p.basePrice ?? p.price,
+          salePrice: p.salePrice ?? p.basePrice ?? p.price,
+          rating: p.averageRating ?? p.rating,
           reviews: p.reviewCount,
-          image: p.images?.[0] || '',
+          image: p.imageUrl || p.images?.[0] || '',
           seller: typeof p.seller === 'string' ? p.seller : p.seller?.storeName,
-          category: p.category?.name || '',
+          category: p.categoryId || p.category?.name || p.category || '',
         })));
       })
       .catch(() => { setResults([]); })

@@ -6,6 +6,7 @@ import { Input } from './input';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '@/store/auth.store';
 
 interface ImageUploadProps {
   value?: string;
@@ -21,7 +22,6 @@ export function ImageUpload({ value, onChange, label = 'Image', className, aspec
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
   const aspectClass = aspectRatio === 'square' ? 'aspect-square' : aspectRatio === 'video' ? 'aspect-video' : 'aspect-[3/1]';
 
   const handleFile = async (file: File) => {
@@ -29,7 +29,10 @@ export function ImageUpload({ value, onChange, label = 'Image', className, aspec
     try {
       const form = new FormData();
       form.append('image', file);
-      const res = await fetch('/api/v1/upload/image', { method: 'POST', body: form });
+      const token = useAuthStore.getState().accessToken;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch('/api/v1/upload/image', { method: 'POST', body: form, headers });
       const data = await res.json();
       const url = data.data?.url ?? data.url;
       if (url) onChange(url);
@@ -40,8 +43,6 @@ export function ImageUpload({ value, onChange, label = 'Image', className, aspec
   return (
     <div className={cn('space-y-2', className)}>
       {label && <label className="text-sm font-medium">{label}</label>}
-
-      {/* Preview */}
       {value && (
         <div className={cn('relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border', aspectClass)}>
           <Image src={value} alt="Preview" fill className="object-cover" sizes="400px" />
@@ -51,46 +52,39 @@ export function ImageUpload({ value, onChange, label = 'Image', className, aspec
           </button>
         </div>
       )}
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+      <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
         {(['url', 'file'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={cn('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all',
-              tab === t ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-muted-foreground')}>
-            {t === 'url' ? <Link className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
-            {t === 'url' ? 'From URL' : 'Upload File'}
+            className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              tab === t ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+            {t === 'url' ? 'URL' : 'Upload'}
           </button>
         ))}
       </div>
-
       <AnimatePresence mode="wait">
         {tab === 'url' ? (
-          <motion.div key="url" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-            className="flex gap-2">
-            <Input placeholder="https://example.com/image.jpg" value={urlInput}
-              onChange={e => setUrlInput(e.target.value)} className="flex-1 text-sm" />
-            <Button type="button" size="sm" variant="outline"
-              onClick={() => { if (urlInput) onChange(urlInput); }}>
-              Apply
+          <motion.div key="url" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="flex gap-2">
+            <Input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com/image.jpg" className="flex-1" />
+            <Button variant="outline" size="sm" onClick={() => { if (urlInput) onChange(urlInput); }}>
+              <Link className="w-4 h-4" />
             </Button>
           </motion.div>
         ) : (
-          <motion.div key="file" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+          <motion.div key="file" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
             <div
+              onClick={() => fileRef.current?.click()}
               onDragOver={e => { e.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
               onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-              onClick={() => fileRef.current?.click()}
-              className={cn('border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer transition-colors',
-                dragging ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' : 'border-gray-200 dark:border-gray-700 hover:border-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800/50')}>
+              className={cn('border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors',
+                dragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50')}>
               {uploading ? (
-                <><Loader2 className="w-8 h-8 text-orange-500 animate-spin" /><p className="text-sm text-muted-foreground">Uploading...</p></>
+                <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
               ) : (
                 <>
-                  <ImageIcon className="w-8 h-8 text-gray-400" />
-                  <p className="text-sm font-medium">Drop image here or click to browse</p>
-                  <p className="text-xs text-muted-foreground">JPG, PNG, WebP up to 10MB</p>
+                  <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Click to upload</span> or drag and drop</p>
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP up to 5MB</p>
                 </>
               )}
             </div>

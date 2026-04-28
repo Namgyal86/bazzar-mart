@@ -5,8 +5,8 @@ const EnvSchema = z.object({
   PORT:                z.coerce.number().default(8100),
 
   // Auth
-  JWT_ACCESS_SECRET:   z.string().min(8),
-  JWT_REFRESH_SECRET:  z.string().min(8).optional(),
+  JWT_ACCESS_SECRET:   z.string().min(32),
+  JWT_REFRESH_SECRET:  z.string().min(32),
 
   // Database — single shared connection
   MONGO_URI:           z.string().url(),
@@ -45,7 +45,10 @@ const EnvSchema = z.object({
   FACEBOOK_APP_SECRET:  z.string().optional(),
 });
 
-const parsed = EnvSchema.safeParse(process.env);
+const rawEnv = Object.fromEntries(
+  Object.entries(process.env).map(([k, v]) => [k, v === '' ? undefined : v])
+);
+const parsed = EnvSchema.safeParse(rawEnv);
 
 if (!parsed.success) {
   console.error('❌  Invalid environment variables:\n', parsed.error.flatten().fieldErrors);

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Plus, X, Package, Tag, DollarSign, Image as ImageIcon, Sparkles } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Plus, X, Package, DollarSign, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
 import { apiClient, getErrorMessage } from '@/lib/api/client';
+import { categoryApi, CategoryWithSubs } from '@/lib/api/product.api';
 import Link from 'next/link';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 const schema = z.object({
   name:        z.string().min(3, 'At least 3 characters'),
@@ -22,31 +23,24 @@ const schema = z.object({
   ),
   stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int().min(0, 'Enter a valid quantity'),
   category:    z.string().min(1, 'Select a category'),
+  subCategory: z.string().min(1, 'Select a subcategory'),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-const CATEGORIES = [
-  'Fruits & Vegetables', 'Dairy & Eggs', 'Grains & Pulses', 'Meat & Seafood',
-  'Snacks & Beverages', 'Spices & Condiments', 'Personal Care', 'Household Items',
-  'Frozen Foods', 'Bakery & Bread',
-];
-
 const sectionCls = 'rounded-2xl p-6 space-y-4';
 const sectionStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' };
-
 const inputCls = 'w-full rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 transition-all';
 const inputStyle = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' };
-const inputFocusStyle = { '--tw-ring-color': 'rgba(99,102,241,0.4)' } as React.CSSProperties;
-
 const labelCls = 'text-sm font-medium text-gray-400 mb-1.5 block';
 
-function FieldInput({ placeholder, type = 'text', error, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { error?: string }) {
-  return (
+const FieldInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { error?: string }>(
+  ({ placeholder, type = 'text', error, ...props }, ref) => (
     <div>
       <input
+        ref={ref}
         type={type}
         placeholder={placeholder}
         className={inputCls}
@@ -55,30 +49,42 @@ function FieldInput({ placeholder, type = 'text', error, ...props }: React.Input
       />
       {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
     </div>
-  );
-}
+  )
+);
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { settings } = useSiteSettingsStore();
   const [images, setImages] = useState<string[]>(['']);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [catTree, setCatTree] = useState<CategoryWithSubs[]>([]);
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  useEffect(() => {
+    categoryApi.withSubs()
+      .then((res: any) => setCatTree(res.data?.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: 'onChange',
     defaultValues: { stock: 10 },
   });
 
-  const priceRaw = watch('price');
+  const selectedCategory = watch('category');
+  const subCats = catTree.find(c => c.name === selectedCategory)?.subcategories ?? [];
+
+  const priceRaw     = watch('price');
   const salePriceRaw = watch('salePrice');
-  const price = Number(priceRaw) || 0;
-  const salePrice = Number(salePriceRaw) || 0;
-  const discount = price > 0 && salePrice > 0 && salePrice < price
+  const price        = Number(priceRaw) || 0;
+  const salePrice    = Number(salePriceRaw) || 0;
+  const discount     = price > 0 && salePrice > 0 && salePrice < price
     ? Math.round(((price - salePrice) / price) * 100)
     : 0;
 
-  const updateImage  = (i: number, url: string) => setImages(p => p.map((img, idx) => idx === i ? url : img));
-  const removeImage  = (i: number)              => setImages(p => p.filter((_, idx) => idx !== i));
-  const addImage     = ()                        => setImages(p => [...p, '']);
+  const updateImage = (i: number, url: string) => setImages(p => p.map((img, idx) => idx === i ? url : img));
+  const removeImage = (i: number)              => setImages(p => p.filter((_, idx) => idx !== i));
+  const addImage    = ()                        => setImages(p => [...p, '']);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -88,21 +94,24 @@ export default function NewProductPage() {
         price:       data.price,
         stock:       data.stock,
         category:    data.category,
+        subCategory: data.subCategory,
         salePrice:   data.salePrice || undefined,
         brand:       data.brand || undefined,
         tags:        data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         images:      images.filter(Boolean),
       });
+      setApiError(null);
       toast({ title: 'Product created!', description: `${data.name} is now live.` });
       router.push('/seller/products');
     } catch (err) {
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      const msg = getErrorMessage(err);
+      setApiError(msg);
+      toast({ title: msg, variant: 'destructive' });
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link href="/seller/products">
           <button
@@ -117,7 +126,7 @@ export default function NewProductPage() {
             Add New Product
             <Sparkles className="w-5 h-5 text-indigo-400 opacity-70" />
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Fill in the details to list your product on Bazzar</p>
+          <p className="text-sm text-gray-500 mt-0.5">Fill in the details to list your product on {settings.siteName || 'Bazzar'}</p>
         </div>
       </div>
 
@@ -133,11 +142,7 @@ export default function NewProductPage() {
 
           <div>
             <label className={labelCls}>Product Name *</label>
-            <FieldInput
-              placeholder="e.g. Samsung Galaxy S24 Ultra"
-              error={errors.name?.message}
-              {...register('name')}
-            />
+            <FieldInput placeholder="e.g. Organic Tomatoes 1kg" error={errors.name?.message} {...register('name')} />
           </div>
 
           <div>
@@ -152,30 +157,62 @@ export default function NewProductPage() {
             {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>}
           </div>
 
+          {/* Category → Subcategory */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Category *</label>
               <select
-                {...register('category')}
+                {...register('category', {
+                  onChange: () => setValue('subCategory', ''),
+                })}
                 className={inputCls}
-                style={{ ...inputStyle, color: 'white' }}
+                style={{ ...inputStyle, color: selectedCategory ? 'white' : '#6b7280', borderColor: errors.category ? 'rgba(239,68,68,0.5)' : undefined }}
               >
                 <option value="" style={{ background: '#1a2035' }}>Select category</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c} style={{ background: '#1a2035' }}>{c}</option>
+                {catTree.map(c => (
+                  <option key={c._id} value={c.name} style={{ background: '#1a2035' }}>{c.name}</option>
                 ))}
               </select>
               {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category.message}</p>}
             </div>
+
             <div>
-              <label className={labelCls}>Brand</label>
-              <FieldInput placeholder="e.g. Samsung, Nike…" {...register('brand')} />
+              <label className={labelCls}>Subcategory *</label>
+              <select
+                {...register('subCategory')}
+                disabled={!selectedCategory}
+                className={inputCls}
+                style={{
+                  ...inputStyle,
+                  color: watch('subCategory') ? 'white' : '#6b7280',
+                  borderColor: errors.subCategory ? 'rgba(239,68,68,0.5)' : undefined,
+                  opacity: !selectedCategory ? 0.5 : 1,
+                  cursor: !selectedCategory ? 'not-allowed' : 'default',
+                }}
+              >
+                <option value="" style={{ background: '#1a2035' }}>
+                  {!selectedCategory ? 'Select category first' : subCats.length === 0 ? 'No subcategories' : 'Select subcategory'}
+                </option>
+                {subCats.map(s => (
+                  <option key={s._id} value={s.name} style={{ background: '#1a2035' }}>{s.name}</option>
+                ))}
+              </select>
+              {errors.subCategory && <p className="text-xs text-red-400 mt-1">{errors.subCategory.message}</p>}
+              {selectedCategory && subCats.length === 0 && (
+                <p className="text-xs text-yellow-500 mt-1">No subcategories available for this category</p>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className={labelCls}>Tags <span className="text-gray-600 font-normal">(comma separated)</span></label>
-            <FieldInput placeholder="smartphone, 5g, android…" {...register('tags')} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Brand</label>
+              <FieldInput placeholder="e.g. Amul, Nestlé…" {...register('brand')} />
+            </div>
+            <div>
+              <label className={labelCls}>Tags <span className="text-gray-600 font-normal">(comma separated)</span></label>
+              <FieldInput placeholder="organic, fresh, local…" {...register('tags')} />
+            </div>
           </div>
         </div>
 
@@ -226,7 +263,7 @@ export default function NewProductPage() {
         <div className={sectionCls} style={sectionStyle}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.12)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251,146,60,0.12)' }}>
                 <ImageIcon className="w-4 h-4 text-orange-400" />
               </div>
               <div>
@@ -270,6 +307,11 @@ export default function NewProductPage() {
         </div>
 
         {/* Actions */}
+        {apiError && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5">
+            <span>⚠</span> {apiError}
+          </p>
+        )}
         <div className="flex gap-3 pb-6">
           <button
             type="button"

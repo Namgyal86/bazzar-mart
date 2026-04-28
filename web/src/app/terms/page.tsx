@@ -1,20 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import type { Metadata } from 'next';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description: 'Bazzar Terms of Service — please read before using our platform.',
-};
-
-const SECTIONS = [
+const SECTIONS_TEMPLATE = [
   {
     title: '1. Acceptance of Terms',
-    body: `By creating an account or using the Bazzar platform, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.`,
+    body: `By creating an account or using the {SITE} platform, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.`,
   },
   {
     title: '2. Use of the Platform',
-    body: `Bazzar provides an online marketplace connecting buyers and sellers in Nepal. You agree to use the platform only for lawful purposes and in a manner that does not infringe the rights of others or restrict or inhibit anyone else's use of the platform.`,
+    body: `{SITE} provides an online marketplace connecting buyers and sellers in Nepal. You agree to use the platform only for lawful purposes and in a manner that does not infringe the rights of others or restrict or inhibit anyone else's use of the platform.`,
   },
   {
     title: '3. Account Registration',
@@ -22,11 +19,11 @@ const SECTIONS = [
   },
   {
     title: '4. Orders and Payments',
-    body: `All orders placed through Bazzar are subject to availability and confirmation. Prices are listed in Nepalese Rupees (NPR). We accept payments via Khalti, eSewa, and other supported gateways. Bazzar reserves the right to cancel or refuse any order at our discretion.`,
+    body: `All orders placed through {SITE} are subject to availability and confirmation. Prices are listed in Nepalese Rupees (NPR). We accept payments via Khalti, eSewa, and other supported gateways. {SITE} reserves the right to cancel or refuse any order at our discretion.`,
   },
   {
     title: '5. Delivery',
-    body: `Estimated delivery times are provided at checkout and may vary based on location and product availability. Bazzar is not liable for delays caused by circumstances beyond our reasonable control, including weather events or public disruptions.`,
+    body: `Estimated delivery times are provided at checkout and may vary based on location and product availability. {SITE} is not liable for delays caused by circumstances beyond our reasonable control, including weather events or public disruptions.`,
   },
   {
     title: '6. Returns and Refunds',
@@ -34,15 +31,15 @@ const SECTIONS = [
   },
   {
     title: '7. Intellectual Property',
-    body: `All content on the Bazzar platform — including text, graphics, logos, and software — is the property of Bazzar or its content suppliers and is protected by applicable intellectual property laws. You may not reproduce or distribute any content without prior written permission.`,
+    body: `All content on the {SITE} platform — including text, graphics, logos, and software — is the property of {SITE} or its content suppliers and is protected by applicable intellectual property laws. You may not reproduce or distribute any content without prior written permission.`,
   },
   {
     title: '8. Limitation of Liability',
-    body: `To the maximum extent permitted by law, Bazzar shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform or inability to use the platform. Our total liability shall not exceed the amount you paid for the relevant order.`,
+    body: `To the maximum extent permitted by law, {SITE} shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform or inability to use the platform. Our total liability shall not exceed the amount you paid for the relevant order.`,
   },
   {
     title: '9. Changes to Terms',
-    body: `Bazzar reserves the right to modify these Terms at any time. Changes will be effective immediately upon posting to the platform. Your continued use of Bazzar after any changes constitutes acceptance of the new Terms.`,
+    body: `{SITE} reserves the right to modify these Terms at any time. Changes will be effective immediately upon posting to the platform. Your continued use of {SITE} after any changes constitutes acceptance of the new Terms.`,
   },
   {
     title: '10. Governing Law',
@@ -50,11 +47,20 @@ const SECTIONS = [
   },
   {
     title: '11. Contact Us',
-    body: `If you have any questions about these Terms, please contact us at support@bazzar.com or through the Help Centre on our platform.`,
+    body: `If you have any questions about these Terms, please contact us at {EMAIL} or through the Help Centre on our platform.`,
   },
 ];
 
 export default function TermsPage() {
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
+  const email = settings.email || 'support@bazzar.com';
+
+  const sections = SECTIONS_TEMPLATE.map((s) => ({
+    ...s,
+    body: s.body.replace(/\{SITE\}/g, siteName).replace(/\{EMAIL\}/g, email),
+  }));
+
   return (
     <div className="min-h-screen" style={{ background: '#060810', color: '#e5e7eb' }}>
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -70,11 +76,11 @@ export default function TermsPage() {
         <p className="text-sm text-gray-500 mb-10">Last updated: April 2025</p>
 
         <p className="text-gray-400 leading-relaxed mb-10">
-          Welcome to Bazzar — Nepal&apos;s online grocery &amp; mart marketplace. Please read these Terms of Service carefully before using our platform.
+          Welcome to {siteName} — Nepal&apos;s online grocery &amp; mart marketplace. Please read these Terms of Service carefully before using our platform.
         </p>
 
         <div className="space-y-8">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <section key={s.title}>
               <h2 className="text-lg font-bold text-white mb-2">{s.title}</h2>
               <p className="text-gray-400 leading-relaxed text-sm">{s.body}</p>

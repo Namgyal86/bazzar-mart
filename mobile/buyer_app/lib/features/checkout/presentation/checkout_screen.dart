@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -57,28 +58,63 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     setState(() => _placing = true);
     try {
       final dio = ref.read(apiClientProvider);
-      // 1. Create order
+
+      // 1. Fetch cart items to include in the order
+      final cartData = await ref.read(cartProvider.future);
+      final rawItems = cartData['items'] as List? ?? [];
+      if (rawItems.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Your cart is empty'), backgroundColor: Colors.orange),
+          );
+        }
+        return;
+      }
+      final orderItems = rawItems.map((item) {
+        final i = item as Map<String, dynamic>;
+        return {
+          'productId':    i['productId'] as String? ?? '',
+          'productName':  i['productName'] as String? ?? i['name'] as String? ?? '',
+          'productImage': i['productImage'] as String? ?? i['imageUrl'] as String? ?? '',
+          'sellerId':     i['sellerId'] as String? ?? '',
+          'sellerName':   i['sellerName'] as String? ?? '',
+          'unitPrice':    (i['unitPrice'] ?? i['price'] ?? 0).toDouble(),
+          'quantity':     (i['quantity'] as int?) ?? 1,
+        };
+      }).toList();
+
+      // 2. Create order with full payload
       final orderRes = await dio.post('/api/v1/orders', data: {
+        'items':           orderItems,
         'shippingAddress': _selectedAddress,
-        'paymentMethod': _gateway,
+        'paymentMethod':   _gateway,
       });
       final orderId = orderRes.data['data']['_id'] as String;
+
+      // Clear cart — order is placed regardless of payment method
+      try { await dio.delete('/api/v1/cart'); } catch (_) {}
+      ref.invalidate(cartProvider);
 
       if (_gateway == 'COD') {
         if (mounted) context.go('/orders/$orderId');
         return;
       }
 
-      // 2. Initiate payment
+      // 3. Initiate payment for online gateways
       final payRes = await dio.post('/api/v1/payments/initiate', data: {
-        'orderId': orderId,
-        'gateway': _gateway,
+        'orderId':   orderId,
+        'gateway':   _gateway,
         'returnUrl': 'bazzar://payment/verify',
       });
       final payData = payRes.data['data'];
       final redirectUrl = payData['redirectUrl'] ?? payData['payment_url'] ?? payData['redirect'];
       if (redirectUrl != null && mounted) {
-        // Open in browser / webview
+        // Launch the payment URL in the device browser
+        final uri = Uri.tryParse(redirectUrl as String);
+        if (uri != null) {
+          // ignore: deprecated_member_use
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
         context.go('/orders/$orderId');
       }
     } catch (e) {
@@ -128,7 +164,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(addr['label'] as String? ?? 'Address', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text('${addr['street'] ?? ''}, ${addr['city'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text('${addr['addressLine1'] ?? addr['street'] ?? ''}, ${addr['city'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
                     ])),
                   ]),
                 ),

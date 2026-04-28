@@ -7,11 +7,6 @@ export async function GET(req: NextRequest) {
     const forwardHeaders: Record<string, string> = {};
     const auth = req.headers.get('authorization');
     if (auth) forwardHeaders['authorization'] = auth;
-    // Forward internal user headers set by the API client
-    const userId = req.headers.get('x-user-id');
-    const userRole = req.headers.get('x-user-role');
-    if (userId) forwardHeaders['x-user-id'] = userId;
-    if (userRole) forwardHeaders['x-user-role'] = userRole;
 
     const res = await fetch(`${MONOLITH_URL}/api/v1/analytics/admin/overview`, {
       headers: forwardHeaders,

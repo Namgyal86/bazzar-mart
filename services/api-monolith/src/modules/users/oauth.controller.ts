@@ -5,6 +5,24 @@ import { User } from './models/user.model';
 import { signAccessToken, signRefreshToken } from './utils/jwt';
 import { env } from '../../config/env';
 
+const pendingStates = new Map<string, number>();
+
+function generateState(): string {
+  const state = crypto.randomBytes(16).toString('hex');
+  pendingStates.set(state, Date.now() + 10 * 60 * 1000); // 10 min TTL
+  // Clean up expired states
+  for (const [k, exp] of pendingStates) if (Date.now() > exp) pendingStates.delete(k);
+  return state;
+}
+
+function validateState(state: string | undefined): boolean {
+  if (!state) return false;
+  const exp = pendingStates.get(state);
+  if (!exp || Date.now() > exp) return false;
+  pendingStates.delete(state);
+  return true;
+}
+
 const WEB_URL = env.WEB_URL;
 const API_BASE_URL = env.API_BASE_URL;
 
@@ -34,19 +52,22 @@ async function issueTokensAndRedirect(res: Response, userId: string, role: strin
 
 export const googleRedirect = (_req: Request, res: Response): void => {
   if (!env.GOOGLE_CLIENT_ID) { res.status(501).json({ error: 'Google OAuth not configured' }); return; }
+  const state = generateState();
   const params = new URLSearchParams({
     client_id:     env.GOOGLE_CLIENT_ID,
     redirect_uri:  `${API_BASE_URL}/api/v1/auth/google/callback`,
     response_type: 'code',
     scope:         'openid email profile',
     access_type:   'online',
+    state,
   });
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 };
 
 export const googleCallback = async (req: Request, res: Response): Promise<void> => {
-  const { code, error } = req.query as { code?: string; error?: string };
+  const { code, error, state } = req.query as { code?: string; error?: string; state?: string };
 
+  if (!validateState(state)) { oauthError(res, 'Invalid OAuth state — possible CSRF attack'); return; }
   if (error || !code) { oauthError(res, 'Google login was cancelled or denied'); return; }
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) { oauthError(res, 'Google OAuth not configured'); return; }
 
@@ -108,17 +129,20 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
 
 export const facebookRedirect = (_req: Request, res: Response): void => {
   if (!env.FACEBOOK_APP_ID) { res.status(501).json({ error: 'Facebook OAuth not configured' }); return; }
+  const state = generateState();
   const params = new URLSearchParams({
     client_id:    env.FACEBOOK_APP_ID,
     redirect_uri: `${API_BASE_URL}/api/v1/auth/facebook/callback`,
     scope:        'email,public_profile',
+    state,
   });
   res.redirect(`https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`);
 };
 
 export const facebookCallback = async (req: Request, res: Response): Promise<void> => {
-  const { code, error } = req.query as { code?: string; error?: string };
+  const { code, error, state } = req.query as { code?: string; error?: string; state?: string };
 
+  if (!validateState(state)) { oauthError(res, 'Invalid OAuth state — possible CSRF attack'); return; }
   if (error || !code) { oauthError(res, 'Facebook login was cancelled or denied'); return; }
   if (!env.FACEBOOK_APP_ID || !env.FACEBOOK_APP_SECRET) { oauthError(res, 'Facebook OAuth not configured'); return; }
 

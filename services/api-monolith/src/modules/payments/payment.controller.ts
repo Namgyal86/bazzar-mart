@@ -5,6 +5,7 @@ import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS } from '../../shared/events/emitter';
 import { env } from '../../config/env';
 import { handleError } from '../../shared/middleware/error';
+import { notify } from '../../shared/utils/notify';
 import {
   khaltiInitiate, khaltiLookup, toKhaltiPaisa,
   isKhaltiSuccess, khaltiErrorMessage, khaltiRefund,
@@ -41,9 +42,11 @@ async function emitPaymentResult(
   if (status === 'SUCCESS') {
     internalBus.emit(EVENTS.PAYMENT_SUCCESS, { ...basePayload, sellerId: '' });
     publishEvent('payment.success', basePayload).catch(() => {});
+    notify(payment.userId, 'Payment Successful', `Your payment of Rs. ${payment.amount} was successful.`, 'PAYMENT', { orderId: payment.orderId, gateway: payment.gateway });
   } else {
     internalBus.emit(EVENTS.PAYMENT_FAILED, basePayload);
     publishEvent('payment.failed', basePayload).catch(() => {});
+    notify(payment.userId, 'Payment Failed', `Your payment of Rs. ${payment.amount} could not be processed.`, 'PAYMENT', { orderId: payment.orderId, gateway: payment.gateway });
   }
 }
 
@@ -76,7 +79,8 @@ export const initiatePayment = async (req: AuthRequest, res: Response): Promise<
       }
 
       // Dev mock — no real key configured, simulate success immediately
-      if (!env.KHALTI_SECRET_KEY && env.NODE_ENV !== 'production') {
+      const hasRealKhaltiKey = env.KHALTI_SECRET_KEY && !env.KHALTI_SECRET_KEY.startsWith('your_');
+      if (!hasRealKhaltiKey && env.NODE_ENV !== 'production') {
         await emitPaymentResult(payment, 'SUCCESS', 'DEV-KHALTI-' + Date.now());
         res.json({ success: true, data: { payment, redirect: null, method: 'KHALTI_DEV_MOCK' } }); return;
       }
@@ -159,12 +163,15 @@ export const khaltiWebhook = async (req: Request, res: Response): Promise<void> 
     const sig  = req.headers['x-khalti-signature'] as string | undefined;
     const body = req.body as { event?: string; payload?: { pidx?: string; purchase_order_id?: string; transaction_id?: string; status?: string } };
 
-    // Verify signature when a webhook secret is configured
-    if (sig && env.KHALTI_SECRET_KEY) {
-      const crypto = await import('crypto');
-      const rawBody = JSON.stringify(req.body);
-      const expected = crypto.createHmac('sha256', env.KHALTI_SECRET_KEY).update(rawBody).digest('hex');
-      if (sig !== expected) { res.status(401).json({ success: false, error: 'Invalid signature' }); return; }
+    // Reject webhook if secret not configured — cannot safely verify
+    if (!env.KHALTI_SECRET_KEY) {
+      res.status(503).json({ success: false, error: 'Webhook not configured' }); return;
+    }
+    const crypto = await import('crypto');
+    const rawBody = JSON.stringify(req.body);
+    const expected = crypto.createHmac('sha256', env.KHALTI_SECRET_KEY).update(rawBody).digest('hex');
+    if (!sig || sig !== expected) {
+      res.status(401).json({ success: false, error: 'Invalid signature' }); return;
     }
 
     const pidx    = body.payload?.pidx;
@@ -272,8 +279,8 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<vo
         }
       } catch (err: unknown) { res.status(502).json({ success: false, error: `Fonepay verification failed: ${(err as Error).message}` }); return; }
     } else {
-      // COD or unknown — trust frontend
-      await emitPaymentResult(payment, 'SUCCESS');
+      // Unknown gateway — reject to prevent payment bypass attacks
+      res.status(400).json({ success: false, error: `Unsupported gateway for verification: ${gateway}` }); return;
     }
     res.json({ success: true, data: payment });
   } catch (err: unknown) { handleError(err, res); }
@@ -320,6 +327,8 @@ export const refundPayment = async (req: AuthRequest, res: Response): Promise<vo
       reason,
     }).catch(() => {});
 
+    notify(payment.userId, 'Refund Processed', `Your refund of Rs. ${payment.amount} has been processed.`, 'PAYMENT', { orderId: payment.orderId, gateway: payment.gateway });
+
     res.json({ success: true, data: payment });
   } catch (err: unknown) { handleError(err, res); }
 };
@@ -328,7 +337,11 @@ export const refundPayment = async (req: AuthRequest, res: Response): Promise<vo
 
 export const getPaymentByOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const payment = await Payment.findOne({ orderId: req.params.orderId });
+    const isAdmin = req.user?.role === 'ADMIN';
+    const query = isAdmin
+      ? { orderId: req.params.orderId }
+      : { orderId: req.params.orderId, userId: req.user!.userId };
+    const payment = await Payment.findOne(query);
     if (!payment) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: payment });
   } catch (err: unknown) { handleError(err, res); }

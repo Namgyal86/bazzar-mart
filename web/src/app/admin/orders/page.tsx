@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Package, TrendingUp, ChevronDown, X, MapPin, CreditCard, User, Calendar, ShoppingBag, Clock, Truck, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { orderApi } from '@/lib/api/order.api';
@@ -36,20 +37,69 @@ function StatusSelect({ value, disabled, onChange, compact = false }: {
   value: string; disabled?: boolean; onChange: (v: string) => void; compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const btnRef  = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || dropRef.current?.contains(t)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left });
+    }
+    setOpen(o => !o);
+  };
+
+  const dropdown = mounted && open ? createPortal(
+    <div
+      ref={dropRef}
+      className="w-44 rounded-xl overflow-hidden py-1"
+      style={{
+        position: 'fixed',
+        top: dropPos.top,
+        left: dropPos.left,
+        zIndex: 99999,
+        background: '#0d1117',
+        border: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+      }}
+    >
+      {ORDER_STATUSES.map(s => (
+        <button
+          key={s}
+          onClick={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold transition-colors hover:bg-white/[0.06] ${s === value ? 'bg-white/[0.04]' : ''}`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[s]}`} />
+          <span className={STATUS_TEXT_COLOR[s]}>{s}</span>
+          {s === value && <span className="ml-auto text-[9px] text-gray-600 font-normal">current</span>}
+        </button>
+      ))}
+    </div>,
+    document.body,
+  ) : null;
+
   return (
-    <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+    <div ref={wrapRef} className="relative" onClick={e => e.stopPropagation()}>
       <button
+        ref={btnRef}
         disabled={disabled}
-        onClick={() => setOpen(o => !o)}
+        onClick={handleOpen}
         className={`flex items-center gap-2 rounded-lg border transition-all disabled:opacity-50 ${
           compact ? 'pl-2.5 pr-7 py-1.5 text-[11px]' : 'pl-3 pr-8 py-2 text-xs'
         } ${open ? 'border-white/25' : 'border-white/10 hover:border-white/20'}`}
@@ -59,27 +109,7 @@ function StatusSelect({ value, disabled, onChange, compact = false }: {
         <span className={`font-semibold ${STATUS_TEXT_COLOR[value] ?? 'text-gray-300'}`}>{value}</span>
         <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-
-      {open && (
-        <div
-          className="absolute z-50 right-0 mt-1.5 w-40 rounded-xl overflow-hidden py-1 shadow-2xl"
-          style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.7)' }}
-        >
-          {ORDER_STATUSES.map(s => (
-            <button
-              key={s}
-              onClick={() => { onChange(s); setOpen(false); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold transition-colors hover:bg-white/[0.06] ${
-                s === value ? 'bg-white/[0.04]' : ''
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[s]}`} />
-              <span className={STATUS_TEXT_COLOR[s]}>{s}</span>
-              {s === value && <span className="ml-auto text-[9px] text-gray-600 font-normal">current</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }

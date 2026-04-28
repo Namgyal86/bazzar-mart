@@ -85,7 +85,7 @@ export const productApi = {
     apiClient.get<{ success: true; data: Product[] }>('/api/v1/products/featured'),
 
   search: (q: string, params?: Record<string, string | number>) =>
-    apiClient.get<ProductListResponse>('/api/v1/products', { params: { search: q, limit: 40, ...params } }),
+    apiClient.get('/api/v1/search', { params: { q, limit: 40, ...params } }),
 
   listCategories: () =>
     apiClient.get<{ success: true; data: Category[] }>('/api/v1/categories'),

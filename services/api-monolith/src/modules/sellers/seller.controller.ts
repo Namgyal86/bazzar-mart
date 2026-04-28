@@ -23,6 +23,7 @@ import { Review } from '../reviews/models/review.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, PaymentSuccessPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
+import { notify } from '../../shared/utils/notify';
 
 const createSellerProductSchema = z.object({
   name:             z.string().min(3),
@@ -92,6 +93,7 @@ export const registerSeller = async (req: AuthRequest, res: Response): Promise<v
       ...(body.physicalLocation ? { physicalLocation: body.physicalLocation as object } : {}),
     });
     res.status(201).json({ success: true, data: seller });
+    notify(seller.userId, 'Seller Registration Received', 'Your seller application is under review. We will notify you once approved.', 'SYSTEM', { sellerId: seller.id });
   } catch (err: unknown) { handleError(err, res); }
 };
 
@@ -190,10 +192,12 @@ export const getSellerProducts = async (req: AuthRequest, res: Response): Promis
 
 export const createSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const seller = await Seller.findOne({ userId: req.user!.userId });
     const body = createSellerProductSchema.parse({
       ...req.body,
       price: Number(req.body.price ?? req.body.basePrice),
       stock: Number(req.body.stock ?? 0),
+      sellerName: req.body.sellerName ?? seller?.storeName ?? 'Unknown Seller',
     });
     const product = await Product.create({ ...body, sellerId: req.user!.userId });
     res.status(201).json({ success: true, data: product });
@@ -452,7 +456,10 @@ export const getAllSellers = async (req: AuthRequest, res: Response): Promise<vo
 export const approveSeller = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const seller = await Seller.findByIdAndUpdate(req.params.id, { status: 'ACTIVE' }, { new: true });
-    if (seller) publishEvent('seller.approved', { sellerId: seller.id, userId: seller.userId }).catch(() => {});
+    if (seller) {
+      publishEvent('seller.approved', { sellerId: seller.id, userId: seller.userId }).catch(() => {});
+      notify(seller.userId, 'Seller Account Approved!', 'Congratulations! Your seller account has been approved. You can now list products and start selling.', 'SYSTEM', { sellerId: seller.id });
+    }
     res.json({ success: true, data: seller });
   } catch (err: unknown) { handleError(err, res); }
 };
@@ -460,6 +467,9 @@ export const approveSeller = async (req: AuthRequest, res: Response): Promise<vo
 export const suspendSeller = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const seller = await Seller.findByIdAndUpdate(req.params.id, { status: 'SUSPENDED' }, { new: true });
+    if (seller) {
+      notify(seller.userId, 'Seller Account Suspended', 'Your seller account has been suspended. Please contact support for more information.', 'SYSTEM', { sellerId: seller.id });
+    }
     res.json({ success: true, data: seller });
   } catch (err: unknown) { handleError(err, res); }
 };

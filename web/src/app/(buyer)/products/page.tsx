@@ -212,17 +212,35 @@ function ProductsPageInner() {
   const [total, setTotal] = useState(0);
   const [searchQ, setSearchQ] = useState(searchParams.get('q') || '');
 
+  const [catsLoaded, setCatsLoaded] = useState(false);
+
   // Load categories with subcategories
   useEffect(() => {
-    categoryApi.withSubs().then(r => setCategoriesWithSubs(r.data.data)).catch(() => {});
+    categoryApi.withSubs()
+      .then(r => setCategoriesWithSubs(r.data.data))
+      .catch(() => {})
+      .finally(() => setCatsLoaded(true));
   }, []);
 
-  // Load products
+  // Load products — wait for categories if a category filter is active
   useEffect(() => {
+    if (selectedCategory && !catsLoaded) return;
     setLoading(true);
     const params: Record<string, string | number> = { limit: 40 };
     if (sort !== 'relevance') params.sort = sort;
-    if (selectedCategory) params.category = selectedCategory;
+
+    if (selectedCategory) {
+      // Check if it's a top-level category slug or actually a subcategory slug
+      const topLevelSlugs = categoriesWithSubs.map(c => c.slug);
+      const isTopLevel = topLevelSlugs.length === 0 || topLevelSlugs.includes(selectedCategory);
+      if (isTopLevel) {
+        params.category = selectedCategory;
+      } else {
+        // It's a subcategory slug — route to subCategory param
+        params.subCategory = selectedCategory;
+      }
+    }
+
     if (selectedSubCategory) params.subCategory = selectedSubCategory;
     if (selectedRating) params.minRating = selectedRating;
     if (selectedPriceRange !== null) {
@@ -239,7 +257,7 @@ function ProductsPageInner() {
       })
       .catch(() => { setProducts([]); setTotal(0); })
       .finally(() => setLoading(false));
-  }, [sort, selectedCategory, selectedSubCategory, selectedRating, selectedPriceRange, inStockOnly, searchQ]);
+  }, [sort, selectedCategory, selectedSubCategory, selectedRating, selectedPriceRange, inStockOnly, searchQ, categoriesWithSubs, catsLoaded]);
 
   const clearFilters = () => {
     setSelectedCategory(null); setSelectedSubCategory(null); setSelectedRating(null);

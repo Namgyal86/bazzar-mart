@@ -13,6 +13,7 @@ export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ code: '', type: 'PERCENTAGE', value: 0, minOrder: 0, maxDiscount: 0, usageLimit: 100, validUntil: '' });
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     apiClient.get('/api/v1/coupons/admin/list')
@@ -32,10 +33,13 @@ export default function AdminCouponsPage() {
       const created = res.data?.data ?? { ...form, _id: Date.now().toString(), usageCount: 0, isActive: true };
       setCoupons(prev => [...prev, { ...created, id: created._id || created.id || Date.now().toString() }]);
       setShowForm(false);
+      setFormError(null);
       setForm({ code: '', type: 'PERCENTAGE', value: 0, minOrder: 0, maxDiscount: 0, usageLimit: 100, validUntil: '' });
       toast({ title: 'Coupon created!' });
     } catch (err: any) {
-      toast({ title: 'Failed to create coupon', description: err?.response?.data?.error || 'Check all fields and try again.', variant: 'destructive' });
+      const msg = err?.response?.data?.error || 'Failed to create coupon. Check all fields and try again.';
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     }
   };
 
@@ -81,7 +85,15 @@ export default function AdminCouponsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Coupon Code</label>
-              <input className={inputCls} placeholder="SAVE20" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} required />
+              <input
+                className={inputCls}
+                placeholder="SAVE20"
+                value={form.code}
+                onChange={e => { setFormError(null); setForm(f => ({ ...f, code: e.target.value.toUpperCase() })); }}
+                required
+                style={{ borderColor: formError ? 'rgba(239,68,68,0.7)' : undefined }}
+              />
+              {formError && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1"><span>⚠</span> {formError}</p>}
             </div>
             <div>
               <label className={labelCls}>Discount Type</label>
@@ -122,14 +134,14 @@ export default function AdminCouponsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5">
-                {['Code', 'Type', 'Value', 'Min Order', 'Usage', 'Valid Until', 'Status', ''].map(h => (
+                {['Code', 'Type', 'Value', 'Min Order', 'Usage', 'Valid Until', 'Status', 'Actions'].map(h => (
                   <th key={h} className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {coupons.map(coupon => (
-                <tr key={coupon.id} className="hover:bg-white/3 transition-colors">
+                <tr key={coupon._id ?? coupon.id} className="hover:bg-white/3 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold ap-text">{coupon.code}</span>

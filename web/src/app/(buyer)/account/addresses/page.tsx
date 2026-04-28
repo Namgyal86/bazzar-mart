@@ -5,6 +5,7 @@ import { MapPin, Plus, Trash2, Edit, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { userApi, Address } from '@/lib/api/user.api';
+import { getErrorMessage } from '@/lib/api/client';
 import { toast } from '@/hooks/use-toast';
 
 const emptyForm = { label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', district: '', province: 'Bagmati', postalCode: '', isDefault: false };
@@ -21,12 +22,14 @@ function AddressForm({
   onCancel,
   saving,
   title,
+  formError,
 }: {
   initial: typeof emptyForm;
   onSave: (data: typeof emptyForm) => void;
   onCancel: () => void;
   saving: boolean;
   title: string;
+  formError?: string | null;
 }) {
   const [form, setForm] = useState(initial);
   return (
@@ -140,6 +143,11 @@ function AddressForm({
           />
           Set as default address
         </label>
+        {formError && (
+          <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5">
+            <span>⚠</span> {formError}
+          </p>
+        )}
         <div className="flex gap-2 pt-2">
           <Button
             type="submit"
@@ -170,6 +178,7 @@ export default function AddressesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     userApi.getAddresses()
@@ -182,10 +191,13 @@ export default function AddressesPage() {
     try {
       const res = await userApi.addAddress(data as Omit<Address, '_id'>);
       setAddresses(prev => [...prev, res.data.data]);
+      setFormError(null);
       toast({ title: 'Address added!' });
       setShowAdd(false);
-    } catch {
-      toast({ title: 'Failed to save address', variant: 'destructive' });
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -196,10 +208,13 @@ export default function AddressesPage() {
     try {
       await userApi.updateAddress(id, data as Omit<Address, '_id'>);
       setAddresses(prev => prev.map(a => a._id === id ? { ...a, ...data } : a));
+      setFormError(null);
       toast({ title: 'Address updated!' });
       setEditingId(null);
-    } catch {
-      toast({ title: 'Failed to update address', variant: 'destructive' });
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -238,9 +253,10 @@ export default function AddressesPage() {
         <AddressForm
           initial={emptyForm}
           onSave={handleAdd}
-          onCancel={() => setShowAdd(false)}
+          onCancel={() => { setShowAdd(false); setFormError(null); }}
           saving={saving}
           title="New Address"
+          formError={formError}
         />
       )}
 
@@ -252,9 +268,10 @@ export default function AddressesPage() {
               <AddressForm
                 initial={{ label: addr.label, fullName: addr.fullName, phone: addr.phone, addressLine1: addr.addressLine1, addressLine2: addr.addressLine2 || '', city: addr.city, district: addr.district, province: addr.province, postalCode: addr.postalCode || '', isDefault: addr.isDefault }}
                 onSave={(data) => handleEdit(addr._id, data)}
-                onCancel={() => setEditingId(null)}
+                onCancel={() => { setEditingId(null); setFormError(null); }}
                 saving={saving}
                 title="Edit Address"
+                formError={formError}
               />
             ) : (
               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all p-5">

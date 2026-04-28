@@ -25,6 +25,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -244,9 +245,12 @@ function StepIndicator({ current }: { current: number }) {
 
 export default function SellerRegisterPage() {
   const router = useRouter();
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldError>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -329,9 +333,10 @@ export default function SellerRegisterPage() {
         },
       });
 
+      setSubmitError(null);
       toast({
         title: 'Seller account created!',
-        description: 'Welcome to Bazzar Seller Hub.',
+        description: `Welcome to ${siteName} Seller Hub.`,
       });
       router.push('/seller/dashboard');
     } catch (err: any) {
@@ -339,6 +344,7 @@ export default function SellerRegisterPage() {
         err?.response?.data?.error ??
         err?.response?.data?.message ??
         'Something went wrong. Please try again.';
+      setSubmitError(message);
       toast({ title: 'Registration failed', description: message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
@@ -460,7 +466,7 @@ export default function SellerRegisterPage() {
                 boxShadow: '0 4px 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)',
               }}
             >
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem' }}>B</span>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem' }}>{siteName[0]}</span>
             </div>
             <span
               style={{
@@ -470,7 +476,7 @@ export default function SellerRegisterPage() {
                 letterSpacing: '-0.02em',
               }}
             >
-              Bazzar
+              {siteName}
             </span>
           </Link>
 
@@ -493,7 +499,7 @@ export default function SellerRegisterPage() {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              on Bazzar
+              on {siteName}
             </span>
           </h1>
           <p
@@ -633,10 +639,10 @@ export default function SellerRegisterPage() {
                   boxShadow: '0 4px 16px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.35)',
                 }}
               >
-                <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem' }}>B</span>
+                <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.1rem' }}>{siteName[0]}</span>
               </div>
               <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', letterSpacing: '-0.02em' }}>
-                Bazzar
+                {siteName}
               </span>
             </Link>
           </div>
@@ -1178,6 +1184,11 @@ export default function SellerRegisterPage() {
                   </div>
                 </Field>
 
+                {submitError && (
+                  <p style={{ fontSize: '12px', color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>⚠</span> {submitError}
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                   {/* Back button */}
                   <button

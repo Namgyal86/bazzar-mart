@@ -1,13 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import type { Metadata } from 'next';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Bazzar Privacy Policy — how we collect, use, and protect your data.',
-};
-
-const SECTIONS = [
+const SECTIONS_TEMPLATE = [
   {
     title: '1. Information We Collect',
     body: `We collect information you provide directly to us when you register, place an order, or contact support. This includes your name, email address, phone number, delivery address, and payment information (processed securely by our payment partners — we do not store raw card data). We also collect usage data such as pages visited, search queries, and device information.`,
@@ -30,7 +27,7 @@ const SECTIONS = [
   },
   {
     title: '6. Cookies and Tracking',
-    body: `Bazzar uses cookies and similar technologies to keep you logged in, remember your cart, and analyse site traffic. You can control cookie preferences through your browser settings; disabling certain cookies may affect platform functionality.`,
+    body: `{SITE} uses cookies and similar technologies to keep you logged in, remember your cart, and analyse site traffic. You can control cookie preferences through your browser settings; disabling certain cookies may affect platform functionality.`,
   },
   {
     title: '7. Security',
@@ -38,23 +35,36 @@ const SECTIONS = [
   },
   {
     title: '8. Your Rights',
-    body: `You have the right to access, correct, or delete your personal data. You may also object to or restrict certain processing. To exercise these rights, contact us at privacy@bazzar.com. We will respond within 30 days.`,
+    body: `You have the right to access, correct, or delete your personal data. You may also object to or restrict certain processing. To exercise these rights, contact us at {EMAIL}. We will respond within 30 days.`,
   },
   {
-    title: '9. Children\'s Privacy',
-    body: `Bazzar is not intended for children under 16. We do not knowingly collect personal data from children. If you believe a child has provided us with personal data, please contact us and we will delete it promptly.`,
+    title: "9. Children's Privacy",
+    body: `{SITE} is not intended for children under 16. We do not knowingly collect personal data from children. If you believe a child has provided us with personal data, please contact us and we will delete it promptly.`,
   },
   {
     title: '10. Changes to This Policy',
-    body: `We may update this Privacy Policy from time to time. We will notify you of significant changes by email or by a prominent notice on the platform. Continued use of Bazzar after changes take effect constitutes acceptance of the updated policy.`,
+    body: `We may update this Privacy Policy from time to time. We will notify you of significant changes by email or by a prominent notice on the platform. Continued use of {SITE} after changes take effect constitutes acceptance of the updated policy.`,
   },
   {
     title: '11. Contact Us',
-    body: `For privacy-related questions or requests, please email privacy@bazzar.com or write to: Bazzar Privacy Team, Kathmandu, Nepal.`,
+    body: `For privacy-related questions or requests, please email {EMAIL} or write to: {SITE} Privacy Team, {ADDRESS}.`,
   },
 ];
 
 export default function PrivacyPage() {
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
+  const email = settings.email || 'privacy@bazzar.com';
+  const address = settings.address || 'Kathmandu, Nepal';
+
+  const sections = SECTIONS_TEMPLATE.map((s) => ({
+    ...s,
+    body: s.body
+      .replace(/\{SITE\}/g, siteName)
+      .replace(/\{EMAIL\}/g, email)
+      .replace(/\{ADDRESS\}/g, address),
+  }));
+
   return (
     <div className="min-h-screen" style={{ background: '#060810', color: '#e5e7eb' }}>
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -70,11 +80,11 @@ export default function PrivacyPage() {
         <p className="text-sm text-gray-500 mb-10">Last updated: April 2025</p>
 
         <p className="text-gray-400 leading-relaxed mb-10">
-          Your privacy matters to us. This policy explains what personal data Bazzar collects, how we use it, and the choices you have.
+          Your privacy matters to us. This policy explains what personal data {siteName} collects, how we use it, and the choices you have.
         </p>
 
         <div className="space-y-8">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <section key={s.title}>
               <h2 className="text-lg font-bold text-white mb-2">{s.title}</h2>
               <p className="text-gray-400 leading-relaxed text-sm">{s.body}</p>

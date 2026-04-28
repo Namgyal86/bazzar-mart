@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { apiClient } from '@/lib/api/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 interface Referral {
   _id: string;
@@ -30,15 +31,17 @@ const STATUS_STYLES: Record<string, string> = {
   REVOKED:  'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400',
 };
 
-const HOW_IT_WORKS = [
-  { step: '1', title: 'Share your code', desc: 'Send your unique referral code to friends & family.' },
-  { step: '2', title: 'Friend signs up', desc: 'They register on Bazzar using your referral code.' },
-  { step: '3', title: 'Both earn rewards', desc: 'You both get Rs. 200 credit after their first order (min Rs. 1000).' },
-  { step: '4', title: 'Use at checkout', desc: 'Apply wallet balance at checkout — up to Rs. 200 per order.' },
-];
-
 export default function ReferralPage() {
   const { user } = useAuthStore();
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
+
+  const HOW_IT_WORKS = [
+    { step: '1', title: 'Share your code', desc: 'Send your unique referral code to friends & family.' },
+    { step: '2', title: 'Friend signs up', desc: `They register on ${siteName} using your referral code.` },
+    { step: '3', title: 'Both earn rewards', desc: 'You both get Rs. 200 credit after their first order (min Rs. 1000).' },
+    { step: '4', title: 'Use at checkout', desc: 'Apply wallet balance at checkout — up to Rs. 200 per order.' },
+  ];
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -73,8 +76,8 @@ export default function ReferralPage() {
   const shareCode = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Join Bazzar!',
-        text: `Use my referral code ${referralCode} on Bazzar and get Rs. 200 off your first order!`,
+        title: `Join ${siteName}!`,
+        text: `Use my referral code ${referralCode} on ${siteName} and get Rs. 200 off your first order!`,
       }).catch(() => {});
     } else {
       copyCode();
@@ -99,7 +102,7 @@ export default function ReferralPage() {
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Referral Wallet</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Earn rewards by inviting friends to Bazzar</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Earn rewards by inviting friends to {siteName}</p>
       </div>
 
       {/* Wallet balance cards */}

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Palette, Globe, Shield, Check, Save, Eye, Image as ImageIcon, Wand2, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Palette, Globe, Shield, Check, Save, Eye, Image as ImageIcon, Wand2, MapPin, Phone } from 'lucide-react';
 import { useThemeStore, THEME_PRESETS } from '@/store/theme.store';
+import { useSiteSettingsStore, SiteSettings } from '@/store/site-settings.store';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api/client';
 
 const inputCls = 'w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[var(--ap)] transition-colors';
 const labelCls = 'text-xs font-semibold text-gray-400 mb-1.5 block';
@@ -13,21 +15,44 @@ const VALLEY_DISTRICTS = ['Kathmandu', 'Lalitpur', 'Bhaktapur'];
 
 export default function AdminSettingsPage() {
   const { themeName, customColor, logo, siteName, setTheme, setCustomColor, setLogo, setSiteName, getPreset } = useThemeStore();
-  const [activeTab, setActiveTab] = useState<'appearance' | 'general' | 'security' | 'location'>('appearance');
+  const { settings: siteSettings, setSettings, fetchSettings } = useSiteSettingsStore();
+  const [activeTab, setActiveTab] = useState<'appearance' | 'general' | 'security' | 'location' | 'contact'>('appearance');
   const [storeLocation, setStoreLocation] = useState({ address: '', district: 'Kathmandu', landmark: '', lat: '', lng: '', radiusKm: '10' });
   const [savingLocation, setSavingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [contactForm, setContactForm] = useState<SiteSettings>(siteSettings);
+  const [savingContact, setSavingContact] = useState(false);
+
+  useEffect(() => { fetchSettings(); }, []);
+  useEffect(() => { setContactForm(siteSettings); }, [siteSettings]);
+
+  const handleSaveContact = async () => {
+    setSavingContact(true);
+    try {
+      await apiClient.post('/api/v1/analytics/admin/settings', { section: 'site_settings', data: contactForm });
+      setSettings(contactForm);
+      toast({ title: 'Site settings saved!' });
+    } catch (err: any) {
+      toast({ title: err?.response?.data?.error || 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingContact(false);
+    }
+  };
 
   const handleSaveLocation = async () => {
+    if (!storeLocation.address.trim()) {
+      setLocationError('Store address is required.');
+      return;
+    }
     setSavingLocation(true);
     try {
-      await fetch('/api/v1/analytics/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section: 'store_location', data: storeLocation }),
-      });
+      await apiClient.post('/api/v1/analytics/admin/settings', { section: 'store_location', data: storeLocation });
+      setLocationError(null);
       toast({ title: 'Store location saved!' });
-    } catch {
-      toast({ title: 'Error saving location', variant: 'destructive' } as any);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Error saving location. Try again.';
+      setLocationError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSavingLocation(false);
     }
@@ -42,16 +67,23 @@ export default function AdminSettingsPage() {
     setSaving(true);
     setLogo(localLogo);
     setSiteName(localSiteName);
-    await new Promise(r => setTimeout(r, 400));
+    // Also persist to DB so footer/site picks it up
+    try {
+      const updated = { ...siteSettings, siteName: localSiteName, logo: localLogo };
+      await apiClient.post('/api/v1/analytics/admin/settings', { section: 'site_settings', data: updated });
+      setSettings(updated);
+    } catch {}
+    await new Promise(r => setTimeout(r, 200));
     setSaving(false);
     toast({ title: 'Settings saved!', description: 'Your branding changes are now live.' });
   };
 
   const tabs = [
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'general',    label: 'General',    icon: Globe },
-    { id: 'security',   label: 'Security',   icon: Shield },
+    { id: 'appearance', label: 'Appearance',    icon: Palette },
+    { id: 'general',    label: 'General',        icon: Globe },
+    { id: 'security',   label: 'Security',       icon: Shield },
     { id: 'location',   label: 'Store Location', icon: MapPin },
+    { id: 'contact',    label: 'Contact & Social', icon: Phone },
   ] as const;
 
   return (
@@ -384,9 +416,106 @@ export default function AdminSettingsPage() {
             <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             Deliveries are only accepted within Kathmandu Valley (Kathmandu, Lalitpur, Bhaktapur). Orders outside this zone are rejected automatically.
           </div>
+          {locationError && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5">
+              <span>⚠</span> {locationError}
+            </p>
+          )}
           <button onClick={handleSaveLocation} disabled={savingLocation} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 shadow-lg" style={{ backgroundColor: 'var(--ap)' }}>
             <Save className="w-4 h-4" />
             {savingLocation ? 'Saving…' : 'Save Location'}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'contact' && (
+        <div className="bg-[#131929] border border-white/5 rounded-2xl p-6 space-y-6">
+          <div>
+            <h2 className="font-bold text-white flex items-center gap-2">
+              <Phone className="w-4 h-4" style={{ color: 'var(--ap)' }} />
+              Contact & Social Links
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">These appear in the footer and throughout the site</p>
+          </div>
+
+          {/* Site identity */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Site Name</label>
+              <input className={inputCls} value={contactForm.siteName} onChange={e => setContactForm(f => ({ ...f, siteName: e.target.value }))} placeholder="Bazzar" />
+            </div>
+            <div>
+              <label className={labelCls}>Site Description</label>
+              <input className={inputCls} value={contactForm.description} onChange={e => setContactForm(f => ({ ...f, description: e.target.value }))} placeholder="Nepal's trusted online marketplace..." />
+            </div>
+          </div>
+
+          {/* Logo */}
+          <div>
+            <label className={labelCls}>Site Logo</label>
+            <ImageUpload value={contactForm.logo} onChange={v => setContactForm(f => ({ ...f, logo: v }))} label="Footer & site logo" aspectRatio="square" />
+          </div>
+
+          {/* Contact info */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Contact Information</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Phone Number</label>
+                <input className={inputCls} value={contactForm.phone} onChange={e => setContactForm(f => ({ ...f, phone: e.target.value }))} placeholder="+977-1-4000000" />
+              </div>
+              <div>
+                <label className={labelCls}>Email Address</label>
+                <input className={inputCls} type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="support@bazzar.com" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Address</label>
+                <input className={inputCls} value={contactForm.address} onChange={e => setContactForm(f => ({ ...f, address: e.target.value }))} placeholder="Kathmandu, Nepal 44600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Social links */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Social Media Links</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { key: 'facebook',  label: 'Facebook URL',  placeholder: 'https://facebook.com/yourbrand' },
+                { key: 'instagram', label: 'Instagram URL', placeholder: 'https://instagram.com/yourbrand' },
+                { key: 'twitter',   label: 'Twitter / X URL', placeholder: 'https://twitter.com/yourbrand' },
+                { key: 'youtube',   label: 'YouTube URL',   placeholder: 'https://youtube.com/@yourbrand' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className={labelCls}>{label}</label>
+                  <input
+                    className={inputCls}
+                    value={(contactForm as any)[key]}
+                    onChange={e => setContactForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* App store links */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">App Download Links</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>App Store URL</label>
+                <input className={inputCls} value={contactForm.appStoreUrl} onChange={e => setContactForm(f => ({ ...f, appStoreUrl: e.target.value }))} placeholder="https://apps.apple.com/app/..." />
+              </div>
+              <div>
+                <label className={labelCls}>Google Play URL</label>
+                <input className={inputCls} value={contactForm.playStoreUrl} onChange={e => setContactForm(f => ({ ...f, playStoreUrl: e.target.value }))} placeholder="https://play.google.com/store/apps/..." />
+              </div>
+            </div>
+          </div>
+
+          <button onClick={handleSaveContact} disabled={savingContact} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 shadow-lg" style={{ backgroundColor: 'var(--ap)' }}>
+            <Save className="w-4 h-4" />
+            {savingContact ? 'Saving…' : 'Save Contact & Social'}
           </button>
         </div>
       )}

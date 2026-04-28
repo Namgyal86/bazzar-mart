@@ -82,6 +82,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         sellerName: item.sellerName,
         unitPrice: item.salePrice ?? item.unitPrice,
         quantity: item.quantity,
+        stock: item.stock,
       });
       await get().fetchCart();
     } catch (err) {

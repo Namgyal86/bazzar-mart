@@ -32,8 +32,6 @@ import { registerRecommendationEventHandlers } from './modules/recommendations/r
 import { registerAnalyticsEventHandlers }      from './modules/analytics/analytics.controller';
 
 // Seed helpers
-import { seedCategories } from './modules/products/models/category.model';
-import { seedBanners }    from './modules/products/models/banner.model';
 
 // Background jobs
 import { startOrderScheduler } from './modules/orders/order.scheduler';
@@ -72,10 +70,6 @@ async function bootstrap(): Promise<void> {
   } catch (err) {
     console.warn('⚠️  Kafka consumers unavailable:', (err as Error).message);
   }
-
-  // 6. Seed
-  await seedCategories().catch(console.error);
-  await seedBanners().catch(console.error);
 
   // 7. Background jobs
   startOrderScheduler();

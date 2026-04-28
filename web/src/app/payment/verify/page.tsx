@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { paymentApi } from '@/lib/api/payment.api';
+import { useCartStore } from '@/store/cart.store';
 
 type VerifyState = 'verifying' | 'success' | 'failed';
 
@@ -14,6 +15,7 @@ function PaymentVerifyContent() {
   const [state, setState] = useState<VerifyState>('verifying');
   const [message, setMessage] = useState('');
   const [orderId, setOrderId] = useState('');
+  const clearCart = useCartStore(s => s.clearCart);
 
   useEffect(() => {
     const verify = async () => {
@@ -33,6 +35,8 @@ function PaymentVerifyContent() {
           const res = await paymentApi.verify({ pidx, orderId: purchaseOrderId, gateway: 'KHALTI' }) as any;
           const payment = res.data?.data;
           if (payment?.status === 'SUCCESS') {
+            clearCart();
+            sessionStorage.removeItem('pendingOrderId');
             setState('success');
             setOrderId(payment.orderId || purchaseOrderId || '');
           } else {
@@ -44,6 +48,8 @@ function PaymentVerifyContent() {
           const res = await paymentApi.verify({ esewaData: decoded, gateway: 'ESEWA' }) as any;
           const payment = res.data?.data;
           if (payment?.status === 'SUCCESS') {
+            clearCart();
+            sessionStorage.removeItem('pendingOrderId');
             setState('success');
             setOrderId(payment.orderId || '');
           } else {

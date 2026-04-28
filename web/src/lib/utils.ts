@@ -6,13 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency = 'NPR'): string {
+  const n = amount ?? 0;
   if (currency === 'NPR') {
-    return `Rs. ${amount.toLocaleString('en-NP')}`;
+    return `Rs. ${n.toLocaleString('en-NP')}`;
   }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-  }).format(amount);
+  }).format(n);
 }
 
 export function formatDate(date: string | Date | undefined | null): string {

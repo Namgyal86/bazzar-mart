@@ -45,10 +45,15 @@ function timeAgo(date: string) {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
+  const fetchNotifications = () =>
     notificationApi.list()
       .then((res) => { if (Array.isArray(res.data?.data)) setNotifications(res.data.data); })
       .catch(() => {});
+
+  useEffect(() => {
+    fetchNotifications();
+    const t = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(t);
   }, []);
 
   const markRead = async (id: string) => {

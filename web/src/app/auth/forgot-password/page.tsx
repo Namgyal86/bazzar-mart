@@ -8,6 +8,7 @@ import { Mail, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -17,6 +18,8 @@ type FormData = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
+  const { settings } = useSiteSettingsStore();
+  const siteName = settings.siteName || 'Bazzar';
 
   const {
     register,
@@ -88,9 +91,9 @@ export default function ForgotPasswordPage() {
                 boxShadow: '0 0 20px hsl(var(--ap-h) var(--ap-s) var(--ap-l) / 0.4)',
               }}
             >
-              <span className="text-white font-black text-xl">B</span>
+              <span className="text-white font-black text-xl">{siteName[0]}</span>
             </div>
-            <span className="text-white text-2xl font-black tracking-tight">Bazzar</span>
+            <span className="text-white text-2xl font-black tracking-tight">{siteName}</span>
           </Link>
         </div>
 

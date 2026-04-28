@@ -4,48 +4,50 @@ import { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare, Clock, CheckCircle } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { toast } from '@/hooks/use-toast';
-
-const CONTACT_ITEMS = [
-  {
-    icon: Mail,
-    title: 'Email Us',
-    detail: 'support@bazzar.com',
-    sub: 'We reply within 24 hours',
-    color: 'text-blue-500',
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-    border: 'border-blue-100 dark:border-blue-900/30',
-  },
-  {
-    icon: Phone,
-    title: 'Call Us',
-    detail: '+977-1-4000000',
-    sub: 'Sun–Fri, 9am–6pm NPT',
-    color: 'text-green-500',
-    bg: 'bg-green-50 dark:bg-green-950/30',
-    border: 'border-green-100 dark:border-green-900/30',
-  },
-  {
-    icon: MapPin,
-    title: 'Visit Us',
-    detail: 'Kathmandu, Nepal',
-    sub: 'Lalitpur-3, Pulchowk',
-    color: 'text-orange-500',
-    bg: 'bg-orange-50 dark:bg-orange-950/30',
-    border: 'border-orange-100 dark:border-orange-900/30',
-  },
-  {
-    icon: Clock,
-    title: 'Support Hours',
-    detail: 'Sun–Fri 9am–6pm',
-    sub: 'Nepal Time (NPT)',
-    color: 'text-purple-500',
-    bg: 'bg-purple-50 dark:bg-purple-950/30',
-    border: 'border-purple-100 dark:border-purple-900/30',
-  },
-];
+import { useSiteSettingsStore } from '@/store/site-settings.store';
 
 export default function ContactPage() {
+  const { settings } = useSiteSettingsStore();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+
+  const CONTACT_ITEMS = [
+    {
+      icon: Mail,
+      title: 'Email Us',
+      detail: settings.email || 'support@bazzar.com',
+      sub: 'We reply within 24 hours',
+      color: 'text-blue-500',
+      bg: 'bg-blue-50 dark:bg-blue-950/30',
+      border: 'border-blue-100 dark:border-blue-900/30',
+    },
+    {
+      icon: Phone,
+      title: 'Call Us',
+      detail: settings.phone || '+977-1-4000000',
+      sub: 'Sun–Fri, 9am–6pm NPT',
+      color: 'text-green-500',
+      bg: 'bg-green-50 dark:bg-green-950/30',
+      border: 'border-green-100 dark:border-green-900/30',
+    },
+    {
+      icon: MapPin,
+      title: 'Visit Us',
+      detail: settings.address || 'Kathmandu, Nepal',
+      sub: 'Nepal Time (NPT)',
+      color: 'text-orange-500',
+      bg: 'bg-orange-50 dark:bg-orange-950/30',
+      border: 'border-orange-100 dark:border-orange-900/30',
+    },
+    {
+      icon: Clock,
+      title: 'Support Hours',
+      detail: 'Sun–Fri 9am–6pm',
+      sub: 'Nepal Time (NPT)',
+      color: 'text-purple-500',
+      bg: 'bg-purple-50 dark:bg-purple-950/30',
+      border: 'border-purple-100 dark:border-purple-900/30',
+    },
+  ];
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 

@@ -25,6 +25,7 @@ function SaveButton({ loading, label = 'Save', icon: Icon = Save }: { loading: b
 function ProfileTab() {
   const [profile, setProfile] = useState({ storeName: '', description: '', phone: '' });
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     sellerApi.getProfile()
@@ -40,9 +41,12 @@ function ProfileTab() {
     setSaving(true);
     try {
       await sellerApi.updateProfile(profile);
+      setFormError(null);
       toast({ title: 'Profile saved!' });
     } catch (err) {
-      toast({ title: 'Failed to save', description: getErrorMessage(err), variant: 'destructive' });
+      const msg = getErrorMessage(err);
+      setFormError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -53,7 +57,14 @@ function ProfileTab() {
       <h2 className="font-semibold text-white">Store Profile</h2>
       <div>
         <label className={labelCls}>Store Name</label>
-        <input className={inputCls} value={profile.storeName} onChange={e => setProfile(p => ({ ...p, storeName: e.target.value }))} placeholder="Your store name" />
+        <input
+          className={inputCls}
+          value={profile.storeName}
+          onChange={e => { setFormError(null); setProfile(p => ({ ...p, storeName: e.target.value })); }}
+          placeholder="Your store name"
+          style={{ borderColor: formError ? 'rgba(239,68,68,0.7)' : undefined }}
+        />
+        {formError && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1"><span>⚠</span> {formError}</p>}
       </div>
       <div>
         <label className={labelCls}>Description</label>

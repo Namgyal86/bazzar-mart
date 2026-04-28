@@ -31,9 +31,10 @@ const createProductSchema = z.object({
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      page = 1, limit = 20, category, subCategory, search,
+      page = 1, limit = 20, category, subCategory, search, q,
       sort = 'createdAt', order = 'desc',
       minPrice, maxPrice, sellerId, featured, onSale,
+      minRating, inStock,
     } = req.query;
 
     const filter: Record<string, unknown> = { isActive: true };
@@ -52,7 +53,10 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         { salePrice: null, price: range },
       ];
     }
-    if (search) filter.$text = { $search: String(search) };
+    const searchTerm = (q || search) ? String(q || search) : null;
+    if (searchTerm) filter.name = { $regex: searchTerm, $options: 'i' };
+    if (minRating) filter.rating = { $gte: Number(minRating) };
+    if (inStock === '1' || inStock === 'true') filter.stock = { $gt: 0 };
 
     const sortObj: Record<string, 1 | -1> = { [String(sort)]: order === 'asc' ? 1 : -1 };
     const skip = (Number(page) - 1) * Number(limit);
@@ -70,6 +74,9 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
+      res.status(404).json({ success: false, error: 'Product not found' }); return;
+    }
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });

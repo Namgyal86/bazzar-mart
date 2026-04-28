@@ -206,3 +206,24 @@ export const adminUpdateUser = async (req: Request, res: Response): Promise<void
     res.json({ success: true, data: user });
   } catch (err: unknown) { handleError(err, res); }
 };
+
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, error: 'currentPassword and newPassword are required' }); return;
+    }
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, error: 'New password must be at least 8 characters' }); return;
+    }
+    const user = await User.findById(req.user!.userId).select('+password');
+    if (!user) { res.status(404).json({ success: false, error: 'User not found' }); return; }
+    // comparePassword is a model method defined alongside the pre-save bcrypt hook
+    const valid = await (user as any).comparePassword(currentPassword);
+    if (!valid) { res.status(401).json({ success: false, error: 'Current password is incorrect' }); return; }
+    // Assign plain text — pre-save hook will hash it automatically
+    user.password = newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err: unknown) { handleError(err, res); }
+};

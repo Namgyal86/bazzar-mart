@@ -5,6 +5,7 @@ import { Store, Image as ImageIcon, Save, Eye, CheckCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { sellerApi, SellerProfile } from '@/lib/api/seller.api';
+import { getErrorMessage } from '@/lib/api/client';
 import { toast } from '@/hooks/use-toast';
 
 const inputCls = 'w-full bg-[#0d1117] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors';
@@ -18,6 +19,7 @@ export default function StorefrontPage() {
     banner: '',
   });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     sellerApi.getProfile()
@@ -29,9 +31,12 @@ export default function StorefrontPage() {
     setSaving(true);
     try {
       await sellerApi.updateProfile(profile);
+      setSaveError(null);
       toast({ title: 'Storefront updated!' });
-    } catch {
-      toast({ title: 'Failed to save storefront', variant: 'destructive' });
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      setSaveError(msg);
+      toast({ title: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -63,6 +68,12 @@ export default function StorefrontPage() {
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-1.5 mb-4">
+          <span>⚠</span> {saveError}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">

@@ -37,6 +37,7 @@ import { env } from './config/env';
 import userRoutes            from './modules/users/user.routes';
 import productRoutes         from './modules/products/product.routes';
 import orderRoutes           from './modules/orders/order.routes';
+import deliveryRoutes        from './modules/orders/delivery.routes';
 import cartRoutes            from './modules/cart/cart.routes';
 import paymentRoutes         from './modules/payments/payment.routes';
 import sellerRoutes          from './modules/sellers/seller.routes';
@@ -48,6 +49,7 @@ import searchRoutes          from './modules/search/search.routes';
 import recommendationRoutes  from './modules/recommendations/recommendation.routes';
 import analyticsRoutes       from './modules/analytics/analytics.routes';
 import uploadRoutes          from './modules/upload/upload.routes';
+import notificationRoutes   from './modules/notifications/notification.routes';
 
 import { notFound, errorHandler } from './shared/middleware/error';
 
@@ -92,25 +94,35 @@ export function createApp(): Application {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
+  // Serve locally-uploaded images when Cloudinary is not configured
+  const uploadsDir = require('path').join(__dirname, '..', '..', 'uploads');
+  if (!require('fs').existsSync(uploadsDir)) require('fs').mkdirSync(uploadsDir, { recursive: true });
+  app.use('/uploads', (_req: Request, res: Response, next: Function) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  }, express.static(uploadsDir));
+
   // ── Health endpoints ───────────────────────────────────────────────────────
+
+  function healthAuth(req: Request, res: Response, next: Function): void {
+    // /health (liveness) is public. /health/db and /health/full require internal token.
+    const token = req.headers['x-health-token'];
+    const expected = process.env.HEALTH_TOKEN;
+    if (expected && token !== expected) {
+      res.status(401).json({ error: 'Unauthorized' }); return;
+    }
+    next();
+  }
 
   /** Basic liveness probe — load balancer / k8s uses this */
   app.get('/health', (_req: Request, res: Response) => {
-    res.json({
-      status:  'ok',
-      service: 'api-monolith',
-      uptime:  process.uptime(),
-      env:     env.NODE_ENV,
-    });
+    res.json({ status: 'ok' });
   });
 
   /**
-   * DB readiness probe.
-   * Returns 200 when Mongoose readyState === 1 AND a ping succeeds.
-   * Returns 500 with the exact error when the DB is unreachable.
-   * Frontend / ops should call this to confirm the monolith is fully ready.
+   * DB readiness probe — requires HEALTH_TOKEN header when configured.
    */
-  app.get('/health/db', async (_req: Request, res: Response) => {
+  app.get('/health/db', healthAuth, async (_req: Request, res: Response) => {
     const state = mongoose.connection.readyState;
     const label = DB_STATE_LABEL[state] ?? 'unknown';
 
@@ -154,8 +166,8 @@ export function createApp(): Application {
     }
   });
 
-  /** Full system status — DB + Redis + uptime in one call */
-  app.get('/health/full', async (_req: Request, res: Response) => {
+  /** Full system status — requires HEALTH_TOKEN header when configured */
+  app.get('/health/full', healthAuth, async (_req: Request, res: Response) => {
     const dbState = mongoose.connection.readyState;
     let dbOk = dbState === 1;
     let dbPingMs: number | null = null;
@@ -208,6 +220,7 @@ export function createApp(): Application {
   app.use('/api/v1', userRoutes);
   app.use('/api/v1', productRoutes);
   app.use('/api/v1', orderRoutes);
+  app.use('/api/v1', deliveryRoutes);
   app.use('/api/v1', cartRoutes);
   app.use('/api/v1', paymentRoutes);
   app.use('/api/v1', sellerRoutes);
@@ -219,6 +232,7 @@ export function createApp(): Application {
   app.use('/api/v1', recommendationRoutes);
   app.use('/api/v1', analyticsRoutes);
   app.use('/api/v1', uploadRoutes);
+  app.use('/api/v1', notificationRoutes);
 
   // ── Error handling ─────────────────────────────────────────────────────────
   app.use(notFound);

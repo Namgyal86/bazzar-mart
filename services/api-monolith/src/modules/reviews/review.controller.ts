@@ -12,6 +12,7 @@ import { Product } from '../products/models/product.model';
 import { publishEvent } from '../../kafka/producer';
 import { internalBus, EVENTS, ReviewPostedPayload } from '../../shared/events/emitter';
 import { handleError } from '../../shared/middleware/error';
+import { notify } from '../../shared/utils/notify';
 
 // ── EventEmitter subscription ─────────────────────────────────────────────────
 
@@ -90,6 +91,10 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
     internalBus.emit(EVENTS.REVIEW_POSTED, payload);
     // External: recommendation-service via Kafka
     publishEvent('review.posted', payload as unknown as Record<string, unknown>).catch(() => {});
+    // Notify seller of new review
+    if (sellerId) {
+      notify(sellerId, 'New Review Received', `A customer left a ${review.rating}-star review on one of your products.`, 'SYSTEM', { reviewId: review.id, productId: review.productId, rating: review.rating });
+    }
 
     res.status(201).json({ success: true, data: review });
   } catch (err: unknown) { handleError(err, res); }
@@ -131,6 +136,7 @@ export const adminApproveReview = async (req: AuthRequest, res: Response): Promi
     const review = await Review.findByIdAndUpdate(req.params.id, { status: 'APPROVED' }, { new: true });
     if (!review) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: review });
+    notify(review.userId, 'Review Approved', 'Your review has been approved and is now visible to other customers.', 'SYSTEM', { reviewId: review.id, productId: review.productId });
   } catch (err: unknown) { handleError(err, res); }
 };
 
@@ -139,6 +145,7 @@ export const adminRejectReview = async (req: AuthRequest, res: Response): Promis
     const review = await Review.findByIdAndUpdate(req.params.id, { status: 'REJECTED' }, { new: true });
     if (!review) { res.status(404).json({ success: false, error: 'Not found' }); return; }
     res.json({ success: true, data: review });
+    notify(review.userId, 'Review Not Published', 'Your review did not meet our community guidelines and was not published.', 'SYSTEM', { reviewId: review.id });
   } catch (err: unknown) { handleError(err, res); }
 };
 
