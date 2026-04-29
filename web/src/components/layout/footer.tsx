@@ -4,12 +4,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { useSiteSettingsStore } from '@/store/site-settings.store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+interface FooterCategory { name: string; slug: string; }
 
 export function Footer() {
   const { settings, fetchSettings } = useSiteSettingsStore();
+  const [shopCategories, setShopCategories] = useState<FooterCategory[]>([]);
 
-  useEffect(() => { fetchSettings(); }, []);
+  useEffect(() => {
+    fetchSettings();
+    fetch('/api/v1/categories?navOnly=true')
+      .then(r => r.json())
+      .then(j => { if (j.success && Array.isArray(j.data)) setShopCategories(j.data.slice(0, 6)); })
+      .catch(() => {});
+  }, []);
 
   return (
     <footer className="bg-gray-900 text-gray-300 mt-16">
@@ -116,19 +125,14 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Shop</h4>
             <ul className="space-y-2 text-sm">
-              {[
-                { label: 'Fruits & Vegetables', href: '/categories/fruits-vegetables' },
-                { label: 'Dairy & Eggs', href: '/categories/dairy-eggs' },
-                { label: 'Grains & Pulses', href: '/categories/grains-pulses' },
-                { label: 'Snacks & Beverages', href: '/categories/snacks-beverages' },
-                { label: 'Spices & Condiments', href: '/categories/spices-condiments' },
-                { label: 'Personal Care', href: '/categories/personal-care' },
-                { label: "Today's Deals", href: '/deals' },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="hover:text-orange-400 transition-colors">{item.label}</Link>
+              {shopCategories.map((cat) => (
+                <li key={cat.slug}>
+                  <Link href={`/categories/${cat.slug}`} className="hover:text-orange-400 transition-colors">{cat.name}</Link>
                 </li>
               ))}
+              <li>
+                <Link href="/deals" className="hover:text-orange-400 transition-colors">Today&apos;s Deals</Link>
+              </li>
             </ul>
           </div>
 

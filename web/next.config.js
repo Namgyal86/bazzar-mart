@@ -9,6 +9,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
