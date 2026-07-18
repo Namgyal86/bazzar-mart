@@ -35,6 +35,29 @@ const isUserAuthenticated = () => {
   }
 };
 
+// Auth store hydrates from a cookie on the client and may not have finished
+// by the time this store rehydrates from localStorage — checking
+// isAuthenticated synchronously here would read the pre-hydration `false`
+// default and wipe a logged-in user's wishlist on every page load.
+const clearIfUnauthenticated = (clear: () => void) => {
+  try {
+    const { useAuthStore } = require('./auth.store');
+    const run = () => {
+      if (!useAuthStore.getState().isAuthenticated) clear();
+    };
+    if (useAuthStore.persist.hasHydrated()) {
+      run();
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => {
+        unsub();
+        run();
+      });
+    }
+  } catch {
+    clear();
+  }
+};
+
 export const useWishlistStore = create<WishlistState>()(
   persist(
     (set, get) => ({
@@ -76,9 +99,8 @@ export const useWishlistStore = create<WishlistState>()(
     {
       name: 'bazzar-wishlist',
       onRehydrateStorage: () => (state) => {
-        if (state && !isUserAuthenticated()) {
-          state.items = [];
-        }
+        if (!state) return;
+        clearIfUnauthenticated(() => useWishlistStore.setState({ items: [] }));
       },
     },
   ),

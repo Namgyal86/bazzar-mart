@@ -56,7 +56,12 @@ export default function SellerReviewsPage() {
     apiClient.get('/api/v1/seller/reviews')
       .then((res: any) => {
         const data = res.data?.data;
-        setReviews(Array.isArray(data) ? data : DEMO_REVIEWS);
+        // Backend status enum is uppercase (PENDING/APPROVED/REJECTED); normalize
+        // to lowercase to match this page's filters and STATUS_CONFIG keys.
+        const normalized = Array.isArray(data)
+          ? data.map((r: Review) => ({ ...r, status: (r.status || '').toString().toLowerCase() as Review['status'] }))
+          : DEMO_REVIEWS;
+        setReviews(normalized);
       })
       .catch(() => setReviews(DEMO_REVIEWS))
       .finally(() => setLoading(false));

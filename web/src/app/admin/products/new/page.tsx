@@ -79,7 +79,7 @@ export default function AdminNewProductPage() {
   });
 
   const selectedCategory = watch('category');
-  const subCats = catTree.find(c => c.name === selectedCategory)?.subcategories ?? [];
+  const subCats = catTree.find(c => c.slug === selectedCategory)?.subcategories ?? [];
 
   const priceRaw     = watch('price');
   const salePriceRaw = watch('salePrice');
@@ -177,7 +177,7 @@ export default function AdminNewProductPage() {
               >
                 <option value="" style={{ background: '#1a2035' }}>Select category</option>
                 {catTree.map(c => (
-                  <option key={c._id} value={c.name} style={{ background: '#1a2035' }}>{c.name}</option>
+                  <option key={c._id} value={c.slug} style={{ background: '#1a2035' }}>{c.name}</option>
                 ))}
               </select>
               {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category.message}</p>}
@@ -201,7 +201,7 @@ export default function AdminNewProductPage() {
                   {!selectedCategory ? 'Select category first' : subCats.length === 0 ? 'No subcategories' : 'Select subcategory'}
                 </option>
                 {subCats.map(s => (
-                  <option key={s._id} value={s.name} style={{ background: '#1a2035' }}>{s.name}</option>
+                  <option key={s._id} value={s.slug} style={{ background: '#1a2035' }}>{s.name}</option>
                 ))}
               </select>
               {errors.subCategory && <p className="text-xs text-red-400 mt-1">{errors.subCategory.message}</p>}

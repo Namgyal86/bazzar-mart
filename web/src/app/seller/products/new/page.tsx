@@ -23,7 +23,7 @@ const schema = z.object({
   ),
   stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int().min(0, 'Enter a valid quantity'),
   category:    z.string().min(1, 'Select a category'),
-  subCategory: z.string().min(1, 'Select a subcategory'),
+  subCategory: z.string().optional(),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
 });
@@ -177,7 +177,7 @@ export default function NewProductPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Subcategory *</label>
+              <label className={labelCls}>Subcategory</label>
               <select
                 {...register('subCategory')}
                 disabled={!selectedCategory}

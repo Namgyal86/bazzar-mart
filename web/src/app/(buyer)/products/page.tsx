@@ -23,11 +23,11 @@ const SORT_OPTIONS = [
 ];
 
 const PRICE_RANGES = [
-  { label: 'Under Rs. 5,000', min: 0, max: 5000 },
-  { label: 'Rs. 5,000 – 20,000', min: 5000, max: 20000 },
-  { label: 'Rs. 20,000 – 50,000', min: 20000, max: 50000 },
-  { label: 'Rs. 50,000 – 1,00,000', min: 50000, max: 100000 },
-  { label: 'Above Rs. 1,00,000', min: 100000, max: Infinity },
+  { label: 'Under Rs. 100', min: 0, max: 100 },
+  { label: 'Rs. 100 – 300', min: 100, max: 300 },
+  { label: 'Rs. 300 – 500', min: 300, max: 500 },
+  { label: 'Rs. 500 – 1,000', min: 500, max: 1000 },
+  { label: 'Above Rs. 1,000', min: 1000, max: Infinity },
 ];
 
 function addToCart(product: any) {

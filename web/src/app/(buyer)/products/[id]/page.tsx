@@ -129,7 +129,7 @@ export default function ProductDetailPage() {
           seller: {
             id: raw.sellerId ?? raw.seller?._id ?? '',
             name: raw.sellerName ?? raw.seller?.name ?? raw.seller?.storeName ?? 'Unknown Seller',
-            slug: raw.seller?.slug ?? '',
+            slug: raw.seller?.slug ?? raw.sellerId ?? '',
             rating: raw.seller?.rating ?? raw.sellerRating ?? 0,
             totalSales: raw.seller?.totalSales ?? 0,
           },
@@ -311,8 +311,8 @@ export default function ProductDetailPage() {
         <ChevronRight className="w-3 h-3" />
         {product.category && (
           <>
-            <Link href={`/products?category=${product.category.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-orange-500 dark:hover:text-orange-400">
-              {product.category}
+            <Link href={`/categories/${product.category}`} className="hover:text-orange-500 dark:hover:text-orange-400">
+              {product.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
             </Link>
             <ChevronRight className="w-3 h-3" />
           </>
