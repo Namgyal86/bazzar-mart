@@ -109,7 +109,7 @@ export default function StoreDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    productApi.list({ seller: slug, limit: 24 })
+    productApi.list({ sellerId: slug, limit: 24 })
       .then((res: any) => {
         const prods = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.products ?? []);
         setProducts(prods.map((p: any) => ({
@@ -119,17 +119,16 @@ export default function StoreDetailPage() {
           price: p.salePrice || p.price,
           basePrice: p.price,
           rating: p.rating || 0,
-          seller: typeof p.seller === 'object' ? (p.seller?.storeName ?? '') : (p.seller ?? ''),
+          seller: p.sellerName || '',
         })));
-        if (prods.length > 0 && prods[0].seller && typeof prods[0].seller === 'object') {
-          const s = prods[0].seller;
+        if (prods.length > 0 && prods[0].sellerName) {
           setStore({
-            name: s.storeName || slug,
-            description: s.description || '',
-            rating: s.rating || 0,
-            totalSales: s.totalSales || 0,
-            location: s.location || '',
-            joinedYear: s.createdAt ? new Date(s.createdAt).getFullYear() : null,
+            name: prods[0].sellerName || slug,
+            description: '',
+            rating: 0,
+            totalSales: 0,
+            location: '',
+            joinedYear: null,
           });
         }
       })
