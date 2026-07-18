@@ -19,7 +19,7 @@ const schema = z.object({
   salePrice:   z.number({ invalid_type_error: 'Enter a valid price' }).min(0).optional(),
   stock:       z.number({ invalid_type_error: 'Enter a valid quantity' }).int('Must be a whole number').min(0),
   category:    z.string().min(1, 'Select a category'),
-  subCategory: z.string().min(1, 'Select a subcategory'),
+  subCategory: z.string().optional(),
   brand:       z.string().optional(),
   tags:        z.string().optional(),
 }).refine(
@@ -235,16 +235,16 @@ export default function AdminNewProductPage() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Original Price (Rs.) *</label>
-              <FieldInput type="number" placeholder="0" error={errors.price?.message} {...register('price')} />
+              <FieldInput type="number" placeholder="0" error={errors.price?.message} {...register('price', { valueAsNumber: true })} />
             </div>
             <div>
               <label className={labelCls}>Sale Price (Rs.)</label>
-              <FieldInput type="number" placeholder="0" {...register('salePrice')} />
+              <FieldInput type="number" placeholder="0" {...register('salePrice', { setValueAs: (v) => (v === '' ? undefined : Number(v)) })} />
               {discount > 0 && <p className="text-xs text-green-400 mt-1">{discount}% off</p>}
             </div>
             <div>
               <label className={labelCls}>Stock Quantity *</label>
-              <FieldInput type="number" placeholder="0" error={errors.stock?.message} {...register('stock')} />
+              <FieldInput type="number" placeholder="0" error={errors.stock?.message} {...register('stock', { valueAsNumber: true })} />
             </div>
           </div>
 
