@@ -554,13 +554,17 @@ export const getCategoryBreakdown = async (_req: AuthRequest, res: Response): Pr
 
 export const validateCoupon = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { code, subtotal = 0 } = req.body as { code?: string; subtotal?: number };
+    // Accept both field names — the checkout UI sends `orderTotal`, other
+    // callers may send `subtotal`; mismatching these silently zeroed the
+    // total and made every coupon with a minOrder appear invalid.
+    const { code, subtotal, orderTotal } = req.body as { code?: string; subtotal?: number; orderTotal?: number };
+    const total = Number(subtotal ?? orderTotal ?? 0);
     if (!code) { res.status(400).json({ success: false, error: 'Coupon code required' }); return; }
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
-    if (!coupon || coupon.usageCount >= coupon.usageLimit || (coupon.validUntil && new Date() > coupon.validUntil) || Number(subtotal) < coupon.minOrder) {
+    if (!coupon || coupon.usageCount >= coupon.usageLimit || (coupon.validUntil && new Date() > coupon.validUntil) || total < coupon.minOrder) {
       res.json({ success: true, data: { valid: false, discount: 0 } }); return;
     }
-    let discount = coupon.type === 'PERCENTAGE' ? Math.round((Number(subtotal) * coupon.value) / 100) : coupon.value;
+    let discount = coupon.type === 'PERCENTAGE' ? Math.round((total * coupon.value) / 100) : coupon.value;
     if (coupon.maxDiscount > 0) discount = Math.min(discount, coupon.maxDiscount);
     res.json({ success: true, data: { valid: true, discount, type: coupon.type, value: coupon.value } });
   } catch (err: unknown) {

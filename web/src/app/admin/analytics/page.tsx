@@ -14,7 +14,7 @@ const EMPTY = {
     { label: 'Total Products', value: 0, change: 0, icon: Package, gradient: 'from-green-500 to-emerald-500' },
   ],
   revenueByMonth: [] as { month: string; revenue: number }[],
-  topCategories: [] as { name: string; revenue: number; orders: number; color: string }[],
+  topCategories: [] as { name: string; revenue: number; color: string }[],
   topSellers: [] as { name: string; revenue: number; orders: number }[],
 };
 
@@ -55,7 +55,6 @@ export default function AdminAnalyticsPage() {
           topCategories: (d.categoryData ?? []).map((c: any) => ({
             name: c.name,
             revenue: Math.round((c.value / 100) * gmv),
-            orders: Math.round(c.value * 10),
             color: c.color,
           })),
           topSellers: d.topSellers ?? [],
@@ -173,7 +172,6 @@ export default function AdminAnalyticsPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-white">{formatCurrency(cat.revenue)}</span>
-                      <span className="text-xs text-gray-500 ml-2 font-medium">{cat.orders} orders</span>
                     </div>
                   </div>
                   <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">

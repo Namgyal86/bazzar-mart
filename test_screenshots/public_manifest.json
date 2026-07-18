@@ -1,0 +1,270 @@
+[
+  {
+    "file": "public/001_home_top.png",
+    "caption": "Bazzar homepage showing hero banner and category navigation."
+  },
+  {
+    "file": "public/002_home_scroll.png",
+    "caption": "Bazzar homepage scrolled to show featured products and categories."
+  },
+  {
+    "file": "public/003_categories_top.png",
+    "caption": "Categories listing page showing all product categories."
+  },
+  {
+    "file": "public/004_categories_scroll.png",
+    "caption": "Categories page scrolled to show additional category tiles."
+  },
+  {
+    "file": "public/005_category_detail_top.png",
+    "caption": "Fruits & Vegetables category page listing matching products."
+  },
+  {
+    "file": "public/006_category_detail_scroll.png",
+    "caption": "Fruits & Vegetables category page scrolled to show more products."
+  },
+  {
+    "file": "public/007_products_top.png",
+    "caption": "All-products catalogue page."
+  },
+  {
+    "file": "public/008_products_scroll.png",
+    "caption": "Products catalogue page scrolled to show more listings and filters."
+  },
+  {
+    "file": "public/009_deals_top.png",
+    "caption": "Deals page showing discounted products."
+  },
+  {
+    "file": "public/010_deals_scroll.png",
+    "caption": "Deals page scrolled to show additional offers."
+  },
+  {
+    "file": "public/011_search_top.png",
+    "caption": "Search results page for the query \"rice\"."
+  },
+  {
+    "file": "public/012_search_scroll.png",
+    "caption": "Search results page scrolled to show more matches."
+  },
+  {
+    "file": "public/013_cart_empty_top.png",
+    "caption": "Shopping cart page in its empty state before any items are added."
+  },
+  {
+    "file": "public/014_privacy_top.png",
+    "caption": "Privacy Policy page."
+  },
+  {
+    "file": "public/015_privacy_scroll.png",
+    "caption": "Privacy Policy page scrolled to show further sections."
+  },
+  {
+    "file": "public/016_terms_top.png",
+    "caption": "Terms & Conditions page."
+  },
+  {
+    "file": "public/017_terms_scroll.png",
+    "caption": "Terms & Conditions page scrolled to show further sections."
+  },
+  {
+    "file": "public/018_product_detail_top.png",
+    "caption": "Product detail page for a sample grocery item."
+  },
+  {
+    "file": "public/019_product_detail_scroll.png",
+    "caption": "Product detail page scrolled to show description and reviews."
+  },
+  {
+    "file": "public/020_storefront_top.png",
+    "caption": "Seller storefront page listing their products."
+  },
+  {
+    "file": "public/021_register_empty.png",
+    "caption": "Registration form shown empty immediately after page load."
+  },
+  {
+    "file": "public/022_register_filled.png",
+    "caption": "Registration form filled with realistic buyer details."
+  },
+  {
+    "file": "public/023_register_result.png",
+    "caption": "Result of submitting the registration form \u2014 redirected after account creation."
+  },
+  {
+    "file": "public/024_login_empty.png",
+    "caption": "Login form shown empty immediately after page load."
+  },
+  {
+    "file": "public/025_login_filled.png",
+    "caption": "Login form filled with the newly registered buyer's credentials."
+  },
+  {
+    "file": "public/026_login_result.png",
+    "caption": "Result after submitting the login form \u2014 buyer is now signed in."
+  },
+  {
+    "file": "public/027_forgot_empty.png",
+    "caption": "Forgot Password form shown empty."
+  },
+  {
+    "file": "public/028_forgot_filled.png",
+    "caption": "Forgot Password form filled with the account email."
+  },
+  {
+    "file": "public/029_forgot_result.png",
+    "caption": "Result after submitting the Forgot Password form."
+  },
+  {
+    "file": "public/030_contact_empty.png",
+    "caption": "Contact Us form shown empty."
+  },
+  {
+    "file": "public/031_contact_filled.png",
+    "caption": "Contact Us form filled with a realistic customer enquiry."
+  },
+  {
+    "file": "public/032_contact_result.png",
+    "caption": "Result after submitting the Contact Us form."
+  },
+  {
+    "file": "public/033_cart_with_item.png",
+    "caption": "Shopping cart page showing an item added by the buyer."
+  },
+  {
+    "file": "public/034_checkout_empty.png",
+    "caption": "Checkout page \u2014 Address step, shown before any shipping address is saved."
+  },
+  {
+    "file": "public/035_checkout_filled.png",
+    "caption": "Checkout page \u2014 new delivery address filled with realistic Nepali details."
+  },
+  {
+    "file": "public/036_checkout_payment.png",
+    "caption": "Checkout page \u2014 Payment step, selecting a payment method."
+  },
+  {
+    "file": "public/037_checkout_coupon_applied.png",
+    "caption": "Checkout page \u2014 Payment step after applying a valid coupon code, showing the discount."
+  },
+  {
+    "file": "public/038_checkout_confirm.png",
+    "caption": "Checkout page \u2014 Confirm step, reviewing the order before placing it."
+  },
+  {
+    "file": "public/039_checkout_result.png",
+    "caption": "Result after placing the order \u2014 order confirmation page."
+  },
+  {
+    "file": "public/040_account_order_track_top.png",
+    "caption": "Buyer account \u2014 Order tracking page showing delivery progress for the placed order."
+  },
+  {
+    "file": "public/041_payment_success.png",
+    "caption": "Payment gateway \u2014 Success page shown after a completed payment."
+  },
+  {
+    "file": "public/042_payment_failed.png",
+    "caption": "Payment gateway \u2014 Failure page shown when a payment cannot be verified."
+  },
+  {
+    "file": "public/043_payment_fonepay.png",
+    "caption": "Payment gateway \u2014 Fonepay QR payment screen with scannable QR code."
+  },
+  {
+    "file": "public/044_payment_verify.png",
+    "caption": "Payment gateway \u2014 Verification result page after the provider reports a cancelled or failed payment."
+  },
+  {
+    "file": "public/045_wishlist_top.png",
+    "caption": "Wishlist page showing the product the buyer saved for later."
+  },
+  {
+    "file": "public/046_account_profile_top.png",
+    "caption": "Buyer account \u2014 Profile page showing the signed-in buyer's details."
+  },
+  {
+    "file": "public/047_account_profile_filled.png",
+    "caption": "Buyer account \u2014 Profile page with an updated phone number."
+  },
+  {
+    "file": "public/048_account_profile_result.png",
+    "caption": "Buyer account \u2014 Result after saving profile changes."
+  },
+  {
+    "file": "public/049_account_addresses_top.png",
+    "caption": "Buyer account \u2014 Addresses page showing the address saved during checkout."
+  },
+  {
+    "file": "public/050_account_addresses_add_empty.png",
+    "caption": "Buyer account \u2014 Add Address form shown empty."
+  },
+  {
+    "file": "public/051_account_addresses_add_filled.png",
+    "caption": "Buyer account \u2014 Add Address form filled with a second delivery address."
+  },
+  {
+    "file": "public/052_account_addresses_add_result.png",
+    "caption": "Buyer account \u2014 Result after saving the new address, now listed alongside the existing one."
+  },
+  {
+    "file": "public/053_account_orders_top.png",
+    "caption": "Buyer account \u2014 Orders page listing the order just placed at checkout."
+  },
+  {
+    "file": "public/054_account_order_detail.png",
+    "caption": "Buyer account \u2014 Detail view of the order, showing items and delivery status."
+  },
+  {
+    "file": "public/055_account_notifications_top.png",
+    "caption": "Buyer account \u2014 Notifications preferences page."
+  },
+  {
+    "file": "public/056_account_referral_top.png",
+    "caption": "Buyer account \u2014 Referral Wallet page showing the buyer's referral code and earnings."
+  },
+  {
+    "file": "public/057_product_specs_tab.png",
+    "caption": "Product detail page \u2014 Specifications tab."
+  },
+  {
+    "file": "public/058_product_reviews_tab_empty.png",
+    "caption": "Product detail page \u2014 Reviews tab with the Write a Review form shown empty."
+  },
+  {
+    "file": "public/059_product_reviews_tab_filled.png",
+    "caption": "Product detail page \u2014 Review form filled with a 5-star rating and comment."
+  },
+  {
+    "file": "public/060_product_reviews_tab_result.png",
+    "caption": "Product detail page \u2014 Result after submitting the review, now listed below."
+  },
+  {
+    "file": "public/061_contact_admin_empty.png",
+    "caption": "Connect with Admin form shown empty."
+  },
+  {
+    "file": "public/062_contact_admin_filled.png",
+    "caption": "Connect with Admin form filled with a realistic support question."
+  },
+  {
+    "file": "public/063_contact_admin_result.png",
+    "caption": "Result after submitting the Connect with Admin ticket."
+  },
+  {
+    "file": "public/064_seller_register_empty.png",
+    "caption": "Become-a-Seller registration form \u2014 step 1, Business Details, shown empty."
+  },
+  {
+    "file": "public/065_seller_register_filled.png",
+    "caption": "Become-a-Seller registration form \u2014 step 1 filled with realistic business details."
+  },
+  {
+    "file": "public/066_seller_register_step2.png",
+    "caption": "Become-a-Seller registration form \u2014 step 2, Account Credentials filled."
+  },
+  {
+    "file": "public/067_seller_register_result.png",
+    "caption": "Result after submitting the seller registration form \u2014 new seller account created."
+  }
+]

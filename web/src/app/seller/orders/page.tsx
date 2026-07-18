@@ -18,19 +18,21 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const NEXT_STATUS: Record<string, string> = {
+  PENDING: 'CONFIRMED',
   CONFIRMED: 'PROCESSING',
   PROCESSING: 'SHIPPED',
   SHIPPED: 'DELIVERED',
 };
 
 const NEXT_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Confirm Order',
   CONFIRMED: 'Start Processing',
   PROCESSING: 'Mark Shipped',
   SHIPPED: 'Mark Delivered',
 };
 
 const STAT_CARDS = [
-  { key: 'CONFIRMED', label: 'Pending', icon: AlertCircle, gradient: 'from-amber-500/20 to-transparent', border: 'border-amber-500/15', iconBg: 'bg-amber-500/10 border-amber-500/20', iconCls: 'text-amber-400' },
+  { key: 'PENDING', label: 'Pending', icon: AlertCircle, gradient: 'from-amber-500/20 to-transparent', border: 'border-amber-500/15', iconBg: 'bg-amber-500/10 border-amber-500/20', iconCls: 'text-amber-400' },
   { key: 'PROCESSING', label: 'Processing', icon: Clock, gradient: 'from-purple-500/20 to-transparent', border: 'border-purple-500/15', iconBg: 'bg-purple-500/10 border-purple-500/20', iconCls: 'text-purple-400' },
   { key: 'SHIPPED', label: 'Shipped', icon: Truck, gradient: 'from-blue-500/20 to-transparent', border: 'border-blue-500/15', iconBg: 'bg-blue-500/10 border-blue-500/20', iconCls: 'text-blue-400' },
   { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle, gradient: 'from-emerald-500/20 to-transparent', border: 'border-emerald-500/15', iconBg: 'bg-emerald-500/10 border-emerald-500/20', iconCls: 'text-emerald-400' },

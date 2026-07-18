@@ -1,0 +1,90 @@
+[
+  {
+    "file": "seller/001_login_as_seller.png",
+    "caption": "Seller successfully logged in and redirected to the Seller Hub dashboard."
+  },
+  {
+    "file": "seller/002_dashboard_scroll.png",
+    "caption": "Seller Dashboard scrolled to show top products and recent orders."
+  },
+  {
+    "file": "seller/003_analytics_top.png",
+    "caption": "Seller Analytics page showing store performance metrics."
+  },
+  {
+    "file": "seller/004_analytics_scroll.png",
+    "caption": "Seller Analytics page scrolled to show further detail."
+  },
+  {
+    "file": "seller/005_products_list.png",
+    "caption": "Seller Products page showing this store's product catalogue."
+  },
+  {
+    "file": "seller/006_products_new_empty.png",
+    "caption": "Seller \u2014 Add Product form shown empty."
+  },
+  {
+    "file": "seller/007_products_new_filled.png",
+    "caption": "Seller \u2014 Add Product form filled with realistic product details."
+  },
+  {
+    "file": "seller/008_products_new_result.png",
+    "caption": "Seller \u2014 Result after adding the new product, now listed in the catalogue."
+  },
+  {
+    "file": "seller/009_products_edit.png",
+    "caption": "Seller \u2014 Edit Product page for the newly added product."
+  },
+  {
+    "file": "seller/010_inventory_top.png",
+    "caption": "Seller Inventory page showing stock levels across products."
+  },
+  {
+    "file": "seller/011_orders_list.png",
+    "caption": "Seller Orders page showing orders placed for this store's products, awaiting confirmation."
+  },
+  {
+    "file": "seller/012_orders_status_advanced.png",
+    "caption": "Seller Orders \u2014 order status advanced after the seller actioned it."
+  },
+  {
+    "file": "seller/013_customers_top.png",
+    "caption": "Seller Customers page showing buyers who purchased from this store."
+  },
+  {
+    "file": "seller/014_reviews_all_tab.png",
+    "caption": "Seller Reviews page \u2014 All tab showing every customer review."
+  },
+  {
+    "file": "seller/015_reviews_approved_tab.png",
+    "caption": "Seller Reviews page \u2014 Approved tab filtered view."
+  },
+  {
+    "file": "seller/016_reviews_pending_tab.png",
+    "caption": "Seller Reviews page \u2014 Pending tab filtered view."
+  },
+  {
+    "file": "seller/017_payouts_top.png",
+    "caption": "Seller Payouts page showing earnings and payout history."
+  },
+  {
+    "file": "seller/018_storefront_top.png",
+    "caption": "Seller Storefront settings page showing this store's public profile."
+  },
+  {
+    "file": "seller/019_storefront_filled.png",
+    "caption": "Seller Storefront settings \u2014 updated store description."
+  },
+  {
+    "file": "seller/020_storefront_result.png",
+    "caption": "Seller Storefront settings \u2014 result after saving changes."
+  },
+  {
+    "file": "seller/021_notifications_top.png",
+    "caption": "Seller Notifications page showing store alert preferences."
+  },
+  {
+    "file": "seller/022_settings_top.png",
+    "caption": "Seller Settings page showing account and store configuration."
+  }
+]

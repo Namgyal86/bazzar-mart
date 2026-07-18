@@ -99,7 +99,7 @@ export default function AdminCouponsPage() {
               <label className={labelCls}>Discount Type</label>
               <select className={inputCls} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 <option value="PERCENTAGE">Percentage (%)</option>
-                <option value="FLAT">Flat Amount (Rs.)</option>
+                <option value="FIXED">Flat Amount (Rs.)</option>
               </select>
             </div>
             <div>

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useSiteSettingsStore } from '@/store/site-settings.store';
+import { useAuthStore } from '@/store/auth.store';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -245,6 +246,7 @@ function StepIndicator({ current }: { current: number }) {
 
 export default function SellerRegisterPage() {
   const router = useRouter();
+  const { setAuth } = useAuthStore();
   const { settings } = useSiteSettingsStore();
   const siteName = settings.siteName || 'Bazzar';
   const [step, setStep] = useState(1);
@@ -309,13 +311,22 @@ export default function SellerRegisterPage() {
 
     setIsSubmitting(true);
     try {
-      await authApi.register({
+      const res = await authApi.register({
         firstName: step2.firstName,
         lastName: step2.lastName,
         email: step2.email,
         password: step2.password,
         phone: step1.phone,
         role: 'SELLER',
+      });
+      const { user } = res.data.data;
+      setAuth({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role as any,
+        referralCode: user.referralCode,
       });
 
       // Cookie set by /api/auth/register — apiClient sends it automatically

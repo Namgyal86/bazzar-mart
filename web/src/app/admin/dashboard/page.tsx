@@ -159,19 +159,22 @@ export default function AdminDashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => `${value}%`} contentStyle={{ background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip formatter={(value: any) => formatCurrency(value)} contentStyle={{ background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-3 space-y-1.5">
-                {(overview.categoryData as any[]).map((cat: any) => (
-                  <div key={cat.name} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                      <span className="text-gray-400">{cat.name}</span>
+                {(() => {
+                  const categoryTotal = (overview.categoryData as any[]).reduce((sum, c) => sum + (c.value ?? 0), 0) || 1;
+                  return (overview.categoryData as any[]).map((cat: any) => (
+                    <div key={cat.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                        <span className="text-gray-400">{cat.name}</span>
+                      </div>
+                      <span className="font-semibold text-gray-300">{Math.round((cat.value / categoryTotal) * 100)}%</span>
                     </div>
-                    <span className="font-semibold text-gray-300">{cat.value}%</span>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </>
           ) : (

@@ -1,0 +1,194 @@
+[
+  {
+    "file": "admin/001_login_as_admin.png",
+    "caption": "Admin successfully logged in and redirected to the admin panel."
+  },
+  {
+    "file": "admin/002_dashboard_top.png",
+    "caption": "Admin Dashboard showing key store metrics."
+  },
+  {
+    "file": "admin/003_dashboard_scroll.png",
+    "caption": "Admin Dashboard scrolled to show additional charts and recent activity."
+  },
+  {
+    "file": "admin/004_orders_list.png",
+    "caption": "Orders module showing the full list of customer orders."
+  },
+  {
+    "file": "admin/005_orders_detail.png",
+    "caption": "Orders module \u2014 detail panel for the first order in the list."
+  },
+  {
+    "file": "admin/006_orders_tab_pending.png",
+    "caption": "Orders module \u2014 Pending status tab filtered view."
+  },
+  {
+    "file": "admin/007_orders_tab_delivered.png",
+    "caption": "Orders module \u2014 Delivered status tab filtered view."
+  },
+  {
+    "file": "admin/008_sellers_list.png",
+    "caption": "Sellers module showing registered sellers awaiting or holding approval."
+  },
+  {
+    "file": "admin/009_sellers_approved.png",
+    "caption": "Sellers module \u2014 after approving a pending seller application."
+  },
+  {
+    "file": "admin/010_support_list.png",
+    "caption": "Support module showing customer enquiries received via the Contact Us form."
+  },
+  {
+    "file": "admin/011_support_expanded.png",
+    "caption": "Support module \u2014 expanded view of a customer enquiry submitted via the Contact Us form."
+  },
+  {
+    "file": "admin/012_support_resolved.png",
+    "caption": "Support module \u2014 enquiry marked as resolved after being handled."
+  },
+  {
+    "file": "admin/013_users_list.png",
+    "caption": "Users module showing all registered platform users."
+  },
+  {
+    "file": "admin/014_users_scroll.png",
+    "caption": "Users module scrolled to show additional accounts and role/status controls."
+  },
+  {
+    "file": "admin/015_users_tab_seller.png",
+    "caption": "Users module \u2014 Seller role tab filtered view."
+  },
+  {
+    "file": "admin/016_users_tab_buyer.png",
+    "caption": "Users module \u2014 Buyer role tab filtered view."
+  },
+  {
+    "file": "admin/017_products_list.png",
+    "caption": "Products module showing the full product catalogue."
+  },
+  {
+    "file": "admin/018_products_new_empty.png",
+    "caption": "Add New Product form shown empty."
+  },
+  {
+    "file": "admin/019_products_new_filled.png",
+    "caption": "Add New Product form filled with realistic product details."
+  },
+  {
+    "file": "admin/020_products_new_result.png",
+    "caption": "Result after submitting the Add New Product form \u2014 product added to the catalogue."
+  },
+  {
+    "file": "admin/021_categories_top.png",
+    "caption": "Categories module showing all store categories."
+  },
+  {
+    "file": "admin/022_categories_add_empty.png",
+    "caption": "Add New Category form shown empty."
+  },
+  {
+    "file": "admin/023_categories_add_filled.png",
+    "caption": "Add New Category form filled with realistic details."
+  },
+  {
+    "file": "admin/024_categories_add_result.png",
+    "caption": "Result after submitting the Add New Category form."
+  },
+  {
+    "file": "admin/025_banners_top.png",
+    "caption": "Banners module showing homepage promotional banners."
+  },
+  {
+    "file": "admin/026_banners_add_empty.png",
+    "caption": "Add New Banner form shown empty."
+  },
+  {
+    "file": "admin/027_banners_add_filled.png",
+    "caption": "Add New Banner form filled with realistic promotional copy."
+  },
+  {
+    "file": "admin/028_banners_add_result.png",
+    "caption": "Result after submitting the Add New Banner form."
+  },
+  {
+    "file": "admin/029_coupons_top.png",
+    "caption": "Coupons module showing active discount codes."
+  },
+  {
+    "file": "admin/030_coupons_add_empty.png",
+    "caption": "Add New Coupon form shown empty."
+  },
+  {
+    "file": "admin/031_coupons_add_filled.png",
+    "caption": "Add New Coupon form filled with realistic promotional details."
+  },
+  {
+    "file": "admin/032_coupons_add_result.png",
+    "caption": "Result after submitting the Add New Coupon form."
+  },
+  {
+    "file": "admin/033_flash_deals_top.png",
+    "caption": "Flash Deals module showing time-limited product offers."
+  },
+  {
+    "file": "admin/034_flash_deals_scroll.png",
+    "caption": "Flash Deals module scrolled to show additional deal listings."
+  },
+  {
+    "file": "admin/035_payments_top.png",
+    "caption": "Payments module showing transaction records."
+  },
+  {
+    "file": "admin/036_payments_scroll.png",
+    "caption": "Payments module showing transaction records. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/037_reviews_top.png",
+    "caption": "Reviews module showing customer product reviews."
+  },
+  {
+    "file": "admin/038_reviews_scroll.png",
+    "caption": "Reviews module showing customer product reviews. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/039_referrals_top.png",
+    "caption": "Referrals module showing the referral program overview."
+  },
+  {
+    "file": "admin/040_referrals_scroll.png",
+    "caption": "Referrals module showing the referral program overview. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/041_analytics_top.png",
+    "caption": "Analytics module showing store performance metrics."
+  },
+  {
+    "file": "admin/042_analytics_scroll.png",
+    "caption": "Analytics module showing store performance metrics. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/043_delivery_top.png",
+    "caption": "Delivery module showing delivery tracking and assignment."
+  },
+  {
+    "file": "admin/044_delivery_scroll.png",
+    "caption": "Delivery module showing delivery tracking and assignment. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/045_notifications_top.png",
+    "caption": "Notifications module showing system notification settings."
+  },
+  {
+    "file": "admin/046_notifications_scroll.png",
+    "caption": "Notifications module showing system notification settings. \u2014 scrolled to show further detail."
+  },
+  {
+    "file": "admin/047_settings_top.png",
+    "caption": "Settings module showing store configuration options."
+  },
+  {
+    "file": "admin/048_settings_scroll.png",
+    "caption": "Settings module showing store configuration options. \u2014 scrolled to show further detail."
+  }
+]
