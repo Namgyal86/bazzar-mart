@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, USER_COOKIE } from '@/lib/auth-cookies';
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+const IS_PROD = process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false';
 
 function decodeJwtPayload(token: string): Record<string, string> | null {
   try {

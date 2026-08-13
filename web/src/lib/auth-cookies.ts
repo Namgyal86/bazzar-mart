@@ -4,7 +4,7 @@ export const ACCESS_TOKEN_COOKIE  = 'bz_access';
 export const REFRESH_TOKEN_COOKIE = 'bz_refresh';
 export const USER_COOKIE          = 'bz_user';
 
-const IS_PROD       = process.env.NODE_ENV === 'production';
+const IS_PROD       = process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false';
 const ACCESS_MAX    = 60 * 15;             // 15 min
 const REFRESH_MAX   = 60 * 60 * 24 * 7;   // 7 days
 

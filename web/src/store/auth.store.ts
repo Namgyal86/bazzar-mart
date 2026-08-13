@@ -23,7 +23,7 @@ interface AuthState {
 }
 
 const COOKIE_KEY = 'bz_user';
-const IS_PROD    = process.env.NODE_ENV === 'production';
+const IS_PROD    = process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false';
 const MAX_AGE    = 60 * 60 * 24 * 7; // 7 days
 
 export const useAuthStore = create<AuthState>()(

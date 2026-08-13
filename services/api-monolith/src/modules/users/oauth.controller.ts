@@ -24,7 +24,7 @@ function validateState(state: string | undefined): boolean {
 }
 
 const WEB_URL = env.WEB_URL;
-const API_BASE_URL = env.API_BASE_URL;
+const API_BASE_URL = env.PUBLIC_API_URL || env.API_BASE_URL;
 
 function oauthError(res: Response, message: string) {
   return res.redirect(`${WEB_URL}/auth/login?oauth_error=${encodeURIComponent(message)}`);
