@@ -22,7 +22,7 @@ async function main() {
   const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bazzar_db';
   const client = new MongoClient(MONGO_URI);
   await client.connect();
-  const db = client.db();
+  const db = client.db('bazzar_db');
   console.log(`\n✅ Connected to: ${MONGO_URI}`);
 
   const adminHash  = await bcrypt.hash('Admin@1234', 12);
