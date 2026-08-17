@@ -39,9 +39,13 @@ const createSellerProductSchema = z.object({
   tags:             z.array(z.string()).default([]),
   specifications:   z.record(z.string()).default({}),
   sellerName:       z.string().optional(),
-  // isFeatured intentionally excluded — sellers cannot self-feature
-  // sellerId intentionally excluded — always set from req.user!.userId
 });
+
+// Helper function: get both User ID and Seller Document ID to match orders & products robustly
+async function getSellerKeyIds(userId: string): Promise<string[]> {
+  const seller = await Seller.findOne({ userId });
+  return seller ? [userId, seller._id.toString()] : [userId];
+}
 
 // ── EventEmitter subscription ─────────────────────────────────────────────────
 
@@ -61,7 +65,7 @@ export function registerSellerEventHandlers(): void {
       for (const [sellerId, itemTotal] of Object.entries(sellerTotals)) {
         const credit = Math.round(itemTotal * (1 - COMMISSION));
         await Seller.findOneAndUpdate(
-          { userId: sellerId },
+          { $or: [{ userId: sellerId }, { _id: sellerId }] },
           { $inc: { balance: credit, totalEarnings: credit, totalOrders: 1 } },
         );
       }
@@ -123,15 +127,16 @@ export const updateStore = async (req: AuthRequest, res: Response): Promise<void
 
 export const getDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const sellerId = req.user!.userId;
-    const seller   = await Seller.findOne({ userId: sellerId });
+    const sellerId  = req.user!.userId;
+    const seller    = await Seller.findOne({ userId: sellerId });
     if (!seller) { res.status(404).json({ success: false, error: 'Seller not found' }); return; }
+    const keyIds = [sellerId, seller._id.toString()];
 
     const [recentOrderDocs, productCount, topProductDocs, pendingOrderCount] = await Promise.all([
-      Order.find({ 'items.sellerId': sellerId }).sort('-createdAt').limit(5),
-      Product.countDocuments({ sellerId, isActive: true }),
-      Product.find({ sellerId, isActive: true }).sort('-soldCount').limit(4),
-      Order.countDocuments({ 'items.sellerId': sellerId, status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING'] } }),
+      Order.find({ 'items.sellerId': { $in: keyIds } }).sort('-createdAt').limit(5),
+      Product.countDocuments({ sellerId: { $in: keyIds }, isActive: true }),
+      Product.find({ sellerId: { $in: keyIds }, isActive: true }).sort('-soldCount').limit(4),
+      Order.countDocuments({ 'items.sellerId': { $in: keyIds }, status: { $in: ['PENDING', 'CONFIRMED', 'PROCESSING'] } }),
     ]);
 
     // Revenue chart: last 7 days
@@ -142,7 +147,7 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
       const end   = new Date(start.getTime() + 86400000);
       const dayOrders = recentOrderDocs.filter(o => o.createdAt >= start && o.createdAt < end);
       const revenue = dayOrders.reduce((s, o) => {
-        return s + o.items.filter(it => it.sellerId === sellerId).reduce((a, it) => a + it.totalPrice, 0);
+        return s + o.items.filter(it => keyIds.includes(it.sellerId)).reduce((a, it) => a + it.totalPrice, 0);
       }, 0);
       revenueChart.push({ day: start.toLocaleDateString('en', { weekday: 'short' }), revenue });
     }
@@ -158,7 +163,6 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
     const topProducts = topProductDocs.map(p => ({ name: p.name, sales: p.soldCount, _id: p.id }));
 
     res.json({ success: true, data: {
-      // Web frontend fields
       revenue:      seller.totalEarnings,
       orders:       seller.totalOrders,
       products:     productCount,
@@ -166,7 +170,6 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
       rating:       seller.rating,
       recentOrders,
       topProducts,
-      // Mobile app aliases
       totalRevenue:  seller.totalEarnings,
       totalOrders:   seller.totalOrders,
       totalProducts: productCount,
@@ -180,11 +183,12 @@ export const getDashboard = async (req: AuthRequest, res: Response): Promise<voi
 
 export const getSellerProducts = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const { page = 1, limit = 50 } = req.query as { page?: string; limit?: string };
     const skip    = (Number(page) - 1) * Number(limit);
     const [products, total] = await Promise.all([
-      Product.find({ sellerId: req.user!.userId, isActive: true }).skip(skip).limit(Number(limit)),
-      Product.countDocuments({ sellerId: req.user!.userId, isActive: true }),
+      Product.find({ sellerId: { $in: keyIds }, isActive: true }).skip(skip).limit(Number(limit)),
+      Product.countDocuments({ sellerId: { $in: keyIds }, isActive: true }),
     ]);
     res.json({ success: true, data: products, meta: { total, page: Number(page), limit: Number(limit) } });
   } catch (err: unknown) { handleError(err, res); }
@@ -206,7 +210,8 @@ export const createSellerProduct = async (req: AuthRequest, res: Response): Prom
 
 export const updateSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const product = await Product.findOneAndUpdate({ _id: req.params.id, sellerId: req.user!.userId }, req.body, { new: true });
+    const keyIds = await getSellerKeyIds(req.user!.userId);
+    const product = await Product.findOneAndUpdate({ _id: req.params.id, sellerId: { $in: keyIds } }, req.body, { new: true });
     if (!product) { res.status(404).json({ success: false, error: 'Product not found' }); return; }
     res.json({ success: true, data: product });
   } catch (err: unknown) { handleError(err, res); }
@@ -214,7 +219,8 @@ export const updateSellerProduct = async (req: AuthRequest, res: Response): Prom
 
 export const deleteSellerProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    await Product.findOneAndUpdate({ _id: req.params.id, sellerId: req.user!.userId }, { isActive: false });
+    const keyIds = await getSellerKeyIds(req.user!.userId);
+    await Product.findOneAndUpdate({ _id: req.params.id, sellerId: { $in: keyIds } }, { isActive: false });
     res.json({ success: true, data: null });
   } catch (err: unknown) { handleError(err, res); }
 };
@@ -223,8 +229,9 @@ export const deleteSellerProduct = async (req: AuthRequest, res: Response): Prom
 
 export const getSellerOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const { page = 1, limit = 20, status } = req.query as { page?: string; limit?: string; status?: string };
-    const filter: Record<string, unknown> = { 'items.sellerId': req.user!.userId };
+    const filter: Record<string, unknown> = { 'items.sellerId': { $in: keyIds } };
     if (status) filter.status = status;
     const skip = (Number(page) - 1) * Number(limit);
     const [orders, total] = await Promise.all([
@@ -237,10 +244,10 @@ export const getSellerOrders = async (req: AuthRequest, res: Response): Promise<
 
 export const getSellerOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const order = await Order.findById(req.params.orderId);
     if (!order) { res.status(404).json({ success: false, error: 'Order not found' }); return; }
-    // Ensure seller actually has items in this order
-    const hasSeller = order.items.some(i => i.sellerId === req.user!.userId);
+    const hasSeller = order.items.some(i => keyIds.includes(i.sellerId));
     if (!hasSeller) { res.status(403).json({ success: false, error: 'Forbidden' }); return; }
     res.json({ success: true, data: order });
   } catch (err: unknown) { handleError(err, res); }
@@ -251,9 +258,10 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     const { status } = req.body as { status: string };
     const valid = ['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
     if (!valid.includes(status)) { res.status(400).json({ success: false, error: 'Invalid status' }); return; }
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const order = await Order.findById(req.params.orderId);
     if (!order) { res.status(404).json({ success: false, error: 'Order not found' }); return; }
-    const hasSeller = order.items.some(i => i.sellerId === req.user!.userId);
+    const hasSeller = order.items.some(i => keyIds.includes(i.sellerId));
     if (!hasSeller) { res.status(403).json({ success: false, error: 'Forbidden' }); return; }
     order.status = status as typeof order.status;
     order.statusHistory.push({ status, timestamp: new Date() });
@@ -269,9 +277,10 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     const sellerId = req.user!.userId;
     const seller   = await Seller.findOne({ userId: sellerId });
     if (!seller) { res.status(404).json({ success: false, error: 'Seller not found' }); return; }
+    const keyIds = [sellerId, seller._id.toString()];
 
     const since = new Date(); since.setMonth(since.getMonth() - 6);
-    const orders = await Order.find({ 'items.sellerId': sellerId, createdAt: { $gte: since } });
+    const orders = await Order.find({ 'items.sellerId': { $in: keyIds }, createdAt: { $gte: since } });
 
     // Monthly revenue
     const monthMap: Record<string, number> = {};
@@ -284,7 +293,7 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     orders.forEach(o => {
       const key = new Date(o.createdAt).toLocaleString('en', { month: 'short' });
       if (key in monthMap) {
-        const sellerItems = o.items.filter(i => i.sellerId === sellerId);
+        const sellerItems = o.items.filter(i => keyIds.includes(i.sellerId));
         monthMap[key] += sellerItems.reduce((s, i) => s + i.totalPrice, 0);
       }
     });
@@ -292,7 +301,7 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     // Top products
     const prodMap: Record<string, { name: string; sold: number; revenue: number }> = {};
     orders.forEach(o => {
-      o.items.filter(i => i.sellerId === sellerId).forEach(item => {
+      o.items.filter(i => keyIds.includes(i.sellerId)).forEach(item => {
         if (!prodMap[item.productName]) prodMap[item.productName] = { name: item.productName, sold: 0, revenue: 0 };
         prodMap[item.productName].sold    += item.quantity;
         prodMap[item.productName].revenue += item.totalPrice;
@@ -300,13 +309,12 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     });
     const topProducts = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
-    // Prior period: same 6-month window shifted back 6 months (D-18)
     const prevEnd   = new Date(since);
     const prevSince = new Date(since);
     prevSince.setMonth(prevSince.getMonth() - 6);
 
     const prevOrders = await Order.find({
-      'items.sellerId': sellerId,
+      'items.sellerId': { $in: keyIds },
       createdAt:        { $gte: prevSince, $lt: prevEnd },
     }).lean();
 
@@ -314,7 +322,7 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
     const prevCustomerSet = new Set<string>();
     for (const o of prevOrders) {
       const sellerItems = (o.items as Array<{ sellerId: string; totalPrice: number }>)
-        .filter(i => i.sellerId === sellerId);
+        .filter(i => keyIds.includes(i.sellerId));
       prevRevenue += sellerItems.reduce((s, i) => s + i.totalPrice, 0);
       prevCustomerSet.add(o.userId as string);
     }
@@ -347,8 +355,8 @@ export const getSellerAnalytics = async (req: AuthRequest, res: Response): Promi
 
 export const getSellerReviews = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const sellerId  = req.user!.userId;
-    const products  = await Product.find({ sellerId, isActive: true }).select('_id').limit(100);
+    const keyIds    = await getSellerKeyIds(req.user!.userId);
+    const products  = await Product.find({ sellerId: { $in: keyIds }, isActive: true }).select('_id').limit(100);
     const productIds = products.map(p => String(p._id));
     if (productIds.length === 0) { res.json({ success: true, data: [] }); return; }
     const reviews = await Review.find({ productId: { $in: productIds }, isActive: true }).sort('-createdAt').limit(200);
@@ -360,11 +368,12 @@ export const getSellerReviews = async (req: AuthRequest, res: Response): Promise
 
 export const getSellerInventory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const { page = 1, limit = 50 } = req.query as { page?: string; limit?: string };
     const skip = (Number(page) - 1) * Number(limit);
     const [products, total] = await Promise.all([
-      Product.find({ sellerId: req.user!.userId }).skip(skip).limit(Number(limit)),
-      Product.countDocuments({ sellerId: req.user!.userId }),
+      Product.find({ sellerId: { $in: keyIds } }).skip(skip).limit(Number(limit)),
+      Product.countDocuments({ sellerId: { $in: keyIds } }),
     ]);
     const inventory = products.map(p => ({
       _id:               p.id,
@@ -383,10 +392,11 @@ export const getSellerInventory = async (req: AuthRequest, res: Response): Promi
 
 export const updateInventoryStock = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const keyIds = await getSellerKeyIds(req.user!.userId);
     const { stock } = req.body as { stock?: number };
     if (stock === undefined || stock < 0) { res.status(400).json({ success: false, error: 'Valid stock required' }); return; }
     const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, sellerId: req.user!.userId },
+      { _id: req.params.id, sellerId: { $in: keyIds } },
       { stock },
       { new: true },
     );

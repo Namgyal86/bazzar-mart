@@ -140,7 +140,7 @@ async function main() {
   // ── PRODUCTS ──────────────────────────────────────────────────────────────
   console.log('\n🛍️  Products...');
   await db.collection('products').deleteMany({});
-  const [s1, s2, s3] = sellerIds;
+  const [s1, s2, s3] = [ids[2].toString(), ids[3].toString(), ids[4].toString()];
   // Category slugs (must match what the frontend sends as ?category=...)
   const fvId='fruits-vegetables', deId='dairy-eggs', gpId='grains-pulses', msId='meat-seafood';
   const sbId='snacks-beverages', scId='spices-condiments', bbId='bakery-bread', ogId='oils-ghee';

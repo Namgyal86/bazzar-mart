@@ -308,7 +308,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     // Increment totalOrders on each seller in this order
     const sellerIds = [...new Set(body.items.map((i: { sellerId: string }) => i.sellerId))];
     for (const sid of sellerIds) {
-      Seller.findOneAndUpdate({ userId: sid }, { $inc: { totalOrders: 1 } }).catch(() => {});
+      Seller.findOneAndUpdate({ $or: [{ userId: sid }, { _id: sid }] }, { $inc: { totalOrders: 1 } }).catch(() => {});
     }
 
     // In-process: referrals module checks for first-order reward
