@@ -110,14 +110,14 @@ services:
       start_period: 40s
 
   # ── API Monolith ───────────────────────────────────────────────────────────
-  # Replaces: user, product, cart, order, payment, review, seller,
-  #           search, recommendation, storefront, referral, analytics, support
 
   api-monolith:
     build: ./services/api-monolith
     container_name: bazzar-api-monolith
     ports:
       - "8100:8100"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - PORT=8100
@@ -140,6 +140,7 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
       - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
     depends_on:
@@ -156,14 +157,14 @@ services:
       start_period: 30s
 
   # ── Kept-separate services ─────────────────────────────────────────────────
-  # These were NOT merged: they have distinct runtime concerns
-  # (delivery has driver-side WebSocket; notification has FCM/SMS/email sends)
 
   delivery-service:
     build: ./services/delivery-service
     container_name: bazzar-delivery-service
     ports:
       - "8013:8013"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - PORT=8013
@@ -182,6 +183,8 @@ services:
     container_name: bazzar-notification-service
     ports:
       - "8008:8008"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - PORT=8008
@@ -214,7 +217,6 @@ services:
       - NODE_ENV=production
       - COOKIE_SECURE=false
       - NEXT_PUBLIC_WS_URL=ws://localhost:8013
-      # Single backend URL — all API traffic proxied through Next.js rewrites
       - MONOLITH_URL=http://api-monolith:8100
       - DELIVERY_SERVICE_URL=http://delivery-service:8013
       - NOTIFICATION_SERVICE_URL=http://notification-service:8008
