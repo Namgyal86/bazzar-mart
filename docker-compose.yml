@@ -31,7 +31,7 @@ services:
     image: mongo:4.4
     container_name: bazzar-mongodb
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
     command: mongod --wiredTigerCacheSizeGB 0.25
@@ -48,7 +48,7 @@ services:
     image: redis:7-alpine
     container_name: bazzar-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -64,7 +64,7 @@ services:
     image: bitnamilegacy/kafka:4.0.0-debian-12-r10
     container_name: bazzar-kafka
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     environment:
       # KRaft — no Zookeeper
       KAFKA_CFG_NODE_ID: 1
@@ -97,7 +97,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks: [bazzar-net]
